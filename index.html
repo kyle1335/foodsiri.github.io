@@ -1,0 +1,423 @@
+<!DOCTYPE HTML>
+<!--
+	美食天地 - Your Ultimate Food Guide
+	Based on Dimension by HTML5 UP (html5up.net | @ajlkn)
+-->
+<html>
+	<head>
+		<title>美食天地 - 探索美味的終極指南</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="stylesheet" href="assets/css/google-maps.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+		<!-- Font Awesome for icons -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
+		<!-- Google Maps API -->
+		<script>
+			// 定義 Google Maps API 載入錯誤處理函數
+			function gm_authFailure() {
+				const mapContainer = document.getElementById('map-container');
+				if (mapContainer) {
+					mapContainer.innerHTML = '<div style="text-align: center; padding: 50px 20px;"><h3 style="color:#f44336;">Google Maps 載入失敗</h3><p>可能的原因：API 金鑰無效或已達使用限制。請檢查您的 API 金鑰設定。</p></div>';
+				}
+			}
+		</script>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<div class="logo">
+							<span class="icon fa-utensils"></span>
+						</div>
+						<div class="content">
+							<div class="inner">
+								<h1>美食天地</h1>
+								<p>探索美味，分享喜悅，找到你的下一個美食冒險</p>
+							</div>
+						</div>
+						<nav>
+							<ul>
+								<li><a href="#discover">發現美食</a></li>
+								<li><a href="#search">搜尋餐廳</a></li>
+								<li><a href="#popular">熱門推薦</a></li>
+								<li><a href="#articles">美食文章</a></li>
+								<li><a href="#login">登入/註冊</a></li>
+							</ul>
+						</nav>
+					</header>
+
+				<!-- Main -->
+					<div id="main">
+
+						<!-- Discover -->
+							<article id="discover">
+								<h2 class="major">發現美食</h2>
+								<span class="image main"><img src="images/food-banner.jpg" alt="" /></span>
+								<p>歡迎來到美食天地，這裡是您探索各地美食的最佳平台。從街頭小吃到高級餐廳，從傳統美食到創新料理，我們提供最全面的美食指南。</p>
+								
+								<h3>探索美食分類</h3>
+								<div class="category-grid">
+									<div class="category-item" onclick="location.href='#category?type=japanese'">
+										<span class="icon fa-bowl-rice"></span>
+										<h4>日式料理</h4>
+										<p>9000+ 餐廳</p>
+									</div>
+									<div class="category-item" onclick="location.href='#category?type=chinese'">
+										<span class="icon fa-pepper-hot"></span>
+										<h4>中式料理</h4>
+										<p>7800+ 餐廳</p>
+									</div>
+									<div class="category-item" onclick="location.href='#category?type=hotpot'">
+										<span class="icon fa-fire"></span>
+										<h4>鍋類</h4>
+										<p>4900+ 餐廳</p>
+									</div>
+									<div class="category-item" onclick="location.href='#category?type=dessert'">
+										<span class="icon fa-ice-cream"></span>
+										<h4>甜點類</h4>
+										<p>8200+ 餐廳</p>
+									</div>
+									<div class="category-item" onclick="location.href='#category?type=breakfast'">
+										<span class="icon fa-mug-hot"></span>
+										<h4>早午餐</h4>
+										<p>5700+ 餐廳</p>
+									</div>
+									<div class="category-item" onclick="location.href='#category?type=allcategories'">
+										<span class="icon fa-list"></span>
+										<h4>更多分類</h4>
+										<p>探索所有</p>
+									</div>
+								</div>
+								
+								<h3>熱門城市</h3>
+								<div class="city-selector">
+									<a href="#search?city=taipei" class="button">台北</a>
+									<a href="#search?city=taichung" class="button">台中</a>
+									<a href="#search?city=kaohsiung" class="button">高雄</a>
+									<a href="#search?city=tainan" class="button">台南</a>
+									<a href="#search?city=hsinchu" class="button">新竹</a>
+								</div>
+							</article>
+
+						<!-- Search -->
+							<article id="search">
+								<h2 class="major">搜尋餐廳</h2>
+								<div class="search-container">
+									<form id="search-form">
+										<div class="fields">
+											<div class="field">
+												<label for="keyword">關鍵字</label>
+												<input type="text" id="keyword" name="keyword" placeholder="輸入餐廳名稱、料理類型或關鍵字" />
+											</div>
+											<div class="field half">
+												<label for="location">地區</label>
+												<select id="location" name="location">
+													<option value="">選擇地區</option>
+													<option value="taipei">台北市</option>
+													<option value="newtaipei">新北市</option>
+													<option value="taichung">台中市</option>
+													<option value="kaohsiung">高雄市</option>
+													<option value="tainan">台南市</option>
+												</select>
+											</div>
+											<div class="field half">
+												<label for="category">類別</label>
+												<select id="category" name="category">
+													<option value="">所有類別</option>
+													<option value="japanese">日式料理</option>
+													<option value="chinese">中式料理</option>
+													<option value="hotpot">鍋類</option>
+													<option value="dessert">甜點</option>
+													<option value="breakfast">早午餐</option>
+												</select>
+											</div>
+										</div>
+										<div class="fields filter-options">
+											<div class="field third">
+												<label>
+													<input type="checkbox" id="open_now" name="open_now"> 營業中
+												</label>
+											</div>
+											<div class="field third">
+												<label>
+													<input type="checkbox" name="delivery" id="delivery"> 提供外送
+												</label>
+											</div>
+											<div class="field third">
+												<label>
+													<input type="checkbox" name="reservation" id="reservation"> 可預約
+												</label>
+											</div>
+										</div>
+										<ul class="actions">
+											<li><input type="submit" value="搜尋" class="primary" /></li>
+											<li><input type="reset" value="重置" /></li>
+										</ul>
+									</form>
+								</div>
+								
+								<!-- 地圖容器 -->
+								<div id="map-container" style="height: 400px; width: 100%; margin: 20px 0; border-radius: 5px; overflow: hidden;"></div>
+								
+								<div id="search-results">
+									<!-- 搜尋結果將在這裡顯示 -->
+									<p>輸入關鍵字並搜尋，找到您的下一個美食體驗！</p>
+								</div>
+							</article>
+
+						<!-- Popular -->
+							<article id="popular">
+								<h2 class="major">熱門推薦</h2>
+								<p>這裡展示了根據用戶評分和訪問量統計的熱門餐廳。</p>
+								
+								<h3>本週最受歡迎</h3>
+								<div class="restaurants-grid">
+									<div class="restaurant-card">
+										<div class="restaurant-image">
+											<img src="images/restaurant1.jpg" alt="餐廳照片" />
+											<div class="rating">4.8<span class="star">★</span></div>
+										</div>
+										<h4>鮨小月 日本料理</h4>
+										<p class="location"><span class="icon fa-location-dot"></span> 台北市中山區</p>
+										<p class="tags">日式料理 • 壽司 • 精緻料理</p>
+										<a href="#restaurant?id=123" class="button small">查看詳情</a>
+									</div>
+									<div class="restaurant-card">
+										<div class="restaurant-image">
+											<img src="images/restaurant2.jpg" alt="餐廳照片" />
+											<div class="rating">4.7<span class="star">★</span></div>
+										</div>
+										<h4>川悅火鍋</h4>
+										<p class="location"><span class="icon fa-location-dot"></span> 台北市信義區</p>
+										<p class="tags">火鍋 • 麻辣 • 海鮮</p>
+										<a href="#restaurant?id=456" class="button small">查看詳情</a>
+									</div>
+									<div class="restaurant-card">
+										<div class="restaurant-image">
+											<img src="images/restaurant3.jpg" alt="餐廳照片" />
+											<div class="rating">4.6<span class="star">★</span></div>
+										</div>
+										<h4>甜蜜時光甜點工坊</h4>
+										<p class="location"><span class="icon fa-location-dot"></span> 台北市大安區</p>
+										<p class="tags">甜點 • 下午茶 • 蛋糕</p>
+										<a href="#restaurant?id=789" class="button small">查看詳情</a>
+									</div>
+								</div>
+								
+								<h3>最新開幕</h3>
+								<div class="restaurants-grid">
+									<div class="restaurant-card">
+										<div class="restaurant-image">
+											<img src="images/restaurant4.jpg" alt="餐廳照片" />
+											<div class="new-badge">新開幕</div>
+										</div>
+										<h4>植物日常 蔬食料理</h4>
+										<p class="location"><span class="icon fa-location-dot"></span> 台北市中正區</p>
+										<p class="tags">素食 • 健康飲食 • 創新料理</p>
+										<a href="#restaurant?id=321" class="button small">查看詳情</a>
+									</div>
+									<div class="restaurant-card">
+										<div class="restaurant-image">
+											<img src="images/restaurant5.jpg" alt="餐廳照片" />
+											<div class="new-badge">新開幕</div>
+										</div>
+										<h4>拿波里披薩坊</h4>
+										<p class="location"><span class="icon fa-location-dot"></span> 台北市松山區</p>
+										<p class="tags">義式料理 • 披薩 • 義大利麵</p>
+										<a href="#restaurant?id=654" class="button small">查看詳情</a>
+									</div>
+								</div>
+							</article>
+
+						<!-- Articles -->
+							<article id="articles">
+								<h2 class="major">美食文章</h2>
+								<p>探索美食趨勢、烹飪技巧和餐廳評論。</p>
+								
+								<div class="articles-grid">
+									<div class="article-card">
+										<div class="article-image">
+											<img src="images/article1.jpg" alt="文章配圖" />
+										</div>
+										<div class="article-content">
+											<h4>2025台灣烘焙大賞：網路聲量TOP30</h4>
+											<p class="article-meta">2025年3月20日 • 美食趨勢</p>
+											<p class="article-excerpt">2025台灣烘焙大賞結果出爐！本文揭露網路聲量最高的30家人氣烘焙店，還有最強布丁的製作秘訣...</p>
+											<a href="#article?id=111" class="read-more">閱讀更多</a>
+										</div>
+									</div>
+									<div class="article-card">
+										<div class="article-image">
+											<img src="images/article2.jpg" alt="文章配圖" />
+										</div>
+										<div class="article-content">
+											<h4>台北必吃10家日式料理，米其林主廚大推薦！</h4>
+											<p class="article-meta">2025年3月15日 • 餐廳推薦</p>
+											<p class="article-excerpt">從平價到高級，這10家日式料理餐廳涵蓋了各種風格和價位，每一家都經過米其林星級主廚的親自推薦...</p>
+											<a href="#article?id=222" class="read-more">閱讀更多</a>
+										</div>
+									</div>
+									<div class="article-card">
+										<div class="article-image">
+											<img src="images/article3.jpg" alt="文章配圖" />
+										</div>
+										<div class="article-content">
+											<h4>台中美食地圖：一日遊必吃路線</h4>
+											<p class="article-meta">2025年3月5日 • 美食之旅</p>
+											<p class="article-excerpt">台中一日遊，從早餐到宵夜，這條路線囊括了台中最具特色的美食，讓你一天內品嚐最道地的台中滋味...</p>
+											<a href="#article?id=333" class="read-more">閱讀更多</a>
+										</div>
+									</div>
+								</div>
+								
+								<ul class="actions">
+									<li><a href="#more-articles" class="button">更多文章</a></li>
+								</ul>
+							</article>
+
+						<!-- Login/Register -->
+							<article id="login">
+								<h2 class="major">登入/註冊</h2>
+								<div class="login-container">
+									<div class="login-tab-container">
+										<div class="login-tab active" data-tab="login-form">登入</div>
+										<div class="login-tab" data-tab="register-form">註冊</div>
+									</div>
+									
+									<div id="login-form" class="tab-content active">
+										<form method="post" action="api/login.php">
+											<div class="fields">
+												<div class="field">
+													<label for="login-email">電子郵件</label>
+													<input type="email" name="email" id="login-email" required />
+												</div>
+												<div class="field">
+													<label for="login-password">密碼</label>
+													<input type="password" name="password" id="login-password" required />
+												</div>
+												<div class="field remember-me">
+													<input type="checkbox" id="remember" name="remember">
+													<label for="remember">記住我</label>
+												</div>
+											</div>
+											<ul class="actions">
+												<li><input type="submit" value="登入" class="primary" /></li>
+												<li><a href="#forgot-password" class="forgot-password">忘記密碼？</a></li>
+											</ul>
+										</form>
+										<div class="social-login">
+											<p>或使用以下方式登入</p>
+											<ul class="icons">
+												<li><a href="#" class="icon brands fa-facebook-f"><span class="label">Facebook</span></a></li>
+												<li><a href="#" class="icon brands fa-google"><span class="label">Google</span></a></li>
+											</ul>
+										</div>
+									</div>
+									
+									<div id="register-form" class="tab-content">
+										<form method="post" action="api/register.php">
+											<div class="fields">
+												<div class="field half">
+													<label for="register-name">用戶名</label>
+													<input type="text" name="name" id="register-name" required />
+												</div>
+												<div class="field half">
+													<label for="register-phone">手機號碼</label>
+													<input type="tel" name="phone" id="register-phone" />
+												</div>
+												<div class="field">
+													<label for="register-email">電子郵件</label>
+													<input type="email" name="email" id="register-email" required />
+												</div>
+												<div class="field">
+													<label for="register-password">密碼</label>
+													<input type="password" name="password" id="register-password" required />
+												</div>
+												<div class="field">
+													<label for="register-confirm-password">確認密碼</label>
+													<input type="password" name="confirm-password" id="register-confirm-password" required />
+												</div>
+												<div class="field terms">
+													<input type="checkbox" id="terms" name="terms" required>
+													<label for="terms">我同意<a href="#terms">服務條款</a>和<a href="#privacy">隱私政策</a></label>
+												</div>
+											</div>
+											<ul class="actions">
+												<li><input type="submit" value="註冊" class="primary" /></li>
+											</ul>
+										</form>
+									</div>
+								</div>
+							</article>
+
+					</div>
+
+				<!-- Footer -->
+					<footer id="footer">
+						<p class="copyright">&copy; 2025 美食天地. 版權所有.</p>
+					</footer>
+
+			</div>
+
+		<!-- BG -->
+			<div id="bg"></div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+			<script src="config/maps_config.js"></script>
+			<script src="assets/js/food-app.js"></script>
+			<script src="assets/js/google-maps-integration.js"></script>
+			<!-- 使用 API 金鑰變數來加載 Google Maps API -->
+			<script>
+				// 在所有 DOM 內容加載完成後，動態加載 Google Maps API
+				document.addEventListener('DOMContentLoaded', function() {
+					// 顯示地圖正在載入的提示
+					const mapContainer = document.getElementById('map-container');
+					if (mapContainer) {
+						mapContainer.innerHTML = '<div style="text-align: center; padding: 50px 20px;"><p>正在載入 Google 地圖...</p></div>';
+					}
+					
+					// 添加載入 API 的超時處理
+					const apiLoadingTimeout = setTimeout(function() {
+						const mapContainer = document.getElementById('map-container');
+						if (mapContainer && !window.google) {
+							mapContainer.innerHTML = '<div style="text-align: center; padding: 50px 20px;"><h3 style="color:#f44336;">Google Maps 載入超時</h3><p>請刷新頁面重試或檢查網絡連接。</p></div>';
+						}
+					}, 10000); // 10秒超時
+					
+					// 動態創建 API 腳本
+					const script = document.createElement('script');
+					script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMapFromCallback&v=weekly`;
+					script.async = true;
+					script.defer = true;
+					
+					// API 載入錯誤處理
+					script.onerror = function() {
+						clearTimeout(apiLoadingTimeout);
+						const mapContainer = document.getElementById('map-container');
+						if (mapContainer) {
+							mapContainer.innerHTML = '<div style="text-align: center; padding: 50px 20px;"><h3 style="color:#f44336;">無法載入 Google Maps</h3><p>請檢查您的網絡連接或 API 金鑰設定。</p><p>使用的 API Key: ' + GOOGLE_MAPS_API_KEY + '</p></div>';
+						}
+					};
+					
+					// 添加成功載入的回調
+					window.initMapCallback = function() {
+						clearTimeout(apiLoadingTimeout);
+						console.log('Google Maps API loaded successfully with key:', GOOGLE_MAPS_API_KEY);
+					};
+					
+					// 添加腳本到頁面
+					document.body.appendChild(script);
+				});
+			</script>
+	</body>
+</html>
