@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美食 App</title>
+    <!-- Include Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #fafafa;
+            color: #262626;
+            padding-top: 55px; /* Space for fixed header */
+            padding-bottom: 60px; /* Space for fixed nav */
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        /* --- Header --- */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-bottom: 1px solid #dbdbdb;
+            padding: 10px 0;
+            z-index: 100; /* Ensure header is above content */
+        }
+
+        .header-content {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        /* --- Page Content --- */
+        .page-content {
+            display: none; /* Hide pages by default */
+        }
+
+        .page-content.active {
+            display: block; /* Show active page */
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* --- Search & Input --- */
+         .search-box {
+            width: 100%;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border: 1px solid #dbdbdb;
+            border-radius: 5px;
+            background-color: #efefef;
+            font-size: 14px;
+        }
+
+        /* --- Restaurant List (Browse) --- */
+        .restaurant-list {
+            margin-top: 15px;
+        }
+        .restaurant-card {
+            background-color: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        .restaurant-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background-color: #eee; /* Placeholder background */
+        }
+        .restaurant-info {
+            padding: 10px 15px;
+        }
+        .restaurant-info h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .restaurant-info p {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 3px;
+            line-height: 1.4;
+        }
+        .stars {
+            color: #fadb14;
+        }
+        .recommendation {
+            font-size: 12px;
+            color: #0095f6;
+            font-weight: 500;
+        }
+
+        /* --- Random Picker --- */
+        #page-random {
+            text-align: center;
+        }
+        .roulette-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            border: 5px solid #ccc;
+            border-radius: 50%;
+            margin: 20px auto;
+            overflow: hidden;
+            transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1); /* Spin animation */
+        }
+        .roulette-item {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            transform-origin: 100% 100%; /* Pivot point */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            text-align: center;
+            padding: 5px;
+            box-sizing: border-box; /* Include padding in dimensions */
+        }
+         /* Style items to form segments - this needs more complex geometry for a real wheel */
+        .roulette-item:nth-child(odd) { background-color: #e0e0e0; }
+        .roulette-item:nth-child(1) { transform: rotate(0deg) skewY(-30deg); } /* Example positioning */
+        .roulette-item:nth-child(2) { transform: rotate(60deg) skewY(-30deg); }
+        .roulette-item:nth-child(3) { transform: rotate(120deg) skewY(-30deg); }
+        .roulette-item:nth-child(4) { transform: rotate(180deg) skewY(-30deg); }
+        .roulette-item:nth-child(5) { transform: rotate(240deg) skewY(-30deg); }
+        .roulette-item:nth-child(6) { transform: rotate(300deg) skewY(-30deg); }
+        /* Add more items and adjust rotation/skew for more segments */
+
+        .roulette-pointer {
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 15px solid #e74c3c; /* Pointer color */
+            z-index: 5;
+        }
+        .spin-button {
+            padding: 12px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #0095f6;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+        .spin-button:hover {
+            background-color: #0077cc;
+        }
+        #random-result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            min-height: 25px;
+        }
+
+        /* --- Challenges --- */
+        .challenge-list {
+            margin-top: 15px;
+        }
+        .challenge-item {
+            background-color: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            padding: 15px;
+        }
+        .challenge-item h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        .challenge-item p {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .challenge-item .leaderboard {
+            font-size: 13px;
+            margin-top: 10px;
+        }
+        .challenge-item .leaderboard strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .challenge-item .leaderboard span {
+            display: inline-block;
+            margin-right: 10px;
+            color: #7f8c8d;
+        }
+         .challenge-item .leaderboard i {
+            margin-right: 4px;
+            color: #f1c40f; /* Gold */
+         }
+        .challenge-item .leaderboard span:nth-child(3) i { color: #bdc3c7; } /* Silver */
+        .challenge-item .leaderboard span:nth-child(4) i { color: #cd7f32; } /* Bronze */
+
+        .join-challenge-btn {
+             padding: 8px 15px;
+             font-size: 13px;
+             cursor: pointer;
+             background-color: #2ecc71;
+             color: white;
+             border: none;
+             border-radius: 5px;
+             margin-top: 10px;
+             transition: background-color 0.2s;
+             float: right; /* Align to the right */
+         }
+        .join-challenge-btn:hover {
+             background-color: #27ae60;
+         }
+
+        /* --- Profile --- */
+        .profile-section {
+            margin-bottom: 25px;
+        }
+        .profile-tabs {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        .profile-tab-btn {
+             padding: 8px 15px;
+             font-size: 14px;
+             cursor: pointer;
+             background-color: #eee;
+             color: #333;
+             border: 1px solid #ddd;
+             border-radius: 5px;
+             transition: background-color 0.2s, color 0.2s;
+        }
+        .profile-tab-btn.active {
+             background-color: #0095f6;
+             color: white;
+             border-color: #0095f6;
+        }
+        .profile-content {
+            display: none; /* Hide content sections by default */
+        }
+        .profile-content.active {
+            display: block; /* Show active content */
+        }
+        .profile-list {
+            list-style: none;
+        }
+        .profile-list li {
+            background-color: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 5px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .accounting-item span {
+            display: block;
+            color: #555;
+            font-size: 13px;
+        }
+        .accounting-item strong {
+             color: #e74c3c; /* Highlight price */
+        }
+        .friend-item, .favorite-item {
+             display: flex;
+             align-items: center;
+             gap: 10px;
+        }
+         .friend-item i, .favorite-item i {
+             color: #0095f6;
+         }
+
+        /* --- Bottom Navigation --- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-top: 1px solid #dbdbdb;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 100; /* Ensure nav is above content */
+        }
+
+        .nav-item {
+            font-size: 24px;
+            cursor: pointer;
+            color: #8e8e8e; /* Default icon color */
+             transition: color 0.2s;
+        }
+        .nav-item.active {
+             color: #262626; /* Active icon color */
+         }
+        .nav-item i {
+             pointer-events: none; /* Ensure clicks are registered on the parent div */
+        }
+
+        /* --- Utility --- */
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: #8e8e8e;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">FoodieApp</div>
+            <!-- Maybe add other header actions later if needed -->
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- 1. Restaurant Browsing Page -->
+        <div id="page-browse" class="page-content active"> <!-- Default page -->
+            <h2><i class="fas fa-map-marker-alt"></i> 附近餐廳瀏覽</h2>
+            <input type="text" id="browse-search-input" class="search-box" placeholder="搜尋附近推薦餐廳...">
+            <div id="restaurant-list" class="restaurant-list">
+                <!-- Restaurant cards will be generated here -->
+                 <p class="no-results" style="display: none;">找不到符合條件的餐廳。</p>
+            </div>
+        </div>
+
+        <!-- 2. Random Food Picker Page -->
+        <div id="page-random" class="page-content">
+            <h2><i class="fas fa-dice"></i> 美食隨機選</h2>
+            <p style="color: #555; margin-bottom: 15px; font-size: 14px;">從您收藏或去過的餐廳中隨機選一家！</p>
+            <div class="roulette-container-wrapper" style="position: relative;">
+                 <div class="roulette-pointer"></div>
+                 <div id="roulette" class="roulette-container">
+                     <!-- Roulette items will be generated here -->
+                 </div>
+            </div>
+            <button id="spin-button" class="spin-button">開始抽籤！</button>
+            <div id="random-result"></div>
+             <p id="random-empty-msg" class="no-results" style="display: none;">您還沒有收藏或記錄去過的餐廳喔！</p>
+        </div>
+
+        <!-- 3. Food Challenges Page -->
+        <div id="page-challenges" class="page-content">
+            <h2><i class="fas fa-trophy"></i> 美食挑戰榜</h2>
+            <div id="challenge-list" class="challenge-list">
+                <!-- Challenge items will be generated here -->
+                 <p class="no-results" style="display: none;">目前沒有進行中的挑戰。</p>
+            </div>
+        </div>
+
+        <!-- 4. Personal Profile Page -->
+        <div id="page-profile" class="page-content">
+            <h2><i class="fas fa-user-circle"></i> 個人功能</h2>
+
+            <div class="profile-tabs">
+                <button class="profile-tab-btn active" data-target="profile-accounting">記帳顯示</button>
+                <button class="profile-tab-btn" data-target="profile-friends">好友名單</button>
+                <button class="profile-tab-btn" data-target="profile-favorites">最愛餐廳</button>
+            </div>
+
+            <!-- Profile Content Sections -->
+            <div id="profile-accounting" class="profile-content active">
+                <h3><i class="fas fa-receipt"></i> 消費紀錄</h3>
+                <ul id="accounting-list" class="profile-list">
+                     <!-- Accounting items will be generated here -->
+                     <li class="no-results" style="display: none;">尚無消費紀錄。</li>
+                </ul>
+            </div>
+
+            <div id="profile-friends" class="profile-content">
+                <h3><i class="fas fa-users"></i> 好友列表</h3>
+                <ul id="friends-list" class="profile-list">
+                    <!-- Friend items will be generated here -->
+                     <li class="no-results" style="display: none;">尚無好友。</li>
+                </ul>
+            </div>
+
+            <div id="profile-favorites" class="profile-content">
+                 <h3><i class="fas fa-heart"></i> 最愛餐廳</h3>
+                <ul id="favorites-list" class="profile-list">
+                    <!-- Favorite items will be generated here -->
+                     <li class="no-results" style="display: none;">尚無最愛餐廳。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" data-page="browse"> <!-- Default active -->
+            <i class="fas fa-map-marker-alt"></i>
+        </div>
+        <div class="nav-item" data-page="random">
+            <i class="fas fa-dice"></i>
+        </div>
+        <div class="nav-item" data-page="challenges">
+            <i class="fas fa-trophy"></i>
+        </div>
+        <div class="nav-item" data-page="profile">
+            <i class="fas fa-user-circle"></i>
+        </div>
+    </div>
+
+    <script>
+        // --- Data Simulation (Simulating Backend/Database) ---
+
+        // Simulated User Location (Latitude, Longitude)
+        const userLocation = { lat: 25.0330, lon: 121.5654 }; // Example: Taipei 101
+
+        // Simulated Restaurant Data
+        let restaurants = [
+            { id: 1, name: "鼎泰豐 (101店)", lat: 25.0336, lon: 121.5646, rating: 4.5, category: "chinese", priceRange: "$$$", imageUrl: "https://via.placeholder.com/300x180/ddeeff/000000?text=鼎泰豐", recommendedBy: ["Alice", "Bob"] },
+            { id: 2, name: "點點心 (微風信義)", lat: 25.0369, lon: 121.5653, rating: 4.0, category: "chinese", priceRange: "$$", imageUrl: "https://via.placeholder.com/300x180/eeddff/000000?text=點點心", recommendedBy: ["Charlie"] },
+            { id: 3, name: "壽司郎 (台北館前路店)", lat: 25.0463, lon: 121.5175, rating: 4.2, category: "japanese", priceRange: "$$", imageUrl: "https://via.placeholder.com/300x180/ffeedd/000000?text=壽司郎", recommendedBy: ["David"] },
+            { id: 4, name: "一蘭拉麵 (台灣台北本店)", lat: 25.0333, lon: 121.5641, rating: 4.1, category: "japanese", priceRange: "$$", imageUrl: "https://via.placeholder.com/300x180/ddffee/000000?text=一蘭拉麵", recommendedBy: ["Alice"] },
+            { id: 5, name: "隨意鳥地方 (101觀景餐廳)", lat: 25.0338, lon: 121.5645, rating: 4.3, category: "italian", priceRange: "$$$$", imageUrl: "https://via.placeholder.com/300x180/ffeeff/000000?text=隨意鳥地方", recommendedBy: [] },
+            { id: 6, name: "樂軒和牛專門店", lat: 25.0380, lon: 121.5446, rating: 4.8, category: "bbq", priceRange: "$$$$", imageUrl: "https://via.placeholder.com/300x180/fff0dd/000000?text=樂軒和牛", recommendedBy: ["Bob", "Eve"] },
+            { id: 7, name: "阜杭豆漿", lat: 25.0461, lon: 121.5217, rating: 4.4, category: "chinese", priceRange: "$", imageUrl: "https://via.placeholder.com/300x180/ddffff/000000?text=阜杭豆漿", recommendedBy: ["Frank"] },
+            { id: 8, name: "星巴克 (101門市)", lat: 25.0339, lon: 121.5648, rating: 3.5, category: "cafe", priceRange: "$$", imageUrl: "https://via.placeholder.com/300x180/eeffee/000000?text=星巴克", recommendedBy: ["Grace"] },
+            { id: 9, name: "某某小吃店", lat: 25.1330, lon: 121.6654, rating: 2.5, category: "chinese", priceRange: "$", imageUrl: "https://via.placeholder.com/300x180/dddddd/000000?text=小吃店", recommendedBy: [] }, // Lower rating, further away
+             { id: 10, name: "附近的好吃咖哩", lat: 25.0345, lon: 121.5660, rating: 3.8, category: "other", priceRange: "$$", imageUrl: "https://via.placeholder.com/300x180/ffffdd/000000?text=咖哩飯", recommendedBy: ["Alice"] },
+             { id: 11, name: "巷口義大利麵", lat: 25.0310, lon: 121.5630, rating: 3.0, category: "italian", priceRange: "$$", imageUrl: "https://via.placeholder.com/300x180/ffeecc/000000?text=義大利麵", recommendedBy: ["Henry"] },
+        ];
+
+        // Simulated User Profile Data
+        let userProfile = {
+            userId: 101,
+            username: "美食探險家",
+            friends: [
+                { id: 201, name: "Alice" },
+                { id: 202, name: "Bob" },
+                { id: 203, name: "Charlie" },
+                { id: 205, name: "Eve" },
+                 { id: 207, name: "Grace" },
+                 { id: 208, name: "Henry" },
+            ],
+            favoriteRestaurants: [1, 6, 7], // Store restaurant IDs
+            accounting: [
+                { restaurantId: 1, restaurantName: "鼎泰豐 (101店)", date: "2024-07-20", items: "小籠包, 蝦仁燒賣", amount: 580 },
+                { restaurantId: 3, restaurantName: "壽司郎 (台北館前路店)", date: "2024-07-15", items: "各式壽司", amount: 750 },
+                { restaurantId: 7, restaurantName: "阜杭豆漿", date: "2024-07-10", items: "燒餅油條, 鹹豆漿", amount: 120 },
+                { restaurantId: 8, restaurantName: "星巴克 (101門市)", date: "2024-07-05", items: "拿鐵", amount: 150 },
+            ]
+        };
+
+        // Simulated Food Challenges
+        let foodChallenges = [
+            {
+                id: 1,
+                title: "挑戰一週健康餐",
+                description: "連續七天只吃原型食物和健康烹調的餐點！",
+                participants: ["Alice", "David", "美食探險家"],
+                leaderboard: [
+                    { rank: 1, name: "Alice", score: "7/7天" },
+                    { rank: 2, name: "David", score: "6/7天" },
+                    { rank: 3, name: "美食探險家", score: "5/7天" },
+                ]
+            },
+            {
+                id: 2,
+                title: "省錢大作戰：日均$200",
+                description: "挑戰連續五天，平均每日餐費不超過200元。",
+                participants: ["Bob", "Charlie"],
+                leaderboard: [
+                    { rank: 1, name: "Bob", score: "平均 $185" },
+                    { rank: 2, name: "Charlie", score: "平均 $198" },
+                    { rank: 3, name: "---", score: "" },
+                ]
+            },
+            {
+                id: 3,
+                title: "素食體驗週",
+                description: "挑戰一週完全素食(蛋奶素可)。",
+                participants: ["Eve", "Frank", "Grace"],
+                leaderboard: [
+                    { rank: 1, name: "Eve", score: "完成" },
+                    { rank: 2, name: "Frank", score: "完成" },
+                    { rank: 3, name: "Grace", score: "完成" },
+                ]
+            }
+        ];
+
+        // --- DOM Elements ---
+        const pages = document.querySelectorAll('.page-content');
+        const navItems = document.querySelectorAll('.nav-item');
+        const browseSearchInput = document.getElementById('browse-search-input');
+        const restaurantListContainer = document.getElementById('restaurant-list');
+        const noRestaurantsMsg = restaurantListContainer.querySelector('.no-results');
+
+        const rouletteContainer = document.getElementById('roulette');
+        const spinButton = document.getElementById('spin-button');
+        const randomResultDiv = document.getElementById('random-result');
+        const randomEmptyMsg = document.getElementById('random-empty-msg');
+
+        const challengeListContainer = document.getElementById('challenge-list');
+        const noChallengesMsg = challengeListContainer.querySelector('.no-results');
+
+        const profileTabs = document.querySelectorAll('.profile-tab-btn');
+        const profileContents = document.querySelectorAll('.profile-content');
+        const accountingList = document.getElementById('accounting-list');
+        const friendsList = document.getElementById('friends-list');
+        const favoritesList = document.getElementById('favorites-list');
+        const noAccountingMsg = accountingList.querySelector('.no-results');
+        const noFriendsMsg = friendsList.querySelector('.no-results');
+        const noFavoritesMsg = favoritesList.querySelector('.no-results');
+
+
+        // --- Utility Functions ---
+
+        // Calculate distance (simplified Haversine formula - approx. for small distances)
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Distance in km
+        }
+
+        // Generate star rating HTML
+        function generateStars(rating) {
+            let stars = '';
+            const fullStars = Math.floor(rating);
+            const halfStar = rating % 1 >= 0.5;
+            const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+
+            for (let i = 0; i < fullStars; i++) stars += '<i class="fas fa-star"></i>';
+            if (halfStar) stars += '<i class="fas fa-star-half-alt"></i>';
+            for (let i = 0; i < emptyStars; i++) stars += '<i class="far fa-star"></i>'; // Use far for empty
+            return `<span class="stars">${stars}</span> (${rating.toFixed(1)})`;
+        }
+
+        // --- Page Rendering Functions ---
+
+        // 1. Render Restaurant Browse Page
+        function renderBrowsePage(searchTerm = '') {
+            restaurantListContainer.innerHTML = ''; // Clear previous results
+             noRestaurantsMsg.style.display = 'none'; // Hide 'no results' initially
+
+            const nearbyRecommendedRestaurants = restaurants.filter(r => {
+                const distance = getDistance(userLocation.lat, userLocation.lon, r.lat, r.lon);
+                const isNearby = distance < 5; // Example: 5km radius
+                const isGoodRating = r.rating >= 3;
+                const isRecommendedByFriend = r.recommendedBy.some(friendName => userProfile.friends.some(f => f.name === friendName));
+
+                // Filter by search term (name or category)
+                 const lowerSearchTerm = searchTerm.toLowerCase();
+                 const matchesSearch = !searchTerm ||
+                                     r.name.toLowerCase().includes(lowerSearchTerm) ||
+                                     r.category.toLowerCase().includes(lowerSearchTerm);
+
+                return isNearby && isGoodRating && isRecommendedByFriend && matchesSearch;
+            });
+
+            if (nearbyRecommendedRestaurants.length === 0) {
+                 restaurantListContainer.appendChild(noRestaurantsMsg); // Add it back
+                 noRestaurantsMsg.style.display = 'block'; // Show 'no results'
+                 return;
+             }
+
+            nearbyRecommendedRestaurants.forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'restaurant-card';
+                card.innerHTML = `
+                    <img src="${r.imageUrl}" alt="${r.name}">
+                    <div class="restaurant-info">
+                        <h3>${r.name}</h3>
+                        <p>${generateStars(r.rating)} ${r.priceRange}</p>
+                        <p><i class="fas fa-map-pin"></i> ${getDistance(userLocation.lat, userLocation.lon, r.lat, r.lon).toFixed(1)} km | ${r.category}</p>
+                        <p class="recommendation"><i class="fas fa-user-friends"></i> 推薦者：${r.recommendedBy.join(', ')}</p>
+                    </div>
+                `;
+                restaurantListContainer.appendChild(card);
+            });
+        }
+
+        // 2. Render Random Food Picker Page
+        function renderRandomPage() {
+             rouletteContainer.innerHTML = ''; // Clear previous items
+             randomResultDiv.textContent = ''; // Clear previous result
+             randomResultDiv.style.color = '#262626';
+             randomEmptyMsg.style.display = 'none'; // Hide empty message
+
+             // Combine favorite and visited restaurants (unique names)
+             const favoriteRestaurantIds = new Set(userProfile.favoriteRestaurants);
+             const visitedRestaurantNames = new Set(userProfile.accounting.map(item => item.restaurantName));
+             const potentialRestaurants = restaurants.filter(r => favoriteRestaurantIds.has(r.id) || visitedRestaurantNames.has(r.name));
+
+             // Remove duplicates by name if any edge cases exist
+             const uniquePotentialRestaurants = Array.from(new Map(potentialRestaurants.map(r => [r.name, r])).values());
+
+
+             if (uniquePotentialRestaurants.length === 0) {
+                 randomEmptyMsg.style.display = 'block';
+                 spinButton.disabled = true; // Disable button if no options
+                 return;
+             } else {
+                  spinButton.disabled = false;
+             }
+
+             // Simple visual representation (not a real wheel geometry)
+             const numItems = uniquePotentialRestaurants.length;
+             const angleIncrement = 360 / numItems;
+
+             uniquePotentialRestaurants.forEach((r, index) => {
+                 const itemDiv = document.createElement('div');
+                 itemDiv.className = 'roulette-item';
+                 itemDiv.textContent = r.name.substring(0, 15) + (r.name.length > 15 ? '...' : ''); // Shorten long names
+                  // Basic positioning - needs refinement for proper wheel segments
+                 const rotateAngle = index * angleIncrement;
+                 // Apply more complex transform based on index for better visual segmenting if needed
+                 itemDiv.style.backgroundColor = index % 2 === 0 ? '#f8f8f8' : '#efefef'; // Alternate colors
+                 // itemDiv.style.transform = `rotate(${rotateAngle}deg) skewY(-${90 - angleIncrement / 2}deg)`; // Example attempt at segmenting
+                 itemDiv.style.transform = `rotate(${rotateAngle}deg) translateX(50%)`; // Simpler positioning
+
+                 rouletteContainer.appendChild(itemDiv);
+             });
+
+             // Store options for spinning
+             rouletteContainer.dataset.options = JSON.stringify(uniquePotentialRestaurants.map(r => r.name));
+        }
+
+        // 3. Render Food Challenges Page
+        function renderChallengesPage() {
+            challengeListContainer.innerHTML = ''; // Clear previous list
+            noChallengesMsg.style.display = 'none';
+
+             if (foodChallenges.length === 0) {
+                 challengeListContainer.appendChild(noChallengesMsg);
+                 noChallengesMsg.style.display = 'block';
+                 return;
+             }
+
+            foodChallenges.forEach(c => {
+                const item = document.createElement('div');
+                item.className = 'challenge-item';
+
+                const leaderboardHtml = c.leaderboard.map((entry, index) => {
+                    let icon = '';
+                    if (index === 0) icon = '<i class="fas fa-medal"></i>';
+                    else if (index === 1) icon = '<i class="fas fa-medal" style="color: #bdc3c7;"></i>'; // Silver
+                    else if (index === 2) icon = '<i class="fas fa-medal" style="color: #cd7f32;"></i>'; // Bronze
+                    return `<span>${icon}${entry.rank}. ${entry.name} (${entry.score})</span>`;
+                 }).join('');
+
+
+                item.innerHTML = `
+                    <button class="join-challenge-btn" data-challenge-id="${c.id}">參加</button>
+                    <h3>${c.title}</h3>
+                    <p>${c.description}</p>
+                    <div class="leaderboard">
+                        <strong><i class="fas fa-trophy"></i> 排行榜：</strong>
+                        ${leaderboardHtml || '<span>尚無排名</span>'}
+                    </div>
+                    <div style="font-size: 12px; color: #888; margin-top: 8px;">
+                       <i class="fas fa-users"></i> 參與者: ${c.participants.join(', ') || '尚無人參加'}
+                    </div>
+                `;
+                challengeListContainer.appendChild(item);
+
+                // Add event listener for the join button (simulation)
+                item.querySelector('.join-challenge-btn').addEventListener('click', (e) => {
+                    const challengeId = e.target.getAttribute('data-challenge-id');
+                    alert(`模擬：您已報名參加挑戰 #${challengeId} "${c.title}"！`);
+                    // In a real app, you'd send this to the backend and update the participants list.
+                });
+            });
+        }
+
+        // 4. Render Personal Profile Page
+        function renderProfilePage() {
+            // --- Render Accounting ---
+             accountingList.innerHTML = ''; // Clear
+             noAccountingMsg.style.display = 'none';
+             if (userProfile.accounting.length === 0) {
+                 accountingList.appendChild(noAccountingMsg);
+                 noAccountingMsg.style.display = 'list-item'; // Use list-item for li
+             } else {
+                 userProfile.accounting.forEach(item => {
+                     const li = document.createElement('li');
+                     li.className = 'accounting-item';
+                     li.innerHTML = `
+                         <strong>${item.restaurantName}</strong>
+                         <span>日期: ${item.date}</span>
+                         <span>餐點: ${item.items}</span>
+                         <span>金額: NT$ ${item.amount}</span>
+                     `;
+                     accountingList.appendChild(li);
+                 });
+             }
+
+            // --- Render Friends ---
+             friendsList.innerHTML = ''; // Clear
+             noFriendsMsg.style.display = 'none';
+             if (userProfile.friends.length === 0) {
+                 friendsList.appendChild(noFriendsMsg);
+                 noFriendsMsg.style.display = 'list-item';
+             } else {
+                 userProfile.friends.forEach(friend => {
+                     const li = document.createElement('li');
+                     li.className = 'friend-item';
+                     li.innerHTML = `<i class="fas fa-user"></i> ${friend.name}`;
+                     friendsList.appendChild(li);
+                 });
+             }
+
+             // --- Render Favorites ---
+             favoritesList.innerHTML = ''; // Clear
+             noFavoritesMsg.style.display = 'none';
+             const favoriteRestaurantDetails = userProfile.favoriteRestaurants
+                 .map(favId => restaurants.find(r => r.id === favId))
+                 .filter(r => r); // Filter out any undefined if data mismatch
+
+             if (favoriteRestaurantDetails.length === 0) {
+                 favoritesList.appendChild(noFavoritesMsg);
+                 noFavoritesMsg.style.display = 'list-item';
+             } else {
+                 favoriteRestaurantDetails.forEach(r => {
+                     const li = document.createElement('li');
+                     li.className = 'favorite-item';
+                     li.innerHTML = `<i class="fas fa-utensils"></i> ${r.name}`;
+                     favoritesList.appendChild(li);
+                 });
+             }
+        }
+
+
+        // --- Event Listeners ---
+
+        // Bottom Navigation Click Handler
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const targetPageId = item.getAttribute('data-page');
+
+                // Remove active class from all pages and nav items
+                pages.forEach(p => p.classList.remove('active'));
+                navItems.forEach(n => n.classList.remove('active'));
+
+                // Add active class to the target page and nav item
+                document.getElementById(`page-${targetPageId}`).classList.add('active');
+                item.classList.add('active');
+
+                // Render content for the newly activated page
+                 switch (targetPageId) {
+                     case 'browse':
+                         renderBrowsePage(); // Initial render
+                         break;
+                     case 'random':
+                         renderRandomPage();
+                         break;
+                     case 'challenges':
+                         renderChallengesPage();
+                         break;
+                     case 'profile':
+                         renderProfilePage();
+                          // Ensure the first tab is active when switching to profile page
+                         profileTabs.forEach((tab, index) => tab.classList.toggle('active', index === 0));
+                         profileContents.forEach((content, index) => content.classList.toggle('active', index === 0));
+                         break;
+                 }
+                 window.scrollTo(0, 0); // Scroll to top when changing page
+            });
+        });
+
+        // Browse Page - Search Input Handler
+        browseSearchInput.addEventListener('input', (e) => {
+            renderBrowsePage(e.target.value);
+        });
+
+        // Random Page - Spin Button Handler
+        spinButton.addEventListener('click', () => {
+            const options = JSON.parse(rouletteContainer.dataset.options || '[]');
+            if (options.length === 0) return;
+
+            spinButton.disabled = true; // Disable while spinning
+            randomResultDiv.textContent = '抽籤中...';
+            randomResultDiv.style.color = '#555';
+
+            const randomIndex = Math.floor(Math.random() * options.length);
+            const winningOption = options[randomIndex];
+
+            // Calculate rotation needed to point to the winner
+            // This needs adjustment based on how items are visually placed in the wheel
+            const degreesPerSegment = 360 / options.length;
+            // The target angle should align the pointer with the middle of the winning segment
+            // The pointer is at the top (0/360 degrees). Let's assume segment 0 starts at 0 deg.
+             const targetRotation = 360 * 5 - (randomIndex * degreesPerSegment) - (degreesPerSegment / 2); // Spin multiple times + adjust
+
+            rouletteContainer.style.transform = `rotate(${targetRotation}deg)`;
+
+            // Wait for animation to finish
+            setTimeout(() => {
+                randomResultDiv.textContent = `恭喜抽中：${winningOption}！`;
+                 randomResultDiv.style.color = '#e74c3c'; // Highlight result
+                 spinButton.disabled = false; // Re-enable button
+            }, 4100); // Match CSS transition duration + small buffer
+        });
+
+         // Profile Page - Tab Click Handler
+         profileTabs.forEach(tab => {
+             tab.addEventListener('click', () => {
+                 const targetContentId = tab.getAttribute('data-target');
+
+                 // Update tab active state
+                 profileTabs.forEach(t => t.classList.remove('active'));
+                 tab.classList.add('active');
+
+                 // Update content active state
+                 profileContents.forEach(content => {
+                     content.classList.toggle('active', content.id === targetContentId);
+                 });
+             });
+         });
+
+        // --- Initial Load ---
+        function initializeApp() {
+            // Set the initial active page and render its content
+            const initialPage = document.querySelector('.nav-item.active').getAttribute('data-page');
+            document.getElementById(`page-${initialPage}`).classList.add('active');
+
+            switch (initialPage) {
+                case 'browse': renderBrowsePage(); break;
+                case 'random': renderRandomPage(); break;
+                case 'challenges': renderChallengesPage(); break;
+                case 'profile': renderProfilePage(); break;
+            }
+        }
+
+        // Wait for the DOM to be fully loaded before initializing
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+    </script>
+</body>
+</html>
