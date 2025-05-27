@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <!-- HTML: 文件標頭區塊 -->
+    <meta charset="UTF-8"> <!-- HTML: 指定文件編碼為 UTF-8 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- HTML: 設定視口以適應不同裝置 -->
+    <title>美食 App</title> <!-- HTML: 瀏覽器標籤頁標題 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- HTML: 引入 Font Awesome 圖標庫 CSS -->
+    <style>
+        /* --- CSS 開始 --- */
+
+        /* --- Base Styles (基本樣式) --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        html, body { height: 100%; }
+        body { background-color: #fafafa; color: #262626; }
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; }
+
+        /* --- Login/Register Styles (登入/註冊樣式) --- */
+        #auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; background-color: #fafafa; }
+        .auth-form-container { background-color: white; padding: 30px 40px; border: 1px solid #dbdbdb; border-radius: 8px; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .auth-form-container h2 { font-size: 22px; margin-bottom: 25px; color: #262626; font-weight: 600; }
+        #login-form input[type="text"], #login-form input[type="password"] { width: 100%; padding: 12px 15px; margin-bottom: 15px; border: 1px solid #dbdbdb; border-radius: 5px; background-color: #fafafa; font-size: 14px; transition: border-color 0.2s, box-shadow 0.2s; }
+        #login-form input[type="text"]:focus, #login-form input[type="password"]:focus { border-color: #a2a2a2; box-shadow: 0 0 0 1px #a2a2a2; outline: none; }
+        #login-button, #register-button { width: 100%; padding: 12px 15px; font-size: 15px; font-weight: bold; cursor: pointer; border-radius: 5px; border: none; margin-top: 10px; transition: background-color 0.2s, opacity 0.2s; }
+        #login-button { background-color: #0095f6; color: white; }
+        #login-button:hover { background-color: #0077cc; }
+        #register-button { background-color: transparent; color: #0095f6; border: 1px solid #0095f6; margin-top: 15px; }
+        #register-button:hover { background-color: rgba(0, 149, 246, 0.05); }
+        .error-message { color: #ed4956; font-size: 13px; margin-top: 15px; min-height: 18px; text-align: center; font-weight: 500; }
+
+        /* --- 註冊表單的 CSS --- */
+        #register-form {
+            display: none; /* Initial state for register form */
+            flex-direction: column;
+            gap: 5px; /* Reduced gap for tighter packing of input and feedback */
+        }
+
+        #register-form input[type="text"],
+        #register-form input[type="password"],
+        #register-form input[type="email"] {
+            width: 100%;
+            padding: 12px 15px;
+            /* margin-bottom: 15px; Removed, gap handles spacing, feedback needs to be closer */
+            border: 1px solid #dbdbdb;
+            border-radius: 5px;
+            background-color: #fafafa;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        #register-form input[type="text"]:focus,
+        #register-form input[type="password"]:focus,
+        #register-form input[type="email"]:focus {
+            border-color: #a2a2a2;
+            box-shadow: 0 0 0 1px #a2a2a2;
+            outline: none;
+        }
+
+        #register-submit-button {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            border: none;
+            background-color: #0095f6;
+            color: white;
+            margin-top: 10px; /* Spacing before button */
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+
+        #register-submit-button:hover {
+            background-color: #0077cc;
+        }
+
+        #register-error { /* Global error for registration form */
+            color: #ed4956;
+            font-size: 13px;
+            margin-top: 10px; /* Spacing before global error */
+            min-height: 18px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .form-switch {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .form-switch a {
+            color: #0095f6;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .form-switch a:hover {
+            text-decoration: underline;
+        }
+         .form-feedback { /* For individual field feedback messages */
+            font-size: 12px;
+            margin-top: 3px; /* Small margin above feedback */
+            margin-bottom: 8px; /* Space before next input element */
+            min-height: 16px;
+            text-align: left;
+            width: 100%;
+        }
+        .form-feedback.valid {
+            color: green;
+        }
+        .form-feedback.invalid {
+            color: #ed4956;
+        }
+
+        #password-strength-meter {
+            width: 100%;
+            height: 8px;
+            background-color: #eee;
+            border-radius: 4px;
+            margin-top: 3px; /* Closer to password input */
+            margin-bottom: 0px; /* Feedback will provide its own bottom margin */
+            overflow: hidden;
+        }
+
+        #password-strength-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #ed4956;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+        #password-strength-bar.strength-0 { width: 0%; background-color: #eee; }
+        #password-strength-bar.strength-1 { width: 25%; background-color: #ed4956; }
+        #password-strength-bar.strength-2 { width: 50%; background-color: #ff9f43; }
+        #password-strength-bar.strength-3 { width: 75%; background-color: #0095f6; }
+        #password-strength-bar.strength-4 { width: 100%; background-color: #2ecc71; }
+
+
+        /* --- Main App Container (主要應用程式容器) --- */
+        #main-app { display: none; padding-top: 55px; padding-bottom: 60px; }
+
+        /* --- Header (頁首) --- */
+        header { position: fixed; top: 0; left: 0; width: 100%; background-color: white; border-bottom: 1px solid #dbdbdb; padding: 10px 0; z-index: 100; }
+        .header-content { max-width: 600px; margin: 0 auto; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 24px; font-weight: bold; }
+        #logout-button { background:none; border:none; font-size: 14px; color: #ed4956; cursor:pointer; font-weight:bold; }
+
+        /* --- Page Content (頁面內容) --- */
+        .page-content { display: none; }
+        .page-content.active { display: block; }
+        /* Restaurant Detail Page Specific Styles */
+        #page-restaurant-detail {
+            /* Common page styles will apply */
+        }
+        .back-button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #262626;
+            cursor: pointer;
+            padding: 5px 10px; /* Added padding for easier click */
+            margin-right: 15px;
+        }
+        .detail-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .detail-header h2 {
+            margin-bottom: 0; /* Override default h2 margin */
+            border-bottom: none; /* Override default h2 border */
+        }
+        .detail-image {
+            width: 100%;
+            max-height: 250px; /* Constrain image height */
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background-color: #eee; /* Placeholder bg */
+        }
+        .detail-info p {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .detail-info p i {
+            margin-right: 8px;
+            color: #888;
+        }
+        .detail-actions {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .action-button {
+            flex-grow: 1;
+            padding: 10px 15px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 1px solid #dbdbdb;
+            background-color: #fff;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .action-button:hover {
+            background-color: #f0f0f0;
+        }
+        .action-button i {
+            font-size: 16px;
+        }
+        .action-button.favorited { /* Style for favorited button */
+            background-color: #ffebee; /* Light red background */
+            color: #ed4956;
+            border-color: #ed4956;
+        }
+        .action-button.favorited i {
+            color: #ed4956; /* Red heart for favorited */
+            font-weight: 900; /* Makes FontAwesome use solid version */
+        }
+        .detail-recommendations {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        .detail-recommendations h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+
+        h2 { font-size: 20px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee; }
+        h3 { font-size: 18px; margin-top: 20px; margin-bottom: 10px; color: #333; }
+
+        /* --- Search & Input (搜尋與輸入框) --- */
+        .search-box { width: 100%; padding: 10px 15px; margin-bottom: 15px; border: 1px solid #dbdbdb; border-radius: 5px; background-color: #efefef; font-size: 14px; }
+
+        /* --- Category Grid Styles (分類網格) --- */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .category-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px 5px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .category-item:hover { background-color: #f0f0f0; }
+        .category-item.active {
+            border-color: #0095f6;
+            background-color: rgba(0, 149, 246, 0.05);
+            font-weight: 600;
+        }
+        .category-item.active .category-name { color: #0077cc; }
+
+        .category-image {
+            width: 60px; height: 60px; position: relative; overflow: hidden;
+            border-radius: 50%; margin-bottom: 8px; background-color: #eee;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .category-image img { width: 100%; height: 100%; object-fit: cover; }
+        .category-image .fa-utensils { font-size: 24px; color: #bbb; }
+        .category-name { font-size: 12px; color: #555; text-align: center; font-weight: 500; }
+
+        /* --- Restaurant List (Browse) (餐廳列表 - 瀏覽) --- */
+        #restaurant-list {
+            margin-top: 15px;
+            display: none; /* Hide by default */
+        }
+        #restaurant-list.visible {
+            display: block; /* Show when this class is added */
+        }
+        .restaurant-card { background-color: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; overflow: hidden; cursor: pointer; transition: box-shadow 0.2s; }
+        .restaurant-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .restaurant-card img { width: 100%; height: 180px; object-fit: cover; background-color: #eee; }
+        .restaurant-info { padding: 10px 15px; }
+        .restaurant-info h3 { font-size: 16px; margin-bottom: 5px; }
+        .restaurant-info p { font-size: 13px; color: #555; margin-bottom: 3px; line-height: 1.4; }
+        .stars { color: #fadb14; }
+        .recommendation { font-size: 12px; color: #0095f6; font-weight: 500; }
+
+        /* --- Random Picker (隨機選擇器 - Styles remain the same) --- */
+        #page-random { text-align: center; }
+        .roulette-container-wrapper { position: relative; width: 280px; height: 280px; margin: 20px auto; }
+        .roulette-container { position: relative; width: 100%; height: 100%; border: 5px solid #ccc; border-radius: 50%; overflow: hidden; transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1); box-shadow: inset 0 0 15px rgba(0,0,0,0.1); }
+        #roulette-labels { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; pointer-events: none; }
+        .roulette-label { position: absolute; top: 50%; left: 50%; transform-origin: 0% 50%; width: 50%; height: 30px; margin-top: -15px; display: flex; align-items: center; justify-content: center; padding-left: 15px; box-sizing: border-box; font-size: 10px; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .roulette-label i { margin-right: 4px; color: #555; font-size: 12px; }
+        .roulette-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 20px solid #e74c3c; z-index: 5; }
+        .spin-button { padding: 12px 25px; font-size: 16px; cursor: pointer; background-color: #0095f6; color: white; border: none; border-radius: 5px; margin-top: 15px; transition: background-color 0.2s; }
+        .spin-button:hover:enabled { background-color: #0077cc; }
+        .spin-button:disabled { background-color: #bdd; cursor: not-allowed; opacity: 0.7;}
+        #random-result { margin-top: 20px; font-size: 18px; font-weight: bold; min-height: 25px; }
+
+        /* --- Add Review Page Styles (新增評論頁面樣式 - Styles remain the same) --- */
+        #page-add-review .form-group { margin-bottom: 15px; }
+        #page-add-review label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 5px; color: #333; }
+        #page-add-review input[type="text"], #page-add-review input[type="number"], #page-add-review textarea { width: 100%; padding: 10px 12px; border: 1px solid #dbdbdb; border-radius: 5px; font-size: 14px; background-color: #fff; }
+        #page-add-review input[type="text"]:focus, #page-add-review input[type="number"]:focus, #page-add-review textarea:focus { border-color: #a2a2a2; box-shadow: 0 0 0 1px #a2a2a2; outline: none; }
+        #page-add-review textarea { min-height: 80px; resize: vertical; }
+        .rating-hearts { display: flex; gap: 5px; font-size: 28px; color: #ccc; cursor: pointer; }
+        .rating-hearts i.selected, .rating-hearts i:hover { color: #ed4956; }
+        .photo-upload-area { margin-top: 10px; padding: 15px; border: 1px dashed #dbdbdb; border-radius: 5px; text-align: center; background-color: #f9f9f9; }
+        .photo-btn { padding: 8px 15px; margin: 5px; font-size: 13px; cursor: pointer; background-color: #efefef; color: #333; border: 1px solid #ccc; border-radius: 5px; transition: background-color 0.2s; }
+        .photo-btn:hover { background-color: #e0e0e0; }
+        .photo-btn i { margin-right: 5px; }
+        #photo-preview { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 10px; }
+        #photo-preview .photo-placeholder { width: 70px; height: 70px; background-color: #eee; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #888; text-align: center; overflow: hidden; }
+        #save-review-button { width: 100%; padding: 12px 15px; font-size: 15px; font-weight: bold; cursor: pointer; border-radius: 5px; border: none; background-color: #2ecc71; color: white; margin-top: 20px; transition: background-color 0.2s; }
+        #save-review-button:hover { background-color: #27ae60; }
+        .review-feedback { margin-top: 15px; font-size: 14px; font-weight: 500; min-height: 20px; text-align: center; }
+        .review-feedback.success { color: #2ecc71; }
+        .review-feedback.error { color: #ed4956; }
+
+        /* --- Challenges (挑戰 - Styles remain the same) --- */
+        .challenge-list { margin-top: 15px; }
+        .challenge-item { background-color: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
+        .challenge-item h3 { font-size: 16px; margin-bottom: 8px; color: #2c3e50; }
+        .challenge-item p { font-size: 14px; color: #555; margin-bottom: 10px; }
+        .challenge-item .leaderboard { font-size: 13px; margin-top: 10px; }
+        .challenge-item .leaderboard strong { display: block; margin-bottom: 5px; }
+        .challenge-item .leaderboard span { display: inline-block; margin-right: 10px; color: #7f8c8d; }
+        .challenge-item .leaderboard i { margin-right: 4px; color: #f1c40f; }
+        /* .challenge-item .leaderboard span:nth-child(3) i { color: #bdc3c7; }
+        .challenge-item .leaderboard span:nth-child(4) i { color: #cd7f32; } */
+        .join-challenge-btn { padding: 8px 15px; font-size: 13px; cursor: pointer; background-color: #2ecc71; color: white; border: none; border-radius: 5px; margin-top: 10px; transition: background-color 0.2s; float: right; }
+        .join-challenge-btn:hover:not(:disabled) { background-color: #27ae60; }
+        .join-challenge-btn:disabled { background-color: #95a5a6; cursor: not-allowed;}
+
+
+        /* --- Profile (個人檔案 - Styles remain the same, including Posts) --- */
+        .profile-section { margin-bottom: 25px; }
+        .profile-tabs { margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; }
+        .profile-tab-btn { padding: 8px 15px; font-size: 14px; cursor: pointer; background-color: #eee; color: #333; border: 1px solid #ddd; border-radius: 5px; transition: background-color 0.2s, color 0.2s, border-color 0.2s; }
+        .profile-tab-btn.active { background-color: #0095f6; color: white; border-color: #0095f6; }
+        .profile-content { display: none; }
+        .profile-content.active { display: block; }
+        .profile-list { list-style: none; padding-left: 0; }
+        .profile-list li { background-color: white; border: 1px solid #dbdbdb; border-radius: 5px; padding: 12px 15px; margin-bottom: 10px; font-size: 14px; }
+        .post-item { display: flex; flex-direction: column; gap: 8px; }
+        .post-item .post-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; }
+        .post-item .post-date { font-size: 12px; color: #888; font-weight: normal; }
+        .post-item .post-content { font-size: 14px; line-height: 1.5; color: #333; margin-top: 5px; margin-bottom: 8px; }
+        .post-item .post-footer { display: flex; align-items: center; gap: 15px; font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 8px; margin-top: 5px; }
+        .post-item .post-likes, .post-item .post-comments { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .post-item .post-likes i { color: #ed4956; }
+        .post-item .post-comments i { color: #0095f6; }
+        .accounting-item span { display: block; color: #555; font-size: 13px; margin-top: 2px; }
+        .accounting-item strong { color: #e74c3c; }
+        .friend-item, .favorite-item { display: flex; align-items: center; gap: 10px; }
+        .friend-item i, .favorite-item i { color: #0095f6; font-size: 16px; }
+
+        /* --- Browse Page - Posts Section --- */
+        .browse-posts-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+        .browse-posts-section h3 { font-size: 18px; margin-top: 0; margin-bottom: 15px; color: #333; display: flex; align-items: center; gap: 8px; }
+
+        /* --- Bottom Navigation (底部導覽列) --- */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: white; border-top: 1px solid #dbdbdb; display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
+        .nav-item { font-size: 24px; cursor: pointer; color: #8e8e8e; transition: color 0.2s; flex: 1; text-align: center; }
+        .nav-item.active { color: #262626; }
+        .nav-item i { pointer-events: none; }
+
+        /* --- Utility (工具樣式) --- */
+        .no-results { text-align: center; padding: 30px; color: #8e8e8e; background: none; border: none; list-style-type: none; margin: 0; }
+        .hidden { display: none !important; }
+
+        /* Map container (地圖容器) */
+        .map-container { margin: 25px auto; max-width: 90%; padding: 15px; background-color: #e9e9e9; border-radius: 8px; text-align: center; color: #666; font-size: 14px; border: 1px solid #ddd; }
+
+        /* --- CSS 結束 --- */
+    </style>
+</head>
+<body>
+    <!-- HTML: 文件主體內容開始 -->
+
+    <!-- Login/Register Screen (登入/註冊畫面) -->
+    <div id="auth-screen">
+         <div class="auth-form-container">
+            <h2>歡迎使用 FoodieApp</h2>
+            <form id="login-form">
+                <input type="text" id="username" placeholder="帳號 (試試 Admin)" required>
+                <input type="password" id="password" placeholder="密碼 (試試 1234)" required>
+                <p id="auth-error" class="error-message"></p>
+                <button type="submit" id="login-button">登入</button>
+                <button type="button" id="register-button">註冊新帳號</button>
+            </form>
+    
+            <!-- 註冊表單 -->
+            <form id="register-form"> <!-- style="display: none;" is handled by JS -->
+                <input type="text" id="new-username" placeholder="請輸入帳號 (至少4個字元)" required>
+                <p id="username-feedback" class="form-feedback"></p>
+
+                <input type="password" id="new-password" placeholder="請輸入密碼" required>
+                <div id="password-strength-meter">
+                    <div id="password-strength-bar" class="strength-bar"></div>
+                </div>
+                <p id="password-feedback" class="form-feedback"></p>
+
+                <input type="password" id="confirm-password" placeholder="請再次輸入密碼" required>
+                <p id="confirm-password-feedback" class="form-feedback"></p>
+
+                <input type="email" id="email" placeholder="請輸入電子郵件" required>
+                <p id="email-feedback" class="form-feedback"></p>
+
+                <p id="register-error" class="error-message"></p>
+                <button type="submit" id="register-submit-button">註冊</button>
+                <p class="form-switch">已經有帳號？<a href="#" id="show-login">返回登入</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Content (主要應用程式內容) -->
+    <div id="main-app">
+        <header>
+             <div class="header-content">
+                <div class="logo">FoodieApp</div>
+                 <button id="logout-button">登出</button>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- 1. Restaurant Browsing Page (餐廳瀏覽頁面) -->
+            <div id="page-browse" class="page-content">
+                 <h2><i class="fas fa-map-marker-alt"></i> 附近餐廳瀏覽</h2>
+                <input type="text" id="browse-search-input" class="search-box" placeholder="輸入餐廳名稱或類型...">
+                
+                <!-- Category Grid (分類網格) -->
+                <div class="category-grid">
+                    <div class="category-item" data-filter="all">
+                      <div class="category-image"><i class="fas fa-utensils"></i></div>
+                      <div class="category-name">全部</div>
+                    </div>
+                     <div class="category-item" data-filter="chinese">
+                      <div class="category-image"> <img src="https://via.placeholder.com/60/a2d5f2/ffffff?text=中" alt="中式"></div>
+                      <div class="category-name">中式</div>
+                    </div>
+                    <div class="category-item" data-filter="japanese">
+                      <div class="category-image"> <img src="https://via.placeholder.com/60/ffc0cb/000000?text=日" alt="日式"></div>
+                      <div class="category-name">日式</div>
+                    </div>
+                    <div class="category-item" data-filter="italian">
+                      <div class="category-image"> <img src="https://via.placeholder.com/60/90ee90/000000?text=義" alt="義式"></div>
+                      <div class="category-name">義式</div>
+                    </div>
+                    <div class="category-item" data-filter="cafe">
+                      <div class="category-image"> <img src="https://via.placeholder.com/60/d2b48c/ffffff?text=咖" alt="咖啡廳"></div>
+                      <div class="category-name">咖啡廳</div>
+                    </div>
+                    <div class="category-item" data-filter="snacks">
+                      <div class="category-image"> <img src="https://via.placeholder.com/60/ffa07a/000000?text=小" alt="小吃"></div>
+                      <div class="category-name">小吃</div>
+                    </div>
+                     <div class="category-item" data-filter="american">
+                      <div class="category-image"> <img src="https://via.placeholder.com/60/ffffdd/000000?text=美" alt="美式"></div>
+                      <div class="category-name">美式</div>
+                    </div>
+                     <div class="category-item" data-filter="dessert">
+                      <div class="category-image"> <img src="https://via.placeholder.com/60/ffdddd/000000?text=甜" alt="甜點"></div>
+                      <div class="category-name">甜點</div>
+                    </div>
+                  </div>
+                <!-- ****** End Category Grid ****** -->
+
+                <!-- Restaurant List (Initially Hidden) -->
+                <div id="restaurant-list" class="restaurant-list">
+                    <p class="no-results" style="display: none;">找不到符合條件的餐廳。</p>
+                </div>
+
+                 <!-- Map Placeholder (Centred) -->
+                <div class="map-container">
+                    <p><i class="fas fa-map-marked-alt"></i> GPS 地圖位置 (模擬顯示)</p>
+                </div>
+
+                <!-- Browse Posts Section -->
+                <div id="browse-posts" class="browse-posts-section">
+                    <h3><i class="fas fa-fire"></i> 熱門/附近貼文</h3>
+                    <ul id="browse-posts-list" class="profile-list">
+                        <li class="no-results" style="display: none;">附近尚無貼文。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 1.1. Restaurant Detail Page (餐廳詳情頁面) -->
+            <div id="page-restaurant-detail" class="page-content">
+                <div class="detail-header">
+                    <button id="back-to-browse" class="back-button">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 id="detail-restaurant-name">餐廳名稱</h2>
+                </div>
+                
+                <div class="detail-content">
+                    <img id="detail-image" class="detail-image" src="" alt="餐廳圖片">
+                    <div class="detail-info">
+                        <p id="detail-rating" class="detail-rating"></p>
+                        <p id="detail-category" class="detail-category"></p>
+                        <p id="detail-price" class="detail-price"></p>
+                        <p id="detail-location" class="detail-location"></p>
+                    </div>
+                    
+                    <div class="detail-actions">
+                        <button id="add-to-favorite-detail" class="action-button">
+                            <i class="far fa-heart"></i> <span id="favorite-text-detail">收藏</span>
+                        </button>
+                        <button id="write-review-detail" class="action-button">
+                            <i class="far fa-edit"></i> 評論
+                        </button>
+                    </div>
+                    
+                    <div class="detail-recommendations">
+                        <h3><i class="fas fa-thumbs-up"></i> 推薦者</h3>
+                        <p id="detail-recommended-by">尚無推薦</p>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- 2. Random Food Picker Page -->
+            <div id="page-random" class="page-content">
+                 <h2><i class="fas fa-dice"></i> 美食隨機選</h2>
+                <p style="color: #555; margin-bottom: 15px; font-size: 14px;">從您收藏或去過的餐廳中隨機選一家！</p>
+                <div class="roulette-container-wrapper"> <div class="roulette-pointer"></div> <div id="roulette" class="roulette-container"> <div id="roulette-labels"></div> </div> </div>
+                <button id="spin-button" class="spin-button">開始抽籤！</button> <div id="random-result"></div>
+                <p id="random-empty-msg" class="no-results" style="display: none;">您還沒有收藏或記錄去過的餐廳喔！</p>
+            </div>
+            <!-- 3. Add Food Review Page -->
+            <div id="page-add-review" class="page-content">
+                <h2><i class="fas fa-pencil-alt"></i> 新增美食評論</h2>
+                <form id="add-review-form">
+                    <div class="form-group"> <label for="review-restaurant-name">餐廳名稱</label> <input type="text" id="review-restaurant-name" placeholder="輸入吃過的餐廳" required> </div>
+                    <div class="form-group"> <label for="review-dishes">餐點項目</label> <textarea id="review-dishes" placeholder="吃了什麼好料？(例如：小籠包、牛肉麵)" required></textarea> </div>
+                    <div class="form-group"> <label for="review-price">花費金額 (NT$)</label> <input type="number" id="review-price" placeholder="大約花了多少錢？" min="0"> </div>
+                    <div class="form-group"> <label>喜愛程度</label> <div class="rating-hearts" id="review-rating-hearts"> <i class="far fa-heart" data-value="1"></i> <i class="far fa-heart" data-value="2"></i> <i class="far fa-heart" data-value="3"></i> <i class="far fa-heart" data-value="4"></i> <i class="far fa-heart" data-value="5"></i> </div> <input type="hidden" id="review-rating" value="0"> </div>
+                    <div class="form-group"> <label for="review-text">評論內容 (會成為貼文)</label> <textarea id="review-text" placeholder="分享你的心得、推薦或建議... (將顯示在個人檔案的貼文中)" rows="5"></textarea> </div>
+                    <div class="form-group"> <label>新增照片 (模擬)</label> <div class="photo-upload-area"> <button type="button" class="photo-btn" id="add-photo-gallery"><i class="fas fa-images"></i> 從相簿選擇</button> <button type="button" class="photo-btn" id="add-photo-camera"><i class="fas fa-camera"></i> 開啟相機</button> <div id="photo-preview"> </div> </div> </div>
+                    <p id="review-message" class="review-feedback"></p> <button type="submit" id="save-review-button">儲存評論與貼文</button>
+                </form>
+            </div>
+            <!-- 4. Food Challenges Page -->
+            <div id="page-challenges" class="page-content">
+                 <h2><i class="fas fa-trophy"></i> 美食挑戰榜</h2>
+                <div id="challenge-list" class="challenge-list"> <p class="no-results" style="display: none;">目前沒有進行中的挑戰。</p> </div>
+                 <p id="challenge-feedback" class="review-feedback" style="text-align:center; margin-top: 20px;"></p>
+            </div>
+            <!-- 5. Personal Profile Page -->
+            <div id="page-profile" class="page-content">
+                 <h2><i class="fas fa-user-circle"></i> 個人功能</h2>
+                <div class="profile-tabs"> <button class="profile-tab-btn active" data-target="profile-accounting">記帳顯示</button><button class="profile-tab-btn" data-target="profile-posts">我的貼文</button>  <button class="profile-tab-btn" data-target="profile-favorites">最愛餐廳</button> <button class="profile-tab-btn" data-target="profile-friends">好友名單</button> </div>
+                <div id="profile-accounting" class="profile-content active"> <h3><i class="fas fa-receipt"></i> 消費紀錄</h3> <ul id="accounting-list" class="profile-list"> <li class="no-results" style="display: none;">尚無消費紀錄。</li> </ul> </div>
+                <div id="profile-posts" class="profile-content"> <h3><i class="fas fa-comment-alt"></i> 我的美食貼文</h3> <ul id="posts-list" class="profile-list"> <li class="no-results" style="display: none;">尚無貼文。</li> </ul> </div>
+                <div id="profile-favorites" class="profile-content"> <h3><i class="fas fa-heart"></i> 最愛餐廳</h3> <ul id="favorites-list" class="profile-list"> <li class="no-results" style="display: none;">尚無最愛餐廳。</li> </ul> </div>
+                <div id="profile-friends" class="profile-content"> <h3><i class="fas fa-users"></i> 好友列表</h3> <ul id="friends-list" class="profile-list"> <li class="no-results" style="display: none;">尚無好友。</li> </ul> </div>
+            </div>
+            <!-- End Other Pages -->
+        </div>
+
+        <!-- Bottom Navigation (底部導覽列) -->
+        <div class="bottom-nav">
+            <div class="nav-item active" data-page="browse"> <i class="fas fa-map-marker-alt"></i> </div>
+            <div class="nav-item" data-page="random"> <i class="fas fa-dice"></i> </div>
+            <div class="nav-item" data-page="add-review"> <i class="fas fa-plus-square"></i> </div>
+            <div class="nav-item" data-page="challenges"> <i class="fas fa-trophy"></i> </div>
+            <div class="nav-item" data-page="profile"> <i class="fas fa-user-circle"></i> </div>
+        </div>
+    </div>
+
+    <script>
+    // --- JavaScript 開始 ---
+
+    // --- Simulated User Database & Profile ---
+    let users = []; // Will be loaded from localStorage
+    let currentUserProfile = null;
+
+    // storage.js - 簡單的存儲管理器
+    const Storage = {
+        saveUserSession(username) {
+            localStorage.setItem('foodieAppUserSession', username);
+        },
+        getUserSession() {
+            return localStorage.getItem('foodieAppUserSession');
+        },
+        saveUserProfile(username, profile) {
+            localStorage.setItem(`foodieAppUserProfile_${username}`, JSON.stringify(profile));
+        },
+        getUserProfile(username) {
+            const data = localStorage.getItem(`foodieAppUserProfile_${username}`);
+            return data ? JSON.parse(data) : null;
+        },
+        saveUsersDB(usersArray) {
+            localStorage.setItem('foodieAppUsersDB', JSON.stringify(usersArray));
+        },
+        getUsersDB() {
+            const data = localStorage.getItem('foodieAppUsersDB');
+            // Ensure Admin user always exists if DB is empty or new
+            let storedUsers = data ? JSON.parse(data) : [];
+            if (!storedUsers.find(u => u.username === "Admin")) {
+                storedUsers.unshift({ username: "Admin", password: "1234", email: "admin@example.com" });
+                 // Save back if Admin was added
+                if (!data || JSON.parse(data).length === 0) Storage.saveUsersDB(storedUsers);
+            }
+            return storedUsers;
+        },
+        clearUserSession() {
+            localStorage.removeItem('foodieAppUserSession');
+        }
+    };
+    users = Storage.getUsersDB();
+
+
+    const userLocation = { lat: 25.0330, lon: 121.5654 };
+
+    // --- Data Simulation ---
+    let restaurants = [ { id: 1, name: "鼎泰豐 (101店)", lat: 25.0336, lon: 121.5646, rating: 4.5, category: "chinese", priceRange: "$$$", imageUrl: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: ["Alice", "Bob"], address:"台北市信義路五段7號B1" }, { id: 2, name: "點點心 (微風信義)", lat: 25.0369, lon: 121.5653, rating: 4.0, category: "chinese", priceRange: "$$", imageUrl: "https://images.unsplash.com/photo-1565895749002-35f51f126ace?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: ["Charlie"], address:"台北市信義區忠孝東路五段68號B1" }, { id: 3, name: "壽司郎 (台北館前路店)", lat: 25.0463, lon: 121.5175, rating: 4.2, category: "japanese", priceRange: "$$", imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: ["David"], address:"台北市中正區館前路8號2樓" }, { id: 4, name: "一蘭拉麵 (台灣台北本店)", lat: 25.0333, lon: 121.5641, rating: 4.1, category: "japanese", priceRange: "$$", imageUrl: "https://images.unsplash.com/photo-1568096889942-6eedde686675?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: ["Alice"], address:"台北市信義區松仁路97號" }, { id: 5, name: "隨意鳥地方 (101觀景餐廳)", lat: 25.0338, lon: 121.5645, rating: 4.3, category: "italian", priceRange: "$$$$", imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: [], address:"台北市信義區信義路五段7號85樓" }, { id: 6, name: "樂軒和牛專門店 (燒肉)", lat: 25.0380, lon: 121.5446, rating: 4.8, category: "japanese", priceRange: "$$$$", imageUrl: "https://images.unsplash.com/photo-1606523890045-3690f003909c?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: ["Bob", "Eve"], address:"台北市大安區仁愛路四段91巷9號" }, { id: 7, name: "阜杭豆漿", lat: 25.0461, lon: 121.5217, rating: 4.4, category: "chinese", priceRange: "$", imageUrl: "https://images.unsplash.com/photo-1626700051177-ab5d69c4c8ba?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: ["Frank"], address:"台北市中正區忠孝東路一段108號2樓" }, { id: 8, name: "星巴克 (101門市)", lat: 25.0339, lon: 121.5648, rating: 3.5, category: "cafe", priceRange: "$$", imageUrl: "https://images.unsplash.com/photo-1511920183353-ace249493512?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: ["Grace"], address:"台北市信義區市府路45號B1" }, { id: 9, name: "Lady M (旗艦店)", lat: 25.0410, lon: 121.5440, rating: 4.6, category: "dessert", priceRange: "$$$", imageUrl: "https://images.unsplash.com/photo-1587314168485-3236d6710814?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: ["Alice", "Grace"], address:"台北市大安區光復南路240巷26號" }, { id: 10, name: "麥當勞 (市府店)", lat: 25.0405, lon: 121.5640, rating: 3.2, category: "american", priceRange: "$", imageUrl: "https://images.unsplash.com/photo-1619881590927-2b9a897c8851?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: ["Bob"], address:"台北市信義區忠孝東路五段15巷1號" }, { id: 11, name: "巷口平價義大利麵", lat: 25.0310, lon: 121.5630, rating: 3.0, category: "italian", priceRange: "$$", imageUrl: "https://images.unsplash.com/photo-1595295333158-4742f28fbd85?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: ["Henry"], address:"台北市信義區莊敬路123巷弄口" }, { id: 12, name: "繼光香香雞", lat: 25.0478, lon: 121.5200, rating: 4.0, category: "snacks", priceRange: "$", imageUrl: "https://images.unsplash.com/photo-1628270004992-6bf8d9a40b18?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: ["Bob"], address:"台北市萬華區漢中街123號" }, { id: 13, name: "路易莎咖啡 (信義)", lat: 25.0350, lon: 121.5660, rating: 3.8, category: "cafe", priceRange: "$", imageUrl: "https://images.unsplash.com/photo-1551030170-19c6fabb0725?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: [], address:"台北市信義區信義路五段100號" }, { id: 14, name: "師大夜市鹽酥雞", lat: 25.0250, lon: 121.5288, rating: 4.1, category: "snacks", priceRange: "$", imageUrl: "https://images.unsplash.com/photo-1562967916-675a6c359b0c?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80", recommendedBy: ["Charlie", "David"], address:"台北市大安區師大路39巷" }, ];
+    let foodChallenges = [ { id: 1, title: "挑戰一週健康餐", description: "連續七天只吃原型食物和健康烹調的餐點！", participants: ["Alice", "David", "美食探險家"], leaderboard: [ { rank: 1, name: "Alice", score: "7/7天" }, { rank: 2, name: "David", score: "6/7天" }, { rank: 3, name: "美食探險家", score: "5/7天" } ] }, { id: 2, title: "省錢大作戰：日均$200", description: "挑戰連續五天，平均每日餐費不超過200元。", participants: ["Bob", "Charlie"], leaderboard: [ { rank: 1, name: "Bob", score: "平均 $185" }, { rank: 2, name: "Charlie", score: "平均 $198" }, { rank: 3, name: "---", score: "" } ] }, { id: 3, title: "素食體驗週", description: "挑戰一週完全素食(蛋奶素可)。", participants: ["Eve", "Frank", "Grace"], leaderboard: [ { rank: 1, name: "Eve", score: "完成" }, { rank: 2, name: "Frank", score: "完成" }, { rank: 3, name: "Grace", score: "完成" } ] } ];
+    const defaultUserProfileData = { userId: null, username: null, friends: [ { id: 201, name: "Alice" }, { id: 202, name: "Bob" }, { id: 203, name: "Charlie" }, { id: 205, name: "Eve" }, { id: 207, name: "Grace" }, { id: 208, name: "Henry" }, { id: 204, name: "David" }, { id: 206, name: "Frank" } ], favoriteRestaurants: [], accounting: [], posts: [] };
+
+    // --- DOM Elements (Auth Screen - 提前聲明) ---
+    let authScreen, mainAppScreen, loginForm, usernameInput, passwordInput,
+        authError, registerButton, logoutButton, registerForm, newUsernameInput,
+        newPasswordInput, confirmPasswordInput, emailInput, registerError,
+        showLoginLink, 
+
+        usernameFeedback, passwordFeedback, passwordStrengthBar,
+        confirmPasswordFeedback, emailFeedback;
+
+
+    const commonWeakPasswords = [
+        "123456", "123456789", "12345678", "password", "qwerty", "111111", "admin"
+    ];
+
+    function showRegisterForm() {
+        if (loginForm && registerForm && authError && registerError) {
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'flex';
+            authError.textContent = '';
+            registerError.textContent = '';
+            if (newUsernameInput) newUsernameInput.value = '';
+            if (newPasswordInput) newPasswordInput.value = '';
+            if (confirmPasswordInput) confirmPasswordInput.value = '';
+            if (emailInput) emailInput.value = '';
+            if (usernameFeedback) usernameFeedback.textContent = '';
+            if (passwordFeedback) passwordFeedback.textContent = '';
+            if (passwordStrengthBar) passwordStrengthBar.className = 'strength-bar strength-0';
+            if (confirmPasswordFeedback) confirmPasswordFeedback.textContent = '';
+            if (emailFeedback) emailFeedback.textContent = '';
+        } else {
+            console.error("showRegisterForm: One or more auth form elements not found.");
+        }
+    }
+
+    function showLoginForm() {
+        if (loginForm && registerForm && authError && registerError) {
+            registerForm.style.display = 'none';
+            loginForm.style.display = 'block';
+            registerError.textContent = '';
+            authError.textContent = '';
+        }  else {
+            console.error("showLoginForm: One or more auth form elements not found.");
+        }
+    }
+
+    function checkPasswordStrength(password) {
+        let score = 0;
+        let feedbackMessages = [];
+        if (!passwordStrengthBar || !passwordFeedback) return 0;
+        if (!password) {
+            passwordStrengthBar.className = 'strength-bar strength-0';
+            passwordFeedback.textContent = '';
+            return 0;
+        }
+        if (password.length >= 12) score += 2;
+        else if (password.length >= 8) score += 1;
+        else feedbackMessages.push("至少8個字元 (建議12+)。");
+        if (/[A-Z]/.test(password)) score += 1; else feedbackMessages.push("包含大寫字母。");
+        if (/[a-z]/.test(password)) score += 1; else feedbackMessages.push("包含小寫字母。");
+        if (/[0-9]/.test(password)) score += 1; else feedbackMessages.push("包含數字。");
+        if (/[^A-Za-z0-9]/.test(password)) score += 1; else feedbackMessages.push("包含特殊符號。");
+        if (score <= 1) passwordStrengthBar.className = 'strength-bar strength-1';
+        else if (score <= 3) passwordStrengthBar.className = 'strength-bar strength-2';
+        else if (score <= 5) passwordStrengthBar.className = 'strength-bar strength-3';
+        else passwordStrengthBar.className = 'strength-bar strength-4';
+        if (feedbackMessages.length > 0 && password.length > 0) {
+            passwordFeedback.textContent = "建議: " + feedbackMessages.slice(0, 2).join(" ");
+            passwordFeedback.className = 'form-feedback invalid';
+        } else if (password.length > 0) {
+            passwordFeedback.textContent = "密碼強度可接受！";
+            passwordFeedback.className = 'form-feedback valid';
+        } else {
+            passwordFeedback.textContent = "";
+            passwordFeedback.className = 'form-feedback';
+        }
+        if (commonWeakPasswords.includes(password.toLowerCase())) {
+            passwordFeedback.textContent = "此密碼非常常見且不安全，請更換。";
+            passwordFeedback.className = 'form-feedback invalid';
+            passwordStrengthBar.className = 'strength-bar strength-1';
+            return 0;
+        }
+        return score;
+    }
+
+    function validateConfirmPassword() {
+        if (!newPasswordInput || !confirmPasswordInput || !confirmPasswordFeedback || !registerError) return true;
+        const password = newPasswordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        registerError.textContent = '';
+        if (!confirmPassword && !password) {
+            confirmPasswordFeedback.textContent = '';
+            confirmPasswordFeedback.className = 'form-feedback';
+            return true;
+        }
+        if (!confirmPassword && password) {
+             confirmPasswordFeedback.textContent = '請再次輸入密碼。';
+             confirmPasswordFeedback.className = 'form-feedback invalid';
+             return false;
+        }
+        if (password === confirmPassword) {
+            confirmPasswordFeedback.textContent = '密碼一致！';
+            confirmPasswordFeedback.className = 'form-feedback valid';
+            return true;
+        } else {
+            confirmPasswordFeedback.textContent = '兩次輸入的密碼不一致。';
+            confirmPasswordFeedback.className = 'form-feedback invalid';
+            return false;
+        }
+    }
+
+    function handleRegisterSubmit(event) {
+        event.preventDefault();
+        if (!registerError || !newUsernameInput || !newPasswordInput || !confirmPasswordInput || !emailInput ||
+            !usernameFeedback || !passwordFeedback || !confirmPasswordFeedback || !emailFeedback) {
+            console.error("handleRegisterSubmit: Missing elements.");
+            return;
+        }
+        registerError.textContent = '';
+        const username = newUsernameInput.value.trim();
+        const password = newPasswordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        const email = emailInput.value.trim();
+        let isValid = true;
+
+        if (!username) { usernameFeedback.textContent = '帳號為必填項。'; usernameFeedback.className = 'form-feedback invalid'; isValid = false; }
+        else if (username.length < 4) { usernameFeedback.textContent = '帳號長度至少4字元。'; usernameFeedback.className = 'form-feedback invalid'; isValid = false; }
+        else {
+            const existingUser = users.find(user => user.username.toLowerCase() === username.toLowerCase());
+            if (existingUser) { usernameFeedback.textContent = '此帳號已被使用。'; usernameFeedback.className = 'form-feedback invalid'; isValid = false; }
+            else { usernameFeedback.textContent = '帳號可使用！'; usernameFeedback.className = 'form-feedback valid';}
+        }
+        const passwordScore = checkPasswordStrength(password);
+        if (!password) { passwordFeedback.textContent = '密碼為必填項。'; passwordFeedback.className = 'form-feedback invalid'; isValid = false; }
+        else if (passwordScore < 2) { passwordFeedback.textContent = '密碼太弱。'; passwordFeedback.className = 'form-feedback invalid'; isValid = false; }
+        if (!confirmPassword) { confirmPasswordFeedback.textContent = '確認密碼為必填項。'; confirmPasswordFeedback.className = 'form-feedback invalid'; isValid = false; }
+        else if (password !== confirmPassword) { confirmPasswordFeedback.textContent = '密碼不一致。'; confirmPasswordFeedback.className = 'form-feedback invalid'; isValid = false; }
+        else if (password) { confirmPasswordFeedback.textContent = '密碼一致！'; confirmPasswordFeedback.className = 'form-feedback valid';} // Only show valid if password entered
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email) { emailFeedback.textContent = 'Email 為必填項。'; emailFeedback.className = 'form-feedback invalid'; isValid = false; }
+        else if (!emailRegex.test(email)) { emailFeedback.textContent = 'Email 格式無效。'; emailFeedback.className = 'form-feedback invalid'; isValid = false; }
+        else { emailFeedback.textContent = 'Email 格式正確。'; emailFeedback.className = 'form-feedback valid';}
+
+        if (!isValid) { registerError.textContent = '請修正標紅的欄位。'; return; }
+
+        const newUser = { username, password, email };
+        users.push(newUser);
+        Storage.saveUsersDB(users);
+        console.log('註冊新用戶:', username);
+        registerError.textContent = '註冊成功！請登入。';
+        registerError.style.color = '#2ecc71';
+        // Clear form
+        newUsernameInput.value = ''; newPasswordInput.value = ''; confirmPasswordInput.value = ''; emailInput.value = '';
+        usernameFeedback.textContent = ''; passwordFeedback.textContent = ''; confirmPasswordFeedback.textContent = ''; emailFeedback.textContent = '';
+        if (passwordStrengthBar) passwordStrengthBar.className = 'strength-bar strength-0';
+        setTimeout(() => { showLoginForm(); }, 2000);
+    }
+
+    function handleLogin(event) {
+        event.preventDefault();
+        if (!authError || !usernameInput || !passwordInput || !authScreen || !mainAppScreen) return;
+        authError.textContent = '';
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+        if (!username || !password) { authError.textContent = '請輸入帳號和密碼。'; return; }
+
+        const foundUser = users.find(user => user.username === username && user.password === password);
+        if (foundUser) {
+            console.log('登入成功:', username);
+            let userProfile = Storage.getUserProfile(foundUser.username);
+            if (!userProfile) {
+                userProfile = JSON.parse(JSON.stringify(defaultUserProfileData));
+                userProfile.username = foundUser.username;
+                userProfile.userId = foundUser.username === "Admin" ? 1 : Date.now();
+            }
+            currentUserProfile = userProfile;
+            Storage.saveUserSession(foundUser.username);
+            Storage.saveUserProfile(foundUser.username, currentUserProfile);
+            authScreen.style.display = 'none';
+            mainAppScreen.style.display = 'block';
+            initializeApp();
+        } else {
+            authError.textContent = '帳號或密碼錯誤。';
+            passwordInput.value = '';
+        }
+    }
+
+    function handleLogout() {
+        if (!mainAppScreen || !authScreen || !usernameInput || !passwordInput || !authError) return;
+        currentUserProfile = null;
+        Storage.clearUserSession();
+        mainAppScreen.style.display = 'none';
+        authScreen.style.display = 'flex';
+        if(loginForm) loginForm.reset();
+        if(usernameInput) usernameInput.value = '';
+        if(passwordInput) passwordInput.value = '';
+        authError.textContent = '';
+        console.log("用戶已登出。");
+    }
+
+    // --- Main App Elements ---
+    let pages, navItems, browseSearchInput, restaurantListContainer, noRestaurantsMsg,
+        categoryGrid, categoryItems, browsePostsList, noBrowsePostsMsg,
+        rouletteContainer, rouletteLabelsContainer, spinButton, randomResultDiv, randomEmptyMsg,
+        challengeListContainer, noChallengesMsg, challengeFeedback, profileTabs, profileContents,
+        postsList, noPostsMsg, accountingList, noAccountingMsg, friendsList, noFriendsMsg, favoritesList, noFavoritesMsg,
+        addReviewForm, reviewRestaurantNameInput, reviewDishesInput, reviewPriceInput,
+        reviewRatingHeartsContainer, reviewRatingInput, reviewTextInput,
+        addPhotoGalleryBtn, addPhotoCameraBtn, photoPreviewContainer, saveReviewButton, reviewMessage,
+        pageRestaurantDetail, backToBrowseBtn, detailRestaurantName, detailImage,
+        detailRating, detailCategory, detailPrice, detailLocation,
+        addToFavoriteDetailBtn, favoriteTextDetail, writeReviewDetailBtn, detailRecommendedBy;
+
+    function getMainAppElements() {
+        pages = mainAppScreen.querySelectorAll('.page-content');
+        navItems = mainAppScreen.querySelectorAll('.nav-item');
+        browseSearchInput = mainAppScreen.querySelector('#browse-search-input');
+        restaurantListContainer = mainAppScreen.querySelector('#restaurant-list');
+        noRestaurantsMsg = restaurantListContainer?.querySelector('.no-results');
+        categoryGrid = mainAppScreen.querySelector('.category-grid');
+        categoryItems = categoryGrid?.querySelectorAll('.category-item');
+        browsePostsList = mainAppScreen.querySelector('#browse-posts-list');
+        noBrowsePostsMsg = browsePostsList?.querySelector('.no-results');
+        rouletteContainer = mainAppScreen.querySelector('#roulette');
+        rouletteLabelsContainer = mainAppScreen.querySelector('#roulette-labels');
+        spinButton = mainAppScreen.querySelector('#spin-button');
+        randomResultDiv = mainAppScreen.querySelector('#random-result');
+        randomEmptyMsg = mainAppScreen.querySelector('#random-empty-msg');
+        addReviewForm = mainAppScreen.querySelector('#add-review-form');
+        reviewRestaurantNameInput = mainAppScreen.querySelector('#review-restaurant-name');
+        reviewDishesInput = mainAppScreen.querySelector('#review-dishes');
+        reviewPriceInput = mainAppScreen.querySelector('#review-price');
+        reviewRatingHeartsContainer = mainAppScreen.querySelector('#review-rating-hearts');
+        reviewRatingInput = mainAppScreen.querySelector('#review-rating');
+        reviewTextInput = mainAppScreen.querySelector('#review-text');
+        addPhotoGalleryBtn = mainAppScreen.querySelector('#add-photo-gallery');
+        addPhotoCameraBtn = mainAppScreen.querySelector('#add-photo-camera');
+        photoPreviewContainer = mainAppScreen.querySelector('#photo-preview');
+        saveReviewButton = mainAppScreen.querySelector('#save-review-button');
+        reviewMessage = mainAppScreen.querySelector('#review-message');
+        challengeListContainer = mainAppScreen.querySelector('#challenge-list');
+        noChallengesMsg = challengeListContainer?.querySelector('.no-results');
+        challengeFeedback = mainAppScreen.querySelector('#challenge-feedback');
+        profileTabs = mainAppScreen.querySelectorAll('.profile-tab-btn');
+        profileContents = mainAppScreen.querySelectorAll('.profile-content');
+        postsList = mainAppScreen.querySelector('#posts-list');
+        noPostsMsg = postsList?.querySelector('.no-results');
+        accountingList = mainAppScreen.querySelector('#accounting-list');
+        noAccountingMsg = accountingList?.querySelector('.no-results');
+        friendsList = mainAppScreen.querySelector('#friends-list');
+        noFriendsMsg = friendsList?.querySelector('.no-results');
+        favoritesList = mainAppScreen.querySelector('#favorites-list');
+        noFavoritesMsg = favoritesList?.querySelector('.no-results');
+        pageRestaurantDetail = mainAppScreen.querySelector('#page-restaurant-detail');
+        backToBrowseBtn = mainAppScreen.querySelector('#back-to-browse');
+        detailRestaurantName = mainAppScreen.querySelector('#detail-restaurant-name');
+        detailImage = mainAppScreen.querySelector('#detail-image');
+        detailRating = mainAppScreen.querySelector('#detail-rating');
+        detailCategory = mainAppScreen.querySelector('#detail-category');
+        detailPrice = mainAppScreen.querySelector('#detail-price');
+        detailLocation = mainAppScreen.querySelector('#detail-location');
+        addToFavoriteDetailBtn = mainAppScreen.querySelector('#add-to-favorite-detail');
+        favoriteTextDetail = mainAppScreen.querySelector('#favorite-text-detail');
+        writeReviewDetailBtn = mainAppScreen.querySelector('#write-review-detail');
+        detailRecommendedBy = mainAppScreen.querySelector('#detail-recommended-by');
+    }
+
+    function getDistance(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180; const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2); const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); return R * c; }
+    function generateStars(rating) { let s = ''; const f = Math.floor(rating), h = rating % 1 >= 0.5, e = 5 - f - (h ? 1 : 0); for (let i=0; i<f; i++) s+='<i class="fas fa-star"></i>'; if(h)s+='<i class="fas fa-star-half-alt"></i>'; for(let i=0; i<e; i++)s+='<i class="far fa-star"></i>'; return `<span class="stars">${s}</span> (${rating.toFixed(1)})`; }
+    function generateHeartStars(rating) { let h = ''; const f = Math.floor(rating), e = 5 - f; for(let i=0;i<f;i++)h+='<i class="fas fa-heart" style="color:#ed4956;"></i>'; for(let i=0;i<e;i++)h+='<i class="far fa-heart" style="color:#ccc;"></i>'; return `<span class="stars">${h}</span>`;}
+    function displayGlobalMessage(pageElement, message, type = 'info', isSticky = false) {
+        let feedbackEl = pageElement.querySelector('.global-feedback');
+        if (!feedbackEl) {
+            feedbackEl = document.createElement('p');
+            feedbackEl.className = 'global-feedback review-feedback'; // Use existing styles
+            pageElement.appendChild(feedbackEl);
+        }
+        feedbackEl.textContent = message;
+        feedbackEl.className = `global-feedback review-feedback ${type}`;
+        feedbackEl.style.display = 'block';
+        if (!isSticky) {
+            setTimeout(() => { feedbackEl.style.display = 'none'; }, 3000);
+        }
+    }
+
+
+    function renderBrowsePage(searchTerm = '', categoryFilter = 'all') {
+        if (!restaurantListContainer || !currentUserProfile) return;
+        restaurantListContainer.classList.add('visible');
+        let currentContent = Array.from(restaurantListContainer.children);
+        currentContent.forEach(child => { if (!child.classList.contains('no-results')) child.remove(); });
+        
+        const noResultsEl = restaurantListContainer.querySelector('.no-results');
+        if (noResultsEl) noResultsEl.style.display = 'none';
+
+        const lowerSearchTerm = searchTerm.toLowerCase();
+        const filteredRestaurants = restaurants.filter(r => {
+            const distance = getDistance(userLocation.lat, userLocation.lon, r.lat, r.lon);
+            const isNearby = distance < 100;
+            const matchesSearch = !searchTerm || r.name.toLowerCase().includes(lowerSearchTerm) || r.category.toLowerCase().includes(lowerSearchTerm);
+            const matchesCategory = (categoryFilter === 'all' || r.category === categoryFilter);
+            return isNearby && matchesSearch && matchesCategory;
+        });
+
+        if (filteredRestaurants.length === 0) {
+            if (noResultsEl) noResultsEl.style.display = 'block';
+        } else {
+            filteredRestaurants.sort((a, b) => b.rating - a.rating);
+            filteredRestaurants.forEach(r => {
+                const card = document.createElement('div'); card.className = 'restaurant-card';
+                card.dataset.restaurantId = r.id;
+                const recText = r.recommendedBy && r.recommendedBy.length > 0 ? `<p class="recommendation"><i class="fas fa-user-friends"></i>推薦：${r.recommendedBy.join(', ')}</p>` : '';
+                card.innerHTML = `<img src="${r.imageUrl}" alt="${r.name}" onerror="this.src='https://via.placeholder.com/300x180/eee/ccc?text=Image+Error';"><div class="restaurant-info"><h3>${r.name}</h3><p>${generateStars(r.rating)} ${r.priceRange || ''}</p><p><i class="fas fa-tags"></i> ${r.category} | <i class="fas fa-map-pin"></i> ${getDistance(userLocation.lat,userLocation.lon,r.lat,r.lon).toFixed(1)} km</p>${recText}</div>`;
+                restaurantListContainer.appendChild(card);
+                card.addEventListener('click', () => showRestaurantDetail(r.id));
+            });
+        }
+    }
+
+    function renderBrowsePosts() {
+         if (!browsePostsList || !noBrowsePostsMsg) return;
+         browsePostsList.innerHTML = ''; noBrowsePostsMsg.style.display = 'none';
+         const allPosts = [];
+         users.forEach(user => {
+            const profile = Storage.getUserProfile(user.username);
+            if(profile && profile.posts && profile.posts.length > 0){
+                profile.posts.forEach(p => allPosts.push({...p, author: profile.username || '匿名'}));
+            }
+         });
+         const recentPosts = allPosts.sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,5);
+
+         if (recentPosts.length === 0) { noBrowsePostsMsg.style.display = 'list-item'; browsePostsList.appendChild(noBrowsePostsMsg); }
+         else {
+              recentPosts.forEach(post => {
+                  const li = document.createElement('li'); li.className = 'post-item';
+                  li.innerHTML = `<div class="post-header"><span><i class="fas fa-user-circle"></i> ${post.author} 在 ${post.restaurantName || '某處'} 分享：</span><span class="post-date">${post.date || ''}</span></div><div class="post-content">${post.content || ''}</div><div class="post-footer"><span class="post-likes"><i class="fas fa-heart"></i> ${post.likes || 0}</span><span class="post-comments"><i class="fas fa-comment"></i> ${post.comments || 0}</span></div>`;
+                  browsePostsList.appendChild(li);
+              });
+          }
+    }
+
+    function renderRandomPage() { if (!rouletteContainer || !rouletteLabelsContainer || !randomResultDiv || !randomEmptyMsg || !spinButton || !currentUserProfile) return; rouletteContainer.style.background = ''; rouletteContainer.style.transform = 'rotate(0deg)'; rouletteLabelsContainer.innerHTML = ''; randomResultDiv.textContent = ''; randomEmptyMsg.style.display = 'none'; spinButton.disabled = true; const favIds = new Set(currentUserProfile.favoriteRestaurants); const visitedNames = new Set(currentUserProfile.accounting.map(item => item.restaurantName)); const potential = restaurants.filter(r => favIds.has(r.id) || visitedNames.has(r.name)); const uniquePotential = Array.from(new Map(potential.map(r => [r.name,r])).values()); if(uniquePotential.length === 0){randomEmptyMsg.style.display = 'block'; return;} spinButton.disabled = false; const num = uniquePotential.length; const angle = 360/num; const c1='#fce4ec', c2='#e3f2fd'; let stops=[]; for(let i=0;i<num;i++){ const sa=i*angle,ea=(i+1)*angle,c=i%2===0?c1:c2; stops.push(`${c} ${sa}deg ${ea}deg`); const la=sa+(angle/2), r=uniquePotential[i], lD=document.createElement('div'); lD.className='roulette-label'; lD.style.transform=`rotate(${la}deg) translate(30%,-50%) rotate(-90deg)`; lD.innerHTML=`<i class="fas fa-utensils"></i><span>${r.name.substring(0,10)}${r.name.length>10?'...':''}</span>`; rouletteLabelsContainer.appendChild(lD); } rouletteContainer.style.background=`conic-gradient(${stops.join(',')})`; rouletteContainer.dataset.options=JSON.stringify(uniquePotential.map(r=>r.name)); rouletteContainer.dataset.numItems=num; }
+    function renderChallengesPage() { if (!challengeListContainer || !noChallengesMsg || !challengeFeedback) return; challengeListContainer.innerHTML = ''; noChallengesMsg.style.display = 'none'; challengeFeedback.textContent = ''; challengeFeedback.style.display = 'none'; if (foodChallenges.length === 0) { noChallengesMsg.style.display = 'block'; challengeListContainer.appendChild(noChallengesMsg); return; } foodChallenges.forEach(c => { const item = document.createElement('div'); item.className = 'challenge-item'; const lbHtml = c.leaderboard.map((e,i)=>{let ico='';if(i===0)ico='<i class="fas fa-medal"></i>';else if(i===1)ico='<i class="fas fa-medal" style="color:#bdc3c7;"></i>';else if(i===2)ico='<i class="fas fa-medal" style="color:#cd7f32;"></i>';const rD=e.rank?`${e.rank}.`:'';return e.name&&e.score?`<span>${ico}${rD} ${e.name} (${e.score})</span>`:''}).filter(h=>h).join(''); item.innerHTML = `<button class="join-challenge-btn" data-challenge-id="${c.id}">參加</button><h3>${c.title}</h3><p>${c.description}</p><div class="leaderboard"><strong><i class="fas fa-trophy"></i>排行榜：</strong>${lbHtml||'<span>尚無排名</span>'}</div><div style="font-size:12px;color:#888;margin-top:8px;clear:both;"><i class="fas fa-users"></i>參與者: ${c.participants.join(', ')||'無'}</div>`; challengeListContainer.appendChild(item); item.querySelector('.join-challenge-btn').addEventListener('click',(e)=>{ const cId=e.target.getAttribute('data-challenge-id'), ch=foodChallenges.find(c=>c.id==cId), cT=ch?ch.title:`ID ${cId}`; challengeFeedback.textContent=`模擬：已報名挑戰 "${cT}"！`; challengeFeedback.className='review-feedback success'; challengeFeedback.style.display='block'; e.target.disabled=true; e.target.textContent='已參加'; setTimeout(()=>challengeFeedback.style.display='none', 3000); }); }); }
+    function resetAddReviewForm() { if (!addReviewForm) return; addReviewForm.reset(); if (reviewRatingInput) reviewRatingInput.value = "0"; if (reviewMessage) { reviewMessage.textContent = ''; reviewMessage.className = 'review-feedback'; } if (photoPreviewContainer) photoPreviewContainer.innerHTML = ''; const hearts = reviewRatingHeartsContainer?.querySelectorAll('i'); hearts?.forEach(h=>{h.classList.remove('fas','selected'); h.classList.add('far');}); }
+    function renderPostsTab() { if (!postsList || !noPostsMsg || !currentUserProfile) return; postsList.innerHTML = ''; noPostsMsg.style.display = 'none'; if (!currentUserProfile.posts || currentUserProfile.posts.length === 0) { noPostsMsg.style.display = 'list-item'; postsList.appendChild(noPostsMsg); } else { [...currentUserProfile.posts].reverse().forEach(p => { const li=document.createElement('li'); li.className='post-item'; li.innerHTML=`<div class="post-header"><span>${p.restaurantName||'貼文'}</span><span class="post-date">${p.date||''}</span></div><div class="post-content">${p.content||''}</div><div class="post-footer"><span class="post-likes"><i class="fas fa-heart"></i>${p.likes||0}</span><span class="post-comments"><i class="fas fa-comment"></i>${p.comments||0}</span></div>`; postsList.appendChild(li);});}}
+    function renderProfilePage() { if (!accountingList || !friendsList || !favoritesList || !postsList || !noAccountingMsg || !noFriendsMsg || !noFavoritesMsg || !noPostsMsg || !currentUserProfile) return; renderPostsTab(); accountingList.innerHTML=''; noAccountingMsg.style.display='none'; if(currentUserProfile.accounting.length===0){noAccountingMsg.style.display='list-item'; accountingList.appendChild(noAccountingMsg);}else{[...currentUserProfile.accounting].reverse().forEach(i=>{const li=document.createElement('li');li.className='accounting-item';const rS=i.rating?generateHeartStars(i.rating):'未評分',rT=i.review?`評論:${i.review.substring(0,50)}${i.review.length>50?'...':''}`:'無';li.innerHTML=`<strong>${i.restaurantName||`ID:${i.restaurantId}`}</strong><span>日期:${i.date||'N/A'}</span><span>餐點:${i.items||'N/A'}</span><span>金額:NT$ ${i.amount!=null?i.amount:'N/A'}</span><span>喜愛度:${rS}</span><span style="color:#777;font-style:italic;">${rT}</span>`;accountingList.appendChild(li);});} friendsList.innerHTML=''; noFriendsMsg.style.display='none'; if(currentUserProfile.friends.length===0){noFriendsMsg.style.display='list-item';friendsList.appendChild(noFriendsMsg);}else{currentUserProfile.friends.forEach(f=>{const li=document.createElement('li');li.className='friend-item';li.innerHTML=`<i class="fas fa-user"></i> ${f.name||`ID:${f.id}`}`;friendsList.appendChild(li);});} favoritesList.innerHTML=''; noFavoritesMsg.style.display='none'; const favDetails=currentUserProfile.favoriteRestaurants.map(id=>restaurants.find(r=>r.id===id)).filter(r=>r); if(favDetails.length===0){noFavoritesMsg.style.display='list-item';favoritesList.appendChild(noFavoritesMsg);}else{favDetails.forEach(r=>{const li=document.createElement('li');li.className='favorite-item';li.innerHTML=`<i class="fas fa-utensils"></i> ${r.name||`ID:${r.id}`}`;favoritesList.appendChild(li);});}}
+
+    function showRestaurantDetail(restaurantId) {
+        const restaurant = restaurants.find(r => r.id === restaurantId);
+        if (!restaurant || !pageRestaurantDetail || !currentUserProfile || !detailRestaurantName || !detailImage || !detailRating || !detailCategory || !detailPrice || !detailLocation || !addToFavoriteDetailBtn || !favoriteTextDetail || !writeReviewDetailBtn || !detailRecommendedBy) {
+            console.error("Missing elements for restaurant detail page or no restaurant found.");
+            return;
+        }
+
+        detailRestaurantName.textContent = restaurant.name;
+        detailImage.src = restaurant.imageUrl;
+        detailImage.alt = restaurant.name;
+        detailRating.innerHTML = generateStars(restaurant.rating);
+        detailCategory.innerHTML = `<i class="fas fa-tags"></i> ${restaurant.category || '未分類'}`;
+        detailPrice.innerHTML = `<i class="fas fa-dollar-sign"></i> ${restaurant.priceRange || 'N/A'}`;
+        detailLocation.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${restaurant.address || '地址未知'}`;
+        detailRecommendedBy.textContent = restaurant.recommendedBy && restaurant.recommendedBy.length > 0 ? restaurant.recommendedBy.join(', ') : '尚無推薦';
+
+        const isFavorited = currentUserProfile.favoriteRestaurants.includes(restaurantId);
+        addToFavoriteDetailBtn.classList.toggle('favorited', isFavorited);
+        favoriteTextDetail.textContent = isFavorited ? '已收藏' : '收藏';
+        const heartIcon = addToFavoriteDetailBtn.querySelector('i');
+        if (heartIcon) { heartIcon.className = isFavorited ? 'fas fa-heart' : 'far fa-heart'; }
+
+        addToFavoriteDetailBtn.dataset.restaurantId = restaurantId;
+        writeReviewDetailBtn.dataset.restaurantName = restaurant.name; // For pre-filling review form
+
+        pages.forEach(p => p.classList.remove('active'));
+        pageRestaurantDetail.classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
+    function navigateToPage(pageId, params = {}) {
+        if (!pages || !navItems || !mainAppScreen) return;
+        pages.forEach(p => p.classList.remove('active'));
+        const targetPageElement = mainAppScreen.querySelector(`#page-${pageId}`);
+        if(targetPageElement) targetPageElement.classList.add('active');
+        navItems.forEach(n => n.classList.remove('active'));
+        const activeNavItem = mainAppScreen.querySelector(`.nav-item[data-page="${pageId}"]`);
+        if(activeNavItem) activeNavItem.classList.add('active');
+
+        switch (pageId) {
+            case 'browse': renderBrowsePage(); renderBrowsePosts(); break;
+            case 'random': renderRandomPage(); break;
+            case 'add-review':
+                resetAddReviewForm();
+                if (params.restaurantName && reviewRestaurantNameInput) {
+                    reviewRestaurantNameInput.value = params.restaurantName;
+                }
+                break;
+            case 'challenges': renderChallengesPage(); break;
+            case 'profile':
+                renderProfilePage();
+                const defaultTab = params.defaultTab || 'profile-accounting';
+                const defaultProfileTab = mainAppScreen.querySelector(`.profile-tab-btn[data-target="${defaultTab}"]`);
+                const defaultProfileContent = mainAppScreen.querySelector(`#${defaultTab}`);
+                profileTabs?.forEach(t => t.classList.remove('active'));
+                profileContents?.forEach(c => c.classList.remove('active'));
+                defaultProfileTab?.classList.add('active');
+                defaultProfileContent?.classList.add('active');
+                break;
+        }
+        window.scrollTo(0, 0);
+    }
+
+    function setupMainAppEventListeners() {
+        if (!navItems || !categoryItems || !browseSearchInput || !spinButton || !reviewRatingHeartsContainer || !addPhotoGalleryBtn || !addPhotoCameraBtn || !addReviewForm || !profileTabs || !backToBrowseBtn || !addToFavoriteDetailBtn || !writeReviewDetailBtn) return;
+
+         navItems.forEach(item => { item.addEventListener('click', () => navigateToPage(item.getAttribute('data-page')));});
+         browseSearchInput.addEventListener('input', (e) => {
+             const sTerm = e.target.value.trim(), activeCat = categoryGrid?.querySelector('.category-item.active'), activeF = activeCat?.getAttribute('data-filter') || 'all';
+             renderBrowsePage(sTerm, activeF);
+         });
+        categoryItems.forEach(item => {
+            item.addEventListener('click', () => {
+                let selF; const isAct = item.classList.contains('active');
+                categoryItems.forEach(ci => ci.classList.remove('active'));
+                if (isAct) { selF = 'all'; } else { item.classList.add('active'); selF = item.getAttribute('data-filter'); }
+                renderBrowsePage(browseSearchInput?.value.trim(), selF);
+            });
+        });
+        spinButton.addEventListener('click', () => { const opts = JSON.parse(rouletteContainer?.dataset.options||'[]'), numI = parseInt(rouletteContainer?.dataset.numItems||0); if(numI===0||!spinButton||!randomResultDiv||!rouletteContainer)return; spinButton.disabled=true; randomResultDiv.textContent='抽籤中...'; const randIdx=Math.floor(Math.random()*numI), winOpt=opts[randIdx]??opts[0], angPerI=360/numI, tarAng=(randIdx*angPerI)+(angPerI*0.75), randRot=5+Math.floor(Math.random()*3), randOff=Math.random()*(angPerI*0.6)-(angPerI*0.3), totRot=360*randRot-tarAng+randOff; rouletteContainer.style.transform=`rotate(${totRot}deg)`; setTimeout(()=>{randomResultDiv.textContent=`恭喜抽中：${winOpt}！`;randomResultDiv.style.color='#e74c3c';spinButton.disabled=false;},4100);});
+        reviewRatingHeartsContainer.addEventListener('click', (e) => { if (e.target.tagName==='I'&&e.target.hasAttribute('data-value')) { const rVal=parseInt(e.target.getAttribute('data-value')); if(reviewRatingInput)reviewRatingInput.value=rVal; const hearts=reviewRatingHeartsContainer.querySelectorAll('i'); hearts.forEach(h=>{const v=parseInt(h.getAttribute('data-value'));h.classList.toggle('fas',v<=rVal);h.classList.toggle('far',v>rVal);h.classList.toggle('selected',v<=rVal);});}});
+        addPhotoGalleryBtn.addEventListener('click', () => addSimulatedPhoto('相簿'));
+        addPhotoCameraBtn.addEventListener('click', () => addSimulatedPhoto('相機'));
+        function addSimulatedPhoto(src) { if (!photoPreviewContainer)return; if(photoPreviewContainer.children.length<5){const p=document.createElement('div');p.className='photo-placeholder';p.textContent=`${src}_${Date.now().toString().slice(-4)}.jpg`;photoPreviewContainer.appendChild(p);if(reviewMessage)reviewMessage.textContent='';}else{if(reviewMessage)reviewMessage.textContent='最多5張照片'; if(reviewMessage) reviewMessage.className='review-feedback error';}}
+        addReviewForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentUserProfile || !reviewRestaurantNameInput || !reviewDishesInput || !reviewRatingInput || !reviewTextInput || !reviewPriceInput || !photoPreviewContainer || !reviewMessage) return;
+            const rName = reviewRestaurantNameInput.value.trim(), dishes = reviewDishesInput.value.trim(), price = reviewPriceInput.value?parseInt(reviewPriceInput.value):null, rating = parseInt(reviewRatingInput.value), review = reviewTextInput.value.trim();
+            if (!rName || !dishes) { reviewMessage.textContent='請填寫餐廳和餐點'; reviewMessage.className='review-feedback error'; return; }
+            if (rating === 0) { reviewMessage.textContent='請選擇喜愛程度'; reviewMessage.className='review-feedback error'; return; }
+            const exRest = restaurants.find(r => r.name === rName), rId = exRest ? exRest.id : Date.now();
+            const cDate = new Date().toISOString().split('T')[0];
+            const newAccEntry = { restaurantId:rId, restaurantName:rName, date:cDate, items:dishes, amount:price, rating:rating, review:review, photos:Array.from(photoPreviewContainer.children).map(p=>p.textContent)};
+            if(!currentUserProfile.accounting)currentUserProfile.accounting=[]; currentUserProfile.accounting.unshift(newAccEntry);
+            if(review){const newPost={id:Date.now(),content:review,date:cDate,likes:0,comments:0,restaurantName:rName}; if(!currentUserProfile.posts)currentUserProfile.posts=[]; currentUserProfile.posts.unshift(newPost);}
+            Storage.saveUserProfile(currentUserProfile.username, currentUserProfile);
+            reviewMessage.textContent='評論與貼文已儲存！'; reviewMessage.className='review-feedback success';
+            setTimeout(() => { resetAddReviewForm(); navigateToPage('profile', { defaultTab: 'profile-accounting' }); }, 1500);
+        });
+        profileTabs.forEach(tab => { tab.addEventListener('click', () => { if (!profileTabs || !profileContents) return; const targetId=tab.getAttribute('data-target'); profileTabs.forEach(t=>t.classList.remove('active')); tab.classList.add('active'); profileContents.forEach(c=>{c.classList.toggle('active',c.id===targetId);}); if(targetId==='profile-posts')renderPostsTab(); if(targetId==='profile-accounting'||targetId==='profile-favorites')renderProfilePage(); }); });
+        backToBrowseBtn.addEventListener('click', () => navigateToPage('browse'));
+        addToFavoriteDetailBtn.addEventListener('click', (e) => {
+            if (!currentUserProfile) return; const rId = parseInt(e.currentTarget.dataset.restaurantId);
+            const idx = currentUserProfile.favoriteRestaurants.indexOf(rId);
+            const heartI = e.currentTarget.querySelector('i');
+            if (idx > -1) { currentUserProfile.favoriteRestaurants.splice(idx, 1); e.currentTarget.classList.remove('favorited'); favoriteTextDetail.textContent = '收藏'; if(heartI) heartI.className = 'far fa-heart'; }
+            else { currentUserProfile.favoriteRestaurants.push(rId); e.currentTarget.classList.add('favorited'); favoriteTextDetail.textContent = '已收藏'; if(heartI) heartI.className = 'fas fa-heart';}
+            Storage.saveUserProfile(currentUserProfile.username, currentUserProfile);
+        });
+        writeReviewDetailBtn.addEventListener('click', (e) => { const rName = e.currentTarget.dataset.restaurantName; navigateToPage('add-review', { restaurantName: rName }); });
+    }
+
+    function initializeApp() {
+        console.log("Initializing main app...");
+        if (!mainAppScreen) { console.error("initializeApp: mainAppScreen not found!"); return; }
+        getMainAppElements();
+        navigateToPage('browse'); // Default to browse page
+        if (logoutButton) { logoutButton.removeEventListener('click', handleLogout); logoutButton.addEventListener('click', handleLogout); } // Ensure logout is bound
+        setupMainAppEventListeners(); // Bind all other listeners
+     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("DOM Loaded.");
+        authScreen = document.getElementById('auth-screen');
+        mainAppScreen = document.getElementById('main-app');
+        loginForm = document.getElementById('login-form');
+        usernameInput = document.getElementById('username');
+        passwordInput = document.getElementById('password');
+        authError = document.getElementById('auth-error');
+        registerButton = document.getElementById('register-button');
+        logoutButton = document.getElementById('logout-button');
+        registerForm = document.getElementById('register-form');
+        newUsernameInput = document.getElementById('new-username');
+        newPasswordInput = document.getElementById('new-password');
+        confirmPasswordInput = document.getElementById('confirm-password');
+        emailInput = document.getElementById('email');
+        registerError = document.getElementById('register-error');
+        showLoginLink = document.getElementById('show-login');
+        usernameFeedback = document.getElementById('username-feedback');
+        passwordFeedback = document.getElementById('password-feedback');
+        passwordStrengthBar = document.getElementById('password-strength-bar');
+        confirmPasswordFeedback = document.getElementById('confirm-password-feedback');
+        emailFeedback = document.getElementById('email-feedback');
+
+        const loggedInUser = Storage.getUserSession();
+        if (loggedInUser) {
+            const profile = Storage.getUserProfile(loggedInUser);
+            if (profile) {
+                currentUserProfile = profile;
+                if(authScreen) authScreen.style.display = 'none';
+                if(mainAppScreen) mainAppScreen.style.display = 'block';
+                initializeApp();
+            } else { // Profile missing, clear session
+                Storage.clearUserSession();
+                if(authScreen) authScreen.style.display = 'flex';
+                if(mainAppScreen) mainAppScreen.style.display = 'none';
+            }
+        } else {
+            if(authScreen) authScreen.style.display = 'flex';
+            if(mainAppScreen) mainAppScreen.style.display = 'none';
+        }
+
+        if (loginForm) loginForm.addEventListener('submit', handleLogin);
+        if (registerButton) registerButton.addEventListener('click', showRegisterForm);
+        if (registerForm) registerForm.addEventListener('submit', handleRegisterSubmit);
+        if (showLoginLink) showLoginLink.addEventListener('click', showLoginForm);
+        // Logout listener is now primarily handled in initializeApp for logged-in state,
+        // but good to have a fallback if initializeApp isn't called (e.g. user was not logged in)
+        if (logoutButton && !loggedInUser) {
+            logoutButton.addEventListener('click', handleLogout);
+        }
+
+
+        if (newUsernameInput) newUsernameInput.addEventListener('input', function(){ const u = this.value.trim(); if(!usernameFeedback||!registerError)return; registerError.textContent=''; if(!u){usernameFeedback.textContent='';usernameFeedback.className='form-feedback';return;} if(u.length<4){usernameFeedback.textContent='帳號至少4字元。';usernameFeedback.className='form-feedback invalid';}else{const eU=users.find(user=>user.username.toLowerCase()===u.toLowerCase());if(eU){usernameFeedback.textContent='此帳號已被使用。';usernameFeedback.className='form-feedback invalid';}else{usernameFeedback.textContent='帳號可使用！';usernameFeedback.className='form-feedback valid';}}});
+        if (newPasswordInput) newPasswordInput.addEventListener('input', function(){ if(!registerError)return;const p=this.value;registerError.textContent='';checkPasswordStrength(p);if(confirmPasswordInput&&confirmPasswordInput.value)validateConfirmPassword();});
+        if (confirmPasswordInput) confirmPasswordInput.addEventListener('input', validateConfirmPassword);
+        if (emailInput) emailInput.addEventListener('input', function(){const e=this.value.trim();if(!emailFeedback||!registerError)return;registerError.textContent='';if(!e){emailFeedback.textContent='';emailFeedback.className='form-feedback';return;} const eR=/^[^\s@]+@[^\s@]+\.[^\s@]+$/; if(eR.test(e)){emailFeedback.textContent='Email 格式正確。';emailFeedback.className='form-feedback valid';}else{emailFeedback.textContent='Email 格式無效。';emailFeedback.className='form-feedback invalid';}});
+    });
+    // --- JavaScript 結束 ---
+    </script>
+</body>
+</html>
