@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>FoodieMap Pro (真實資料最終版)</title>
+    <title>FoodieMap Pro (最終成功版)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <style>
         :root {
@@ -50,7 +50,11 @@
         <header><div class="header-content"><div class="logo">FoodieMap Pro</div></div></header>
         <div class="page-container">
             <div id="page-browse" class="page-content active">
-                <div id="map-canvas"></div>
+                <!-- 【核心修正】將按鈕直接寫在 HTML 裡，放在 map-canvas 內部 -->
+                <div id="map-canvas">
+                    <div id="search-area-panel" style="display: none;"><i class="fas fa-search"></i> 在此處搜尋</div>
+                    <button id="recenter-button" title="回到我的位置"><i class="fas fa-crosshairs"></i></button>
+                </div>
                 <div id="places-api-list">
                     <div class="list-title"><i class="fas fa-utensils"></i> 附近結果</div>
                     <div class="list-content"><p class="info-message">正在初始化地圖...</p></div>
@@ -66,8 +70,7 @@
 
 <script>
 // --- 全域變數 ---
-// 【重要】將您的 API 金鑰存放在這裡，方便共用
-const API_KEY = "AIzaSyD8KivQ-teAcWvBYzpxdoY52JbwvHBGlHA"; 
+const API_KEY = "AIzaSyD8KivQ-teAcWvBYzpxdoY52JbwvHBGlHA"; // 您的 API 金鑰
 
 let map, infoWindow, AdvancedMarkerElement, Place;
 let userMarker = null, restaurantMarkers = [], lastSearchedLocation = null, realUserPosition = null;
@@ -81,21 +84,14 @@ async function initMap() {
         const { Map } = await google.maps.importLibrary("maps");
         ({ Place } = await google.maps.importLibrary("places"));
         ({ AdvancedMarkerElement } = await google.maps.importLibrary("marker"));
+
         map = new Map(document.getElementById("map-canvas"), {
-            center: defaultCenter,
-            zoom: 15,
-            mapId: "6459e75743219a3cb5ebcd45", // 您的 Map ID
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: false
+            center: defaultCenter, zoom: 15, mapId: "6459e75743219a3cb5ebcd45", // 您的 Map ID
+            mapTypeControl: false, streetViewControl: false, fullscreenControl: false
         });
         infoWindow = new google.maps.InfoWindow();
         
-        const mapDiv = document.getElementById('map-canvas');
-        mapDiv.innerHTML = `
-            <div id="search-area-panel" style="display: none;"><i class="fas fa-search"></i> 在此處搜尋</div>
-            <button id="recenter-button" title="回到我的位置"><i class="fas fa-crosshairs"></i></button>
-        `;
+        // 【核心修正】現在我們直接取得 HTML 中已存在的按鈕，而不是用 innerHTML 覆蓋
         searchAreaPanel = document.getElementById('search-area-panel');
         recenterButton = document.getElementById('recenter-button');
         
@@ -103,7 +99,7 @@ async function initMap() {
         startGeolocation();
     } catch (error) {
         console.error("Google Maps 初始化失敗:", error);
-        updateListMessage("地圖載入失敗。請檢查您的 API 金鑰是否正確並已啟用相關服務。");
+        updateListMessage("地圖載入失敗。請檢查 API 金鑰。");
     }
 }
 
@@ -278,11 +274,7 @@ function updateUserMarker(position) {
         const userMarkerEl = document.createElement('div');
         userMarkerEl.style.cssText = 'width:20px;height:20px;border-radius:50%;background-color:#4285F4;border:2px solid white;box-shadow:0 0 5px rgba(0,0,0,0.5);';
         userMarker = new AdvancedMarkerElement({
-            position,
-            map,
-            title: "我的位置",
-            content: userMarkerEl,
-            zIndex: 999
+            position, map, title: "我的位置", content: userMarkerEl, zIndex: 999
         });
     } else {
         userMarker.position = position;
@@ -307,7 +299,10 @@ function hideSearchAreaButton() {
 }
 
 function clearMarkersAndList() {
-    restaurantMarkers.forEach(marker => marker.map = null);
+    restaurantMarkers.forEach(marker => {
+        // AdvancedMarkerElement 沒有 map 屬性，而是直接設定為 null
+        marker.map = null;
+    });
     restaurantMarkers = [];
     const listContent = document.querySelector("#places-api-list .list-content");
     if (listContent) listContent.innerHTML = '';
@@ -329,8 +324,8 @@ function updateListTitle(titleHtml) {
 </script>
 
 <!-- 
-    【最終步驟】請將 key 替換成您自己的【新】API 金鑰。
-    async 屬性會讓地圖非同步載入，提高頁面效能。
+    【提示】請忽略 favicon.ico 404 錯誤，它與地圖功能無關。
+    這是瀏覽器自動尋找網站圖示的行為，不影響主程式。
 -->
 <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD8KivQ-teAcWvBYzpxdoY52JbwvHBGlHA&callback=initMap&libraries=places,marker,geometry"></script>
 
