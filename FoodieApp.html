@@ -22,7 +22,6 @@
         .page-content.active { display: flex; flex-direction: column; }
         #page-browse.active { padding: 0; }
         #map-canvas { position: relative; width: 100%; height: 60%; flex-shrink: 0; background-color: #e9e9e9; }
-        /* 因為按鈕現在在 body 層級，所以定位是相對於整個 body */
         #recenter-button { position: absolute; top: 65px; /* 從 header 下方開始算 */ right: 15px; width: 40px; height: 40px; background-color: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 18px; color: #555; z-index: 10; transition: background-color 0.2s; }
         #recenter-button:hover { background-color: #f5f5f5; }
         #search-area-panel { position: absolute; top: 65px; /* 從 header 下方開始算 */ left: 50%; transform: translateX(-50%); background-color: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10; cursor: pointer; font-weight: 500; display: none; }
@@ -51,7 +50,6 @@
         <header><div class="header-content"><div class="logo">FoodieMap Pro</div></div></header>
         <div class="page-container">
             <div id="page-browse" class="page-content active">
-                <!-- 【核心修正】將 map-canvas 的內容清空，交由 Google API 全權管理 -->
                 <div id="map-canvas"></div>
                 <div id="places-api-list">
                     <div class="list-title"><i class="fas fa-utensils"></i> 附近結果</div>
@@ -65,7 +63,6 @@
             <div class="nav-item" data-page="profile"><i class="far fa-user-circle"></i></div>
         </div>
     </div>
-    <!-- 【核心修正】將按鈕從 JS 移回 HTML，並放在 main-app 的外部，方便用 CSS 定位 -->
     <div id="search-area-panel" style="display: none;"><i class="fas fa-search"></i> 在此處搜尋</div>
     <button id="recenter-button" title="回到我的位置"><i class="fas fa-crosshairs"></i></button>
 
@@ -78,14 +75,6 @@ let userMarker = null, restaurantMarkers = [], lastSearchedLocation = null, real
 let searchAreaPanel, recenterButton;
 let isInitialLocationSet = false;
 
-// --- DOMContentLoaded 事件監聽 ---
-// 【核心修正】確保在所有 HTML 元素都載入後，才去取得它們並綁定事件
-document.addEventListener('DOMContentLoaded', () => {
-    searchAreaPanel = document.getElementById('search-area-panel');
-    recenterButton = document.getElementById('recenter-button');
-    // 注意：地圖相關的事件監聽需要在地圖初始化後才能綁定
-});
-
 // --- App 初始化 (由 Google Maps API 回呼) ---
 async function initMap() {
     const defaultCenter = { lat: 25.0479, lng: 121.5170 };
@@ -93,13 +82,17 @@ async function initMap() {
         const { Map } = await google.maps.importLibrary("maps");
         ({ Place } = await google.maps.importLibrary("places"));
         ({ AdvancedMarkerElement } = await google.maps.importLibrary("marker"));
-
+        
         map = new Map(document.getElementById("map-canvas"), {
             center: defaultCenter, zoom: 15, mapId: "6459e75743219a3cb5ebcd45",
             mapTypeControl: false, streetViewControl: false, fullscreenControl: false
         });
         infoWindow = new google.maps.InfoWindow();
         
+        // 【核心修正】在 initMap 被呼叫時，HTML 肯定已載入，所以在這裡取得元素最安全
+        searchAreaPanel = document.getElementById('search-area-panel');
+        recenterButton = document.getElementById('recenter-button');
+
         setupEventListeners();
         startGeolocation();
     } catch (error) {
@@ -110,32 +103,23 @@ async function initMap() {
 
 // --- 事件監聽設定 ---
 function setupEventListeners() {
-    // 檢查元素是否存在，避免在 initMap 失敗時出錯
+    // 加上一個防錯檢查
     if (!recenterButton || !searchAreaPanel) {
         console.error("按鈕元素未找到，事件綁定失敗。");
         return;
     }
-
     map.addListener('idle', () => {
         if (!lastSearchedLocation || !realUserPosition) return;
         const center = map.getCenter();
         if (!center) return;
         const distance = google.maps.geometry.spherical.computeDistanceBetween(center, lastSearchedLocation);
-        if (distance > 500) {
-            showSearchAreaButton();
-        }
+        if (distance > 500) showSearchAreaButton();
     });
-    
     recenterButton.addEventListener('click', () => {
-        if (map && realUserPosition) {
-            map.panTo(realUserPosition);
-        }
+        if (map && realUserPosition) map.panTo(realUserPosition);
     });
-
     searchAreaPanel.addEventListener('click', () => {
-        if (map) {
-            searchNearbyRestaurants(map.getCenter().toJSON());
-        }
+        if (map) searchNearbyRestaurants(map.getCenter().toJSON());
     });
 }
 
@@ -161,9 +145,7 @@ function startGeolocation() {
         },
         (error) => {
             console.error("Geolocation error:", error);
-            if (!isInitialLocationSet) {
-                handleLocationError(error, false);
-            }
+            if (!isInitialLocationSet) handleLocationError(error, false);
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -226,7 +208,6 @@ function addToListFromPlace(place) {
     const card = document.createElement('div');
     card.className = 'restaurant-card';
     card.id = `place-${place.id}`;
-
     let photoUrl;
     if (place.photos && place.photos.length > 0) {
         const photoName = place.photos[0].name;
@@ -234,7 +215,6 @@ function addToListFromPlace(place) {
     } else {
         photoUrl = 'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png';
     }
-
     card.innerHTML = `
         <img src="${photoUrl}" alt="${place.displayName}" class="photo" loading="lazy">
         <div class="restaurant-info">
@@ -242,7 +222,6 @@ function addToListFromPlace(place) {
             <p class="stars">${generateStars(place.rating)} ${place.rating?.toFixed(1) || '無評分'} (${(place.userRatingCount || 0).toLocaleString()})</p>
             <p>${place.formattedAddress}</p>
         </div>`;
-    
     card.addEventListener('click', () => {
         const targetMarker = restaurantMarkers.find(m => m.title === place.displayName);
         if (targetMarker) {
@@ -281,15 +260,15 @@ function handleLocationError(error, browserHasNoSupport) {
 
 function updateUserMarker(position) {
     if (!map || !AdvancedMarkerElement) return;
-    if (!userMarker) {
-        const userMarkerEl = document.createElement('div');
-        userMarkerEl.style.cssText = 'width:20px;height:20px;border-radius:50%;background-color:#4285F4;border:2px solid white;box-shadow:0 0 5px rgba(0,0,0,0.5);';
-        userMarker = new AdvancedMarkerElement({
-            position, map, title: "我的位置", content: userMarkerEl, zIndex: 999
-        });
-    } else {
+    if (userMarker) {
         userMarker.position = position;
+        return;
     }
+    const userMarkerEl = document.createElement('div');
+    userMarkerEl.style.cssText = 'width:20px;height:20px;border-radius:50%;background-color:#4285F4;border:2px solid white;box-shadow:0 0 5px rgba(0,0,0,0.5);';
+    userMarker = new AdvancedMarkerElement({
+        position, map, title: "我的位置", content: userMarkerEl, zIndex: 999
+    });
 }
 
 function generateStars(rating) {
