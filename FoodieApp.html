@@ -6,7 +6,6 @@
     <title>FoodieMap Pro (真實資料最終版)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <style>
-        /* CSS 樣式與之前相同，此處省略以保持簡潔 */
         :root {
             --primary-color: #262626; --secondary-color: #8e8e8e; --background-color: #fafafa;
             --separator-color: #dbdbdb; --star-color: #fadb14; --accent-color: #0095f6; --danger-color: #ed4956;
@@ -68,7 +67,7 @@
 <script>
 // --- 全域變數 ---
 // 【重要】將您的 API 金鑰存放在這裡，方便共用
-const API_KEY = "在這裡貼上您新的安全金鑰"; 
+const API_KEY = "AIzaSyD8KivQ-teAcWvBYzpxdoY52JbwvHBGlHA"; 
 
 let map, infoWindow, AdvancedMarkerElement, Place;
 let userMarker = null, restaurantMarkers = [], lastSearchedLocation = null, realUserPosition = null;
@@ -83,10 +82,15 @@ async function initMap() {
         ({ Place } = await google.maps.importLibrary("places"));
         ({ AdvancedMarkerElement } = await google.maps.importLibrary("marker"));
         map = new Map(document.getElementById("map-canvas"), {
-            center: defaultCenter, zoom: 15, mapId: "6459e75743219a3cb5ebcd45",
-            mapTypeControl: false, streetViewControl: false, fullscreenControl: false
+            center: defaultCenter,
+            zoom: 15,
+            mapId: "6459e75743219a3cb5ebcd45", // 您的 Map ID
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false
         });
         infoWindow = new google.maps.InfoWindow();
+        
         const mapDiv = document.getElementById('map-canvas');
         mapDiv.innerHTML = `
             <div id="search-area-panel" style="display: none;"><i class="fas fa-search"></i> 在此處搜尋</div>
@@ -94,6 +98,7 @@ async function initMap() {
         `;
         searchAreaPanel = document.getElementById('search-area-panel');
         recenterButton = document.getElementById('recenter-button');
+        
         setupEventListeners();
         startGeolocation();
     } catch (error) {
@@ -102,8 +107,60 @@ async function initMap() {
     }
 }
 
-function setupEventListeners() { /* ... 內容不變 ... */ }
-function startGeolocation() { /* ... 內容不變 ... */ }
+// --- 事件監聽設定 ---
+function setupEventListeners() {
+    map.addListener('idle', () => {
+        if (!lastSearchedLocation || !realUserPosition) return;
+        const center = map.getCenter();
+        if (!center) return;
+        const distance = google.maps.geometry.spherical.computeDistanceBetween(center, lastSearchedLocation);
+        if (distance > 500) {
+            showSearchAreaButton();
+        }
+    });
+    
+    recenterButton.addEventListener('click', () => {
+        if (map && realUserPosition) {
+            map.panTo(realUserPosition);
+        }
+    });
+
+    searchAreaPanel.addEventListener('click', () => {
+        if (map) {
+            searchNearbyRestaurants(map.getCenter().toJSON());
+        }
+    });
+}
+
+// --- 定位功能 ---
+function startGeolocation() {
+    if (!navigator.geolocation) {
+        handleLocationError(null, true);
+        return;
+    }
+    updateListMessage('<i class="fas fa-sync fa-spin"></i> 正在取得您的精確位置...');
+    navigator.geolocation.watchPosition(
+        (position) => {
+            console.log(`定位成功: 緯度=${position.coords.latitude}, 經度=${position.coords.longitude}, 精準度=${position.coords.accuracy} 公尺`);
+            const newPosition = { lat: position.coords.latitude, lng: position.coords.longitude };
+            realUserPosition = newPosition;
+            updateUserMarker(newPosition);
+            if (!isInitialLocationSet) {
+                isInitialLocationSet = true;
+                map.setCenter(newPosition);
+                map.setZoom(16);
+                searchNearbyRestaurants(newPosition);
+            }
+        },
+        (error) => {
+            console.error("Geolocation error:", error);
+            if (!isInitialLocationSet) {
+                handleLocationError(error, false);
+            }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+}
 
 // --- 搜尋功能 (使用真實 API) ---
 async function searchNearbyRestaurants(location) {
@@ -114,7 +171,8 @@ async function searchNearbyRestaurants(location) {
     const request = {
         locationRestriction: { center: location, radius: 1000 },
         includedTypes: ['restaurant'],
-        language: 'zh-TW', maxResultCount: 15,
+        language: 'zh-TW',
+        maxResultCount: 15,
         fields: ['id', 'displayName', 'location', 'rating', 'userRatingCount', 'formattedAddress', 'photos', 'addressComponents'],
     };
     try {
@@ -136,9 +194,26 @@ async function searchNearbyRestaurants(location) {
     }
 }
 
-function createMarkerFromPlace(place) { /* ... 內容不變 ... */ }
+// --- 地圖與列表項目建立 ---
+function createMarkerFromPlace(place) {
+    const marker = new AdvancedMarkerElement({
+        position: place.location,
+        map,
+        title: place.displayName,
+    });
+    marker.addEventListener('gmp-click', () => {
+        infoWindow.setContent(`<strong>${place.displayName}</strong><br>${place.formattedAddress}`);
+        infoWindow.open(map, marker);
+        document.querySelectorAll('.restaurant-card').forEach(c => c.classList.remove('highlight'));
+        const card = document.getElementById(`place-${place.id}`);
+        if (card) {
+            card.classList.add('highlight');
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
+    restaurantMarkers.push(marker);
+}
 
-// --- 【核心修正】處理 Place 物件的函式 ---
 function addToListFromPlace(place) {
     const listContent = document.querySelector("#places-api-list .list-content");
     const card = document.createElement('div');
@@ -146,14 +221,10 @@ function addToListFromPlace(place) {
     card.id = `place-${place.id}`;
 
     let photoUrl;
-    // 【修正】手動建立照片網址
     if (place.photos && place.photos.length > 0) {
-        // 從 photos 陣列的第一個元素取得照片的 'name'
         const photoName = place.photos[0].name;
-        // 使用照片的 name 和你的 API 金鑰來建立 URL
         photoUrl = `https://places.googleapis.com/v1/${photoName}/media?key=${API_KEY}&maxWidthPx=400`;
     } else {
-        // 如果沒有照片，使用預設圖示
         photoUrl = 'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png';
     }
 
@@ -175,22 +246,92 @@ function addToListFromPlace(place) {
     listContent.appendChild(card);
 }
 
-// --- 其他輔助函式 (為了簡潔，將不變的函式內容折疊) ---
-function setupEventListeners() { map.addListener('idle', () => { if (!lastSearchedLocation || !realUserPosition) return; const center = map.getCenter(); if (!center) return; const distance = google.maps.geometry.spherical.computeDistanceBetween(center, lastSearchedLocation); if (distance > 500) showSearchAreaButton(); }); recenterButton.addEventListener('click', () => { if (map && realUserPosition) map.panTo(realUserPosition); }); searchAreaPanel.addEventListener('click', () => { if (map) searchNearbyRestaurants(map.getCenter().toJSON()); }); }
-function startGeolocation() { if (!navigator.geolocation) { handleLocationError(null, true); return; } updateListMessage('<i class="fas fa-sync fa-spin"></i> 正在取得您的精確位置...'); navigator.geolocation.watchPosition( (position) => { console.log(`定位成功: 緯度=${position.coords.latitude}, 經度=${position.coords.longitude}, 精準度=${position.coords.accuracy} 公尺`); const newPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; realUserPosition = newPosition; updateUserMarker(newPosition); if (!isInitialLocationSet) { isInitialLocationSet = true; map.setCenter(newPosition); map.setZoom(16); searchNearbyRestaurants(newPosition); } }, (error) => { console.error("Geolocation error:", error); if (!isInitialLocationSet) handleLocationError(error, false); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } ); }
-function createMarkerFromPlace(place) { const marker = new AdvancedMarkerElement({ position: place.location, map, title: place.displayName, }); marker.addEventListener('gmp-click', () => { infoWindow.setContent(`<strong>${place.displayName}</strong><br>${place.formattedAddress}`); infoWindow.open(map, marker); document.querySelectorAll('.restaurant-card').forEach(c => c.classList.remove('highlight')); const card = document.getElementById(`place-${place.id}`); if(card) { card.classList.add('highlight'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }); restaurantMarkers.push(marker); }
-function handleLocationError(error, browserHasNoSupport) { let message = "定位時發生未知錯誤。"; if (browserHasNoSupport) { message = "您的瀏覽器不支援定位功能。"; } else if (error) { switch (error.code) { case error.PERMISSION_DENIED: message = "您已拒絕位置存取權限。請在瀏覽器設定中允許本網站存取您的位置。"; break; case error.POSITION_UNAVAILABLE: message = "無法取得您的位置資訊。請檢查裝置定位服務是否開啟。"; break; case error.TIMEOUT: message = "定位請求超時。"; break; } } updateListMessage(message); if (map && !isInitialLocationSet) { isInitialLocationSet = true; console.log("Geolocation failed. Searching at default map center."); searchNearbyRestaurants(map.getCenter().toJSON()); } }
-function updateUserMarker(position) { if (!map || !AdvancedMarkerElement) return; if (!userMarker) { const userMarkerEl = document.createElement('div'); userMarkerEl.style.cssText = 'width:20px;height:20px;border-radius:50%;background-color:#4285F4;border:2px solid white;box-shadow:0 0 5px rgba(0,0,0,0.5);'; userMarker = new AdvancedMarkerElement({ position, map, title: "我的位置", content: userMarkerEl, zIndex: 999 }); } else { userMarker.position = position; } }
-function generateStars(rating) { rating = rating || 0; let s = ''; const full = Math.floor(rating); const half = rating % 1 >= 0.5; const empty = 5 - full - (half ? 1 : 0); return '<i class="fas fa-star"></i>'.repeat(full) + (half ? '<i class="fas fa-star-half-alt"></i>' : '') + '<i class="far fa-star"></i>'.repeat(empty); }
-function showSearchAreaButton() { if (searchAreaPanel) searchAreaPanel.style.display = 'block'; }
-function hideSearchAreaButton() { if (searchAreaPanel) searchAreaPanel.style.display = 'none'; }
-function clearMarkersAndList() { restaurantMarkers.forEach(marker => marker.map = null); restaurantMarkers = []; const listContent = document.querySelector("#places-api-list .list-content"); if(listContent) listContent.innerHTML = ''; }
-function updateListMessage(messageHtml) { const listContent = document.querySelector("#places-api-list .list-content"); if (listContent) { listContent.innerHTML = `<p class="info-message">${messageHtml}</p>`; } }
-function updateListTitle(titleHtml) { const listTitle = document.querySelector("#places-api-list .list-title"); if(listTitle) listTitle.innerHTML = `<i class="fas fa-utensils"></i> ${titleHtml}`; }
+// --- 其他輔助函式 ---
+function handleLocationError(error, browserHasNoSupport) {
+    let message = "定位時發生未知錯誤。";
+    if (browserHasNoSupport) {
+        message = "您的瀏覽器不支援定位功能。";
+    } else if (error) {
+        switch (error.code) {
+            case error.PERMISSION_DENIED:
+                message = "您已拒絕位置存取權限。請在瀏覽器設定中允許本網站存取您的位置。";
+                break;
+            case error.POSITION_UNAVAILABLE:
+                message = "無法取得您的位置資訊。請檢查裝置定位服務是否開啟。";
+                break;
+            case error.TIMEOUT:
+                message = "定位請求超時。";
+                break;
+        }
+    }
+    updateListMessage(message);
+    if (map && !isInitialLocationSet) {
+        isInitialLocationSet = true;
+        console.log("Geolocation failed. Searching at default map center.");
+        searchNearbyRestaurants(map.getCenter().toJSON());
+    }
+}
 
+function updateUserMarker(position) {
+    if (!map || !AdvancedMarkerElement) return;
+    if (!userMarker) {
+        const userMarkerEl = document.createElement('div');
+        userMarkerEl.style.cssText = 'width:20px;height:20px;border-radius:50%;background-color:#4285F4;border:2px solid white;box-shadow:0 0 5px rgba(0,0,0,0.5);';
+        userMarker = new AdvancedMarkerElement({
+            position,
+            map,
+            title: "我的位置",
+            content: userMarkerEl,
+            zIndex: 999
+        });
+    } else {
+        userMarker.position = position;
+    }
+}
+
+function generateStars(rating) {
+    rating = rating || 0;
+    let s = '';
+    const full = Math.floor(rating);
+    const half = rating % 1 >= 0.5;
+    const empty = 5 - full - (half ? 1 : 0);
+    return '<i class="fas fa-star"></i>'.repeat(full) + (half ? '<i class="fas fa-star-half-alt"></i>' : '') + '<i class="far fa-star"></i>'.repeat(empty);
+}
+
+function showSearchAreaButton() {
+    if (searchAreaPanel) searchAreaPanel.style.display = 'block';
+}
+
+function hideSearchAreaButton() {
+    if (searchAreaPanel) searchAreaPanel.style.display = 'none';
+}
+
+function clearMarkersAndList() {
+    restaurantMarkers.forEach(marker => marker.map = null);
+    restaurantMarkers = [];
+    const listContent = document.querySelector("#places-api-list .list-content");
+    if (listContent) listContent.innerHTML = '';
+}
+
+function updateListMessage(messageHtml) {
+    const listContent = document.querySelector("#places-api-list .list-content");
+    if (listContent) {
+        listContent.innerHTML = `<p class="info-message">${messageHtml}</p>`;
+    }
+}
+
+function updateListTitle(titleHtml) {
+    const listTitle = document.querySelector("#places-api-list .list-title");
+    if (listTitle) {
+        listTitle.innerHTML = `<i class="fas fa-utensils"></i> ${titleHtml}`;
+    }
+}
 </script>
 
-<!-- 【最終步驟】請將 key 替換成您自己的【新】API 金鑰。 -->
+<!-- 
+    【最終步驟】請將 key 替換成您自己的【新】API 金鑰。
+    async 屬性會讓地圖非同步載入，提高頁面效能。
+-->
 <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD8KivQ-teAcWvBYzpxdoY52JbwvHBGlHA&callback=initMap&libraries=places,marker,geometry"></script>
 
 </body>
