@@ -22,9 +22,10 @@
         .page-content.active { display: flex; flex-direction: column; }
         #page-browse.active { padding: 0; }
         #map-canvas { position: relative; width: 100%; height: 60%; flex-shrink: 0; background-color: #e9e9e9; }
-        #recenter-button { position: absolute; bottom: 20px; right: 15px; width: 40px; height: 40px; background-color: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 18px; color: #555; z-index: 10; transition: background-color 0.2s; }
+        /* 因為按鈕現在在 body 層級，所以定位是相對於整個 body */
+        #recenter-button { position: absolute; top: 65px; /* 從 header 下方開始算 */ right: 15px; width: 40px; height: 40px; background-color: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 18px; color: #555; z-index: 10; transition: background-color 0.2s; }
         #recenter-button:hover { background-color: #f5f5f5; }
-        #search-area-panel { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background-color: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10; cursor: pointer; font-weight: 500; display: none; }
+        #search-area-panel { position: absolute; top: 65px; /* 從 header 下方開始算 */ left: 50%; transform: translateX(-50%); background-color: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10; cursor: pointer; font-weight: 500; display: none; }
         #search-area-panel:hover { background-color: #f5f5f5; }
         #search-area-panel i { margin-right: 8px; }
         #places-api-list { width: 100%; flex-grow: 1; overflow-y: auto; background-color: #fff; display: flex; flex-direction: column; }
@@ -50,11 +51,8 @@
         <header><div class="header-content"><div class="logo">FoodieMap Pro</div></div></header>
         <div class="page-container">
             <div id="page-browse" class="page-content active">
-                <!-- 【核心修正】將按鈕直接寫在 HTML 裡，放在 map-canvas 內部 -->
-                <div id="map-canvas">
-                    <div id="search-area-panel" style="display: none;"><i class="fas fa-search"></i> 在此處搜尋</div>
-                    <button id="recenter-button" title="回到我的位置"><i class="fas fa-crosshairs"></i></button>
-                </div>
+                <!-- 【核心修正】將 map-canvas 的內容清空，交由 Google API 全權管理 -->
+                <div id="map-canvas"></div>
                 <div id="places-api-list">
                     <div class="list-title"><i class="fas fa-utensils"></i> 附近結果</div>
                     <div class="list-content"><p class="info-message">正在初始化地圖...</p></div>
@@ -67,6 +65,9 @@
             <div class="nav-item" data-page="profile"><i class="far fa-user-circle"></i></div>
         </div>
     </div>
+    <!-- 【核心修正】將按鈕從 JS 移回 HTML，並放在 main-app 的外部，方便用 CSS 定位 -->
+    <div id="search-area-panel" style="display: none;"><i class="fas fa-search"></i> 在此處搜尋</div>
+    <button id="recenter-button" title="回到我的位置"><i class="fas fa-crosshairs"></i></button>
 
 <script>
 // --- 全域變數 ---
@@ -77,7 +78,15 @@ let userMarker = null, restaurantMarkers = [], lastSearchedLocation = null, real
 let searchAreaPanel, recenterButton;
 let isInitialLocationSet = false;
 
-// --- App 初始化 ---
+// --- DOMContentLoaded 事件監聽 ---
+// 【核心修正】確保在所有 HTML 元素都載入後，才去取得它們並綁定事件
+document.addEventListener('DOMContentLoaded', () => {
+    searchAreaPanel = document.getElementById('search-area-panel');
+    recenterButton = document.getElementById('recenter-button');
+    // 注意：地圖相關的事件監聽需要在地圖初始化後才能綁定
+});
+
+// --- App 初始化 (由 Google Maps API 回呼) ---
 async function initMap() {
     const defaultCenter = { lat: 25.0479, lng: 121.5170 };
     try {
@@ -86,14 +95,10 @@ async function initMap() {
         ({ AdvancedMarkerElement } = await google.maps.importLibrary("marker"));
 
         map = new Map(document.getElementById("map-canvas"), {
-            center: defaultCenter, zoom: 15, mapId: "6459e75743219a3cb5ebcd45", // 您的 Map ID
+            center: defaultCenter, zoom: 15, mapId: "6459e75743219a3cb5ebcd45",
             mapTypeControl: false, streetViewControl: false, fullscreenControl: false
         });
         infoWindow = new google.maps.InfoWindow();
-        
-        // 【核心修正】現在我們直接取得 HTML 中已存在的按鈕，而不是用 innerHTML 覆蓋
-        searchAreaPanel = document.getElementById('search-area-panel');
-        recenterButton = document.getElementById('recenter-button');
         
         setupEventListeners();
         startGeolocation();
@@ -105,6 +110,12 @@ async function initMap() {
 
 // --- 事件監聽設定 ---
 function setupEventListeners() {
+    // 檢查元素是否存在，避免在 initMap 失敗時出錯
+    if (!recenterButton || !searchAreaPanel) {
+        console.error("按鈕元素未找到，事件綁定失敗。");
+        return;
+    }
+
     map.addListener('idle', () => {
         if (!lastSearchedLocation || !realUserPosition) return;
         const center = map.getCenter();
@@ -300,7 +311,6 @@ function hideSearchAreaButton() {
 
 function clearMarkersAndList() {
     restaurantMarkers.forEach(marker => {
-        // AdvancedMarkerElement 沒有 map 屬性，而是直接設定為 null
         marker.map = null;
     });
     restaurantMarkers = [];
@@ -323,10 +333,6 @@ function updateListTitle(titleHtml) {
 }
 </script>
 
-<!-- 
-    【提示】請忽略 favicon.ico 404 錯誤，它與地圖功能無關。
-    這是瀏覽器自動尋找網站圖示的行為，不影響主程式。
--->
 <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD8KivQ-teAcWvBYzpxdoY52JbwvHBGlHA&callback=initMap&libraries=places,marker,geometry"></script>
 
 </body>
