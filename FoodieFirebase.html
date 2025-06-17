@@ -589,22 +589,29 @@
             const now = new Date();
             const dayOfWeek = now.getDay();
             const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
-
             const todaysPeriods = placeData.opening_hours.periods.filter(p => p.open.day === dayOfWeek);
 
             for (const period of todaysPeriods) {
                 const openTime = parseInt(period.open.time.substring(0, 2)) * 60 + parseInt(period.open.time.substring(2, 4));
                 let closeTime;
                 if (period.close) {
-                    if(period.close.day > period.open.day || (period.close.day === 0 && period.open.day === 6)) {
-                        closeTime = (parseInt(period.close.time.substring(0, 2)) * 60 + parseInt(period.close.time.substring(2, 4))) + 24 * 60;
+                    let closeDay = period.close.day;
+                    let closeTimeMinutes = parseInt(period.close.time.substring(0, 2)) * 60 + parseInt(period.close.time.substring(2, 4));
+                    
+                    if(closeDay > period.open.day || (closeDay === 0 && period.open.day === 6)) {
+                         if (dayOfWeek === period.open.day && currentTimeInMinutes >= openTime) {
+                             return `<span class="open-status open">營業中・隔日 ${String(period.close.time).substring(0, 2)}:${String(period.close.time).substring(2, 4)} 關店</span>`;
+                         }
+                         if(dayOfWeek === closeDay && currentTimeInMinutes < closeTimeMinutes) {
+                             return `<span class="open-status open">營業中・下午 ${String(period.close.time).substring(0, 2)}:${String(period.close.time).substring(2, 4)} 關店</span>`;
+                         }
                     } else {
-                        closeTime = parseInt(period.close.time.substring(0, 2)) * 60 + parseInt(period.close.time.substring(2, 4));
-                    }
-                    if (currentTimeInMinutes >= openTime && currentTimeInMinutes < closeTime) {
-                         const closeHour = String(period.close.time).substring(0, 2);
-                         const closeMinute = String(period.close.time).substring(2, 4);
-                         return `<span class="open-status open">營業中・下午${closeHour}:${closeMinute}關店</span>`;
+                        closeTime = closeTimeMinutes;
+                        if (currentTimeInMinutes >= openTime && currentTimeInMinutes < closeTime) {
+                             const closeHour = String(period.close.time).substring(0, 2);
+                             const closeMinute = String(period.close.time).substring(2, 4);
+                             return `<span class="open-status open">營業中・${closeHour}:${closeMinute} 關店</span>`;
+                        }
                     }
                 }
             }
@@ -626,12 +633,12 @@
             if (nextOpenPeriod) {
                 const openHour = String(nextOpenPeriod.open.time).substring(0, 2);
                 const openMinute = String(nextOpenPeriod.open.time).substring(2, 4);
-                return `<span class="open-status closed">休息中・${openHour}:${openMinute}開店</span>`;
+                return `<span class="open-status closed">休息中・${openHour}:${openMinute} 開店</span>`;
             }
 
             return `<span class="open-status closed">今日公休</span>`;
         }
-
+        
         function getSimpleOpeningHoursHtml(placeData) {
             if (placeData.business_status === "CLOSED_PERMANENTLY") {
                 return `<span class="open-status closed">永久停業</span>`;
