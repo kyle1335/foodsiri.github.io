@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>FoodieApp更新 - Place API (Legacy)</title>
+  <title>FoodieApp 最終版</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   
-  <!-- 確認使用標準 Maps JavaScript API，載入舊版 Places Library -->
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
     async
@@ -19,7 +18,6 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   
   <style>
-    /* CSS 樣式 */
     :root { --primary-color: #667eea; --secondary-color: #764ba2; --success-color: #28a745; --background-color: #f8f9fa; --text-color: #333; --text-light: #6c757d; --nav-height: 60px; }
     html, body { height: 100%; margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--background-color); }
     .app-container { width: 100%; height: 100vh; display: flex; flex-direction: column; }
@@ -38,7 +36,7 @@
     .search-input { width: 100%; padding: 12px 40px 12px 15px; font-size: 16px; border-radius: 25px; border: 1px solid #ccc; box-sizing: border-box; }
     .clear-search-btn { position: absolute; top: 50%; right: 25px; transform: translateY(-50%); background: #ccc; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold; color: white; display: none; justify-content: center; align-items: center; }
     .list-content { overflow-y: auto; flex-grow: 1; }
-    .list-item { display: flex; align-items: flex-start; gap: 15px; padding: 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background-color: 0.2s; }
+    .list-item { display: flex; align-items: flex-start; gap: 15px; padding: 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background-color 0.2s; }
     .list-item.is-selected { background-color: #e8eaf6; border-left: 4px solid var(--primary-color); padding-left: 11px; }
     .item-icon { font-size: 18px; color: var(--primary-color); margin-top: 3px; flex-shrink: 0; }
     .item-info { flex-grow: 1; min-width: 0; }
@@ -58,8 +56,8 @@
     .opening-hours-list { list-style: none; padding-left: 0; margin-top: 8px; font-size: 13px; border-top: 1px solid #f0f0f0; padding-top: 8px; }
     .opening-hours-list li { margin-bottom: 4px; display: flex; justify-content: space-between; }
     .opening-hours-list li.today { font-weight: bold; color: var(--text-color); }
-    .opening-hours-list li .day { padding-right: 1em; }
-    .opening-hours-list li .time { color: var(--text-light); }
+    .opening-hours-list li .day { padding-right: 1em; white-space: nowrap; }
+    .opening-hours-list li .time { color: var(--text-light); text-align: right; }
     .opening-hours-list li.today .time { color: var(--primary-color); }
     .page-header { padding: 15px 20px; background-color: #fff; border-bottom: 1px solid #eee; text-align: center; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
     .page-header h2 { margin: 0; font-size: 18px; color: var(--text-color); display: flex; align-items: center; justify-content: center; flex-grow: 1; }
@@ -140,10 +138,10 @@
           <a id="profile-logout-btn" class="header-action" style="display: none;" onclick="handleSignOut()">登出</a>
         </div>
         <div class="profile-tabs">
-            <button class="tab-btn active" onclick="showProfileTab('accounting', this)">記帳顯示</button>
-            <button class="tab-btn" onclick="showProfileTab('posts', this)">我的貼文</button>
-            <button class="tab-btn" onclick="showProfileTab('favorites', this)">最愛餐廳</button>
-            <button class="tab-btn" onclick="showProfileTab('friends', this)">好友名單</button>
+            <button class="tab-btn active" data-tab="accounting" onclick="showProfileTab('accounting', this)">記帳顯示</button>
+            <button class="tab-btn" data-tab="posts" onclick="showProfileTab('posts', this)">我的貼文</button>
+            <button class="tab-btn" data-tab="favorites" onclick="showProfileTab('favorites', this)">最愛餐廳</button>
+            <button class="tab-btn" data-tab="friends" onclick="showProfileTab('friends', this)">好友名單</button>
         </div>
         <div class="page-content" style="padding-top:0;">
             <div id="accounting-content" class="tab-content active"></div>
@@ -368,15 +366,10 @@
         }
         
         window.showProfileTab = function(tabId, tabElement) {
-            document.querySelectorAll('#profile-page .tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.removeAttribute('data-tab');
-            });
+            document.querySelectorAll('#profile-page .tab-btn').forEach(btn => btn.classList.remove('active'));
             tabElement.classList.add('active');
-            tabElement.dataset.tab = tabId;
             document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById(`${tabId}-content`).classList.add('active');
-
             if (tabId === 'accounting') renderAccountingRecords();
             if (tabId === 'posts') renderMyPosts();
             if (tabId === 'favorites') renderFavoriteRestaurants();
@@ -403,7 +396,7 @@
             const allReviews = await fetchUserReviews();
             if (allReviews.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`; return; }
             const postsHtml = allReviews.map(post => {
-                let ratingHtml = Array(post.rating).fill('<i class="fa-solid fa-heart"></i>').join('');
+                let ratingHtml = Array(post.rating || 0).fill('<i class="fa-solid fa-heart"></i>').join('');
                 const postTimestamp = post.timestamp ? post.timestamp.toDate().toLocaleString() : '時間未知';
                 return `<div class="post-card"><div class="title">${post.restaurantName}</div><div class="details">${postTimestamp}</div><p class="content">${post.content || '（無詳細評論）'}</p><div class="post-rating">${ratingHtml}</div></div>`;
             }).join('');
@@ -525,6 +518,17 @@
             });
         }
         
+        function getOpeningHoursHtml(placeData) {
+            if (placeData.business_status === "CLOSED_PERMANENTLY") {
+                return `<span class="open-status closed">永久停業</span>`;
+            }
+            if (placeData.opening_hours) {
+                const isOpen = typeof placeData.opening_hours.isOpen === 'function' ? placeData.opening_hours.isOpen() : placeData.opening_hours.open_now;
+                return isOpen ? `<span class="open-status open">營業中</span>` : `<span class="open-status closed">休息中</span>`;
+            }
+            return `<span>營業時間未知</span>`;
+        }
+        
         function searchNearbyRestaurants() {
             if (!isMapReady) return;
             const listContainer = document.getElementById("list-content-area");
@@ -587,17 +591,10 @@
             const item = document.createElement("div");
             item.className = "list-item";
             item.dataset.placeId = place.place_id;
-            let openStatusHtml = "";
-            if (place.business_status === "CLOSED_PERMANENTLY") {
-                openStatusHtml = `<span class="open-status closed">永久停業</span>`;
-            } else if (place.opening_hours) {
-                openStatusHtml = place.opening_hours.open_now ? `<span class="open-status open">營業中</span>` : `<span class="open-status closed">休息中</span>`;
-            } else {
-                openStatusHtml = `<span>營業時間未知</span>`;
-            }
+            const openStatusHtml = getOpeningHoursHtml(place);
             const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`;
             const detailsText = [ratingHtml, openStatusHtml].filter(Boolean).join(' · ');
-            const addressHtml = `<div class="item-address">${place.vicinity || place.formatted_address || ''}</div>`;
+            const addressHtml = `<div class="item-address">${place.vicinity || ''}</div>`;
             const distanceHtml = place.distance ? `<div class="item-distance">${Math.round(place.distance)}m</div>` : '';
             item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div>${addressHtml}<div class="item-details">${detailsText}</div></div>${distanceHtml}`;
             item.onclick = () => handlePlaceSelection(place);
@@ -614,9 +611,7 @@
                     userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; 
                     createUserMarker(userGpsPosition); 
                     centerOnUserGPS();
-                }, () => {
-                    searchNearbyRestaurants();
-                }); 
+                }, () => searchNearbyRestaurants()); 
             } else { 
                 searchNearbyRestaurants();
             } 
@@ -628,11 +623,8 @@
         
         window.handlePlaceSelection = function(place) { 
             const marker = restaurantMarkers.find((m) => m.place_id === place.place_id); 
-            if (marker) { 
-                map.panTo(marker.getPosition()); 
-            } else if (place.geometry && place.geometry.location) { 
-                map.panTo(place.geometry.location); 
-            } 
+            const position = (marker && marker.getPosition()) || (place.geometry && place.geometry.location);
+            if(position) map.panTo(position);
             highlightListItem(place.place_id, true); 
             if (userGpsPosition) {
                 calculateAndDisplayRoute(place); 
@@ -673,41 +665,46 @@
         function showPlaceDetailsInWindow(place, marker, routeInfo = null) {
             const request = { 
                 placeId: place.place_id, 
-                fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address'] 
+                fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address', 'place_id'] 
             };
             placesService.getDetails(request, (details, status) => {
-                let content = `<div class="info-window-content"><h4>${place.name}</h4>`;
-                if (status === google.maps.places.PlacesServiceStatus.OK && details) {
-                    const address = details.formatted_address || details.vicinity;
-                    if (address) content += `<p><i class="fas fa-map-marker-alt"></i>${address}</p>`;
-                    if (routeInfo) content += `<p><i class="fas fa-car"></i>${routeInfo.driving.distance} (${routeInfo.driving.duration})</p>`;
-                    if (details.rating) content += `<p><i class="fas fa-star"></i>${details.rating}</p>`;
-                    if (details.formatted_phone_number) content += `<p><i class="fas fa-phone"></i>${details.formatted_phone_number}</p>`;
-                    if (details.business_status === "CLOSED_PERMANENTLY") {
-                        content += `<p><i class="fas fa-store-slash"></i><span style="color: #dc3545; font-weight: bold;">永久停業</span></p>`;
-                    } else if (details.opening_hours) {
-                        const isOpen = details.opening_hours.isOpen();
-                        const statusText = isOpen ? "營業中" : "休息中";
-                        const color = isOpen ? "#28a745" : "#dc3545";
-                        content += `<p><i class="fas fa-clock"></i><span style="color: ${color}; font-weight: bold;">${statusText}</span></p>`;
-                        if (details.opening_hours.weekday_text) {
-                            const todayIndex = (new Date().getDay() + 6) % 7; 
-                            content += '<ul class="opening-hours-list">';
-                            details.opening_hours.weekday_text.forEach((dayText, index) => {
-                                const [day, ...timeParts] = dayText.split(': ');
-                                const time = timeParts.join(': ');
-                                const liClass = (index === todayIndex) ? 'class="today"' : '';
-                                content += `<li ${liClass}><span class="day">${day}</span> <span class="time">${time}</span></li>`;
-                            });
-                            content += '</ul>';
-                        }
-                    }
-                } else {
-                    content += `<div>無法獲取詳細資訊</div>`;
+                if (status !== google.maps.places.PlacesServiceStatus.OK || !details) {
+                    let content = `<div class="info-window-content"><h4>${place.name}</h4><p>無法獲取詳細資訊</p></div>`;
+                    infoWindow.setContent(content);
+                    infoWindow.open({ anchor: marker, map });
+                    return;
+                }
+                let content = `<div class="info-window-content"><h4>${details.name}</h4>`;
+                const address = details.formatted_address || details.vicinity;
+                if (address) content += `<p><i class="fas fa-map-marker-alt"></i>${address}</p>`;
+                if (routeInfo) content += `<p><i class="fas fa-car"></i>${routeInfo.driving.distance} (${routeInfo.driving.duration})</p>`;
+                if (details.rating) content += `<p><i class="fas fa-star"></i>${details.rating}</p>`;
+                if (details.formatted_phone_number) content += `<p><i class="fas fa-phone"></i>${details.formatted_phone_number}</p>`;
+                const authoritativeOpenStatusHtml = getOpeningHoursHtml(details);
+                content += `<p><i class="fas fa-clock"></i>${authoritativeOpenStatusHtml}</p>`;
+                if (details.opening_hours && details.opening_hours.weekday_text) {
+                    const todayIndex = (new Date().getDay() + 6) % 7; 
+                    content += '<ul class="opening-hours-list">';
+                    details.opening_hours.weekday_text.forEach((dayText, index) => {
+                        const [day, ...timeParts] = dayText.split(': ');
+                        const time = timeParts.join(': ');
+                        const liClass = (index === todayIndex) ? 'class="today"' : '';
+                        content += `<li ${liClass}><span class="day">${day}</span> <span class="time">${time}</span></li>`;
+                    });
+                    content += '</ul>';
                 }
                 content += '</div>';
                 infoWindow.setContent(content);
                 infoWindow.open({ anchor: marker, map });
+
+                const listItem = document.querySelector(`.list-item[data-place-id="${details.place_id}"]`);
+                if (listItem) {
+                    const itemDetailsElement = listItem.querySelector('.item-details');
+                    if (itemDetailsElement) {
+                        const authoritativeRatingHtml = details.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${details.rating}` : '無評分';
+                        itemDetailsElement.innerHTML = [authoritativeRatingHtml, authoritativeOpenStatusHtml].filter(Boolean).join(' · ');
+                    }
+                }
             });
         }
 
