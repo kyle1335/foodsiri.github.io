@@ -67,16 +67,19 @@
     .form-group { margin-bottom: 20px; } .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-color); } .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; } .form-group textarea { min-height: 120px; resize: vertical; } .rating-hearts { display: flex; gap: 10px; font-size: 30px; color: #ddd; cursor: pointer; } .rating-hearts .fa-heart:hover, .rating-hearts .fa-heart.active { color: #ff4d6d; } .photo-upload-area { background: #f0f0f0; border: 2px dashed #ccc; border-radius: 8px; padding: 20px; display: flex; justify-content: center; gap: 20px; } .photo-upload-area .btn-upload { background: #fff; color: var(--text-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; } .photo-upload-area .btn-upload i { margin-right: 8px; }
     .challenge-card { background: #fff; border-radius: 12px; margin-bottom: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); } .challenge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; } .challenge-title { font-size: 18px; font-weight: 600; } .challenge-btn-join { background-color: var(--success-color); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 14px; border: none; cursor: pointer; } .challenge-btn-join.joined { background-color: var(--text-light); } .challenge-desc { font-size: 14px; color: var(--text-light); margin-bottom: 15px; } .challenge-ranking-title, .challenge-participants-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; } .challenge-ranking-list, .challenge-participants-list { font-size: 14px; color: #555; list-style: none; padding-left: 0; } .challenge-ranking-list li i { color: #ffd700; margin-right: 4px; }
     .profile-tabs { display: flex; gap: 10px; padding: 0 20px 15px; background: #fff; border-bottom: 1px solid #eee; overflow-x: auto; } .tab-btn { background: #f0f0f0; border: none; border-radius: 20px; padding: 8px 15px; font-size: 14px; cursor: pointer; white-space: nowrap; } .tab-btn.active { background: var(--primary-color); color: #fff; } .tab-content { display: none; } .tab-content.active { display: block; } .record-card, .post-card { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); } .record-card .title, .post-card .title { font-weight: 600; margin-bottom: 5px; } .record-card .details, .post-card .details { font-size: 14px; color: var(--text-light); } .record-card .cost { font-weight: bold; color: var(--success-color); float: right; } .post-card .content { margin-top: 10px; font-size: 15px; line-height: 1.6; } .post-card .post-rating { margin-top: 10px; color: #ff4d6d; }
+    /* --- 新增 & 修改的 CSS --- */
     #profile-login-view { padding: 20px; }
     #profile-login-view h3 { text-align: center; margin-bottom: 20px; font-size: 20px; }
-    .login-form input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
-    .btn-login { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; margin-bottom: 10px; color: #fff; font-weight: bold; }
-    .btn-login.primary { background-color: var(--primary-color); }
-    .btn-login.secondary { background-color: #fff; color: #4285F4; border: 1px solid #ddd; display:flex; align-items:center; justify-content:center; gap: 10px;}
-    .login-separator { display: flex; align-items: center; text-align: center; color: #aaa; margin: 20px 0; }
-    .login-separator::before, .login-separator::after { content: ''; flex: 1; border-bottom: 1px solid #ddd; }
-    .login-separator:not(:empty)::before { margin-right: .25em; }
-    .login-separator:not(:empty)::after { margin-left: .25em; }
+    .auth-form-container { width: 100%; } /* 新增容器 */
+    .auth-form-container input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
+    .btn-auth { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; margin-bottom: 10px; color: #fff; font-weight: bold; }
+    .btn-auth.primary { background-color: var(--primary-color); }
+    .btn-auth.secondary { background-color: #fff; color: #4285F4; border: 1px solid #ddd; display:flex; align-items:center; justify-content:center; gap: 10px;}
+    .auth-separator { display: flex; align-items: center; text-align: center; color: #aaa; margin: 20px 0; }
+    .auth-separator::before, .auth-separator::after { content: ''; flex: 1; border-bottom: 1px solid #ddd; }
+    .auth-separator:not(:empty)::before { margin-right: .25em; }
+    .auth-separator:not(:empty)::after { margin-left: .25em; }
+    .auth-switch-link { text-align: center; margin-top: 15px; font-size: 14px; color: var(--primary-color); cursor: pointer; }
     #auth-error { color: #dc3545; margin-top: 15px; min-height: 20px; font-weight: 500; text-align: center; }
   </style>
 </head>
@@ -85,6 +88,7 @@
   <div class="app-container">
     <main>
       <div id="map-page" class="page active">
+        <!-- 地圖頁面內容不變 -->
         <div id="map-panel">
           <div id="map"></div>
           <button class="location-btn" onclick="centerOnUserGPS()"><i class="fas fa-location-arrow"></i></button>
@@ -98,6 +102,7 @@
         </div>
       </div>
       <div id="random-page" class="page">
+        <!-- 隨機選頁面內容不變 -->
         <div class="page-header"><h2><i class="fa-solid fa-dice"></i>美食隨機選</h2></div>
         <div id="random-picker-container">
             <div id="picker-arrow"></div>
@@ -107,6 +112,7 @@
         </div>
       </div>
       <div id="add-review-page" class="page">
+        <!-- 新增評論頁面內容不變 -->
         <div class="page-header"><h2><i class="fa-solid fa-pencil"></i>新增美食評論</h2></div>
         <div class="page-content">
             <div class="form-group"><label for="review-restaurant-name">餐廳名稱</label><input type="text" id="review-restaurant-name" placeholder="輸入吃過的餐廳"></div>
@@ -119,29 +125,57 @@
         </div>
       </div>
       <div id="challenge-page" class="page">
+        <!-- 挑戰榜頁面內容不變 -->
         <div class="page-header"><h2><i class="fa-solid fa-trophy"></i>美食挑戰榜</h2><a id="challenge-logout-btn" class="header-action" style="display: none;">登出</a></div>
         <div class="page-content" id="challenge-list-container"></div>
       </div>
+
+      <!-- ================== HTML 修改重點區域 START ================== -->
       <div id="profile-page" class="page">
         <div class="page-header">
           <h2 id="profile-header"><i class="fa-solid fa-user"></i>個人功能</h2>
           <a id="profile-logout-btn" class="header-action" style="display: none;">登出</a>
         </div>
         <div class="page-content" style="padding:0; overflow:hidden;">
+            <!-- 未登入時顯示的區塊 -->
             <div id="profile-login-view" class="page-content">
-              <h3>登入以使用完整功能</h3>
-              <div class="login-form">
-                <input type="email" id="email-input" placeholder="電子郵件" required>
-                <input type="password" id="password-input" placeholder="密碼" required>
-                <button class="btn-login primary" onclick="handleSignIn()">登入</button>
-                <button class="btn-login primary" onclick="handleSignUp()">註冊</button>
-                <div class="login-separator">或</div>
-                <button class="btn-login secondary" onclick="handleGoogleSignIn()">
+              
+              <!-- 登入表單 -->
+              <div id="login-container" class="auth-form-container">
+                <h3>登入以使用完整功能</h3>
+                <input type="email" id="login-email-input" placeholder="電子郵件" required>
+                <input type="password" id="login-password-input" placeholder="密碼" required>
+                <button class="btn-auth primary" onclick="handleSignIn()">登入</button>
+                <div class="auth-separator">或</div>
+                <button class="btn-auth secondary" onclick="handleGoogleSignIn()">
                   <i class="fab fa-google"></i> 使用 Google 登入
                 </button>
-                <div id="auth-error"></div>
+                <div class="auth-switch-link" onclick="showAuthView('register')">
+                  還沒有帳號？點此註冊
+                </div>
               </div>
+
+              <!-- 註冊表單 (預設隱藏) -->
+              <div id="register-container" class="auth-form-container" style="display: none;">
+                <h3>建立您的新帳號</h3>
+                <!-- 姓名欄位 -->
+                <input type="text" id="register-name-input" placeholder="姓名" required>
+                <!-- 信箱欄位 -->
+                <input type="email" id="register-email-input" placeholder="電子郵件" required>
+                <!-- 密碼欄位 -->
+                <input type="password" id="register-password-input" placeholder="設定密碼 (至少6位數)" required>
+                <!-- 送出按鈕 -->
+                <button class="btn-auth primary" onclick="handleRegister()">註冊送出</button>
+                 <div class="auth-switch-link" onclick="showAuthView('login')">
+                  已經有帳號了？點此登入
+                </div>
+              </div>
+
+              <!-- 錯誤訊息顯示區 -->
+              <div id="auth-error"></div>
             </div>
+
+            <!-- 登入後顯示的區塊 -->
             <div id="profile-data-view" style="display: none; height: 100%; flex-direction: column;">
               <div class="profile-tabs">
                   <button class="tab-btn active" onclick="showProfileTab('accounting', this)">記帳顯示</button>
@@ -158,6 +192,8 @@
             </div>
         </div>
       </div>
+      <!-- ================== HTML 修改重點區域 END ================== -->
+
     </main>
     <footer class="app-nav">
       <div class="nav-item active" onclick="showPage('map-page', this)"><i class="fa-solid fa-map-location-dot"></i><span>地圖</span></div>
@@ -169,13 +205,10 @@
   </div>
 
 <script>
-    // ================== SCRIPT START (最終修正版) ==================
-
     document.addEventListener('DOMContentLoaded', () => {
 
-        // --- 1. Firebase 初始化與設定 (在 DOMContentLoaded 內最優先執行) ---
+        // --- 1. Firebase 初始化 ---
         const firebaseConfig = {
-            // 使用您更換後的統一金鑰
             apiKey: "AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs",
             authDomain: "foodiedata-b4982.firebaseapp.com",
             projectId: "foodiedata-b4982",
@@ -184,7 +217,6 @@
             appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5",
             measurementId: "G-5FD72CVKGB"
         };
-        
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
@@ -195,13 +227,102 @@
         const POSTS_DB_KEY = 'foodieAppPosts'; 
         const CHALLENGES_DB_KEY = 'foodieAppUserChallenges';
 
-        // --- 3. 核心功能函式 ---
-
+        // ================== JAVASCRIPT 修改重點區域 START ==================
+        
         // 3.1 Firebase Authentication 相關函式
-        window.handleSignUp = function() { const email = document.getElementById('email-input').value; const password = document.getElementById('password-input').value; const errorDiv = document.getElementById('auth-error'); errorDiv.textContent = ''; auth.createUserWithEmailAndPassword(email, password) .catch(error => { console.error("SignUp Error:", error); switch(error.code) { case 'auth/email-already-in-use': errorDiv.textContent = '此電子郵件已被註冊。'; break; case 'auth/invalid-email': errorDiv.textContent = '電子郵件格式不正確。'; break; case 'auth/weak-password': errorDiv.textContent = '密碼強度不足，請至少設定6個字元。'; break; default: errorDiv.textContent = '註冊失敗，請稍後再試。'; } }); }
-        window.handleSignIn = function() { const email = document.getElementById('email-input').value; const password = document.getElementById('password-input').value; const errorDiv = document.getElementById('auth-error'); errorDiv.textContent = ''; auth.signInWithEmailAndPassword(email, password) .catch(error => { console.error("SignIn Error:", error); errorDiv.textContent = '登入失敗，請檢查您的信箱或密碼。'; }); }
-        window.handleGoogleSignIn = function() { const provider = new firebase.auth.GoogleAuthProvider(); const errorDiv = document.getElementById('auth-error'); errorDiv.textContent = ''; auth.signInWithPopup(provider) .catch(error => { console.error("Google SignIn Error:", error); errorDiv.textContent = 'Google 登入失敗，請稍後再試。'; }); }
-        window.handleSignOut = function() { auth.signOut().catch(error => console.error("SignOut Error:", error)); }
+
+        // 新增：切換登入/註冊畫面的函式
+        window.showAuthView = function(viewName) {
+            const loginContainer = document.getElementById('login-container');
+            const registerContainer = document.getElementById('register-container');
+            const errorDiv = document.getElementById('auth-error');
+            errorDiv.textContent = ''; // 切換時清空錯誤訊息
+
+            if (viewName === 'register') {
+                loginContainer.style.display = 'none';
+                registerContainer.style.display = 'block';
+            } else { // 預設顯示登入
+                loginContainer.style.display = 'block';
+                registerContainer.style.display = 'none';
+            }
+        }
+        
+        // 新增：處理註冊的函式
+        window.handleRegister = function() {
+            const name = document.getElementById('register-name-input').value.trim();
+            const email = document.getElementById('register-email-input').value;
+            const password = document.getElementById('register-password-input').value;
+            const errorDiv = document.getElementById('auth-error');
+            errorDiv.textContent = '';
+
+            if (!name || !email || !password) {
+                errorDiv.textContent = '所有欄位都必須填寫！';
+                return;
+            }
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // 註冊成功後，更新使用者的個人資料 (加上姓名)
+                    const user = userCredential.user;
+                    return user.updateProfile({
+                        displayName: name
+                    });
+                })
+                .then(() => {
+                    // 更新成功後，Firebase的onAuthStateChanged會自動處理後續UI更新
+                    // 不需在這裡手動切換頁面
+                    console.log("註冊並更新姓名成功！");
+                })
+                .catch(error => {
+                    console.error("註冊錯誤:", error);
+                    switch(error.code) {
+                        case 'auth/email-already-in-use':
+                            errorDiv.textContent = '此電子郵件已被註冊。';
+                            break;
+                        case 'auth/invalid-email':
+                            errorDiv.textContent = '電子郵件格式不正確。';
+                            break;
+                        case 'auth/weak-password':
+                            errorDiv.textContent = '密碼強度不足，請至少設定6個字元。';
+                            break;
+                        default:
+                            errorDiv.textContent = '註冊失敗，請稍後再試。';
+                    }
+                });
+        }
+
+        // 修改：處理登入的函式，讀取正確的輸入框ID
+        window.handleSignIn = function() {
+            const email = document.getElementById('login-email-input').value;
+            const password = document.getElementById('login-password-input').value;
+            const errorDiv = document.getElementById('auth-error');
+            errorDiv.textContent = '';
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(error => {
+                    console.error("登入錯誤:", error);
+                    errorDiv.textContent = '登入失敗，請檢查您的信箱或密碼。';
+                });
+        }
+        
+        // Google 登入 (不變)
+        window.handleGoogleSignIn = function() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            const errorDiv = document.getElementById('auth-error');
+            errorDiv.textContent = '';
+            auth.signInWithPopup(provider)
+                .catch(error => {
+                    console.error("Google 登入錯誤:", error);
+                    errorDiv.textContent = 'Google 登入失敗，請稍後再試。';
+                });
+        }
+
+        // 登出 (不變)
+        window.handleSignOut = function() {
+            auth.signOut().catch(error => console.error("登出錯誤:", error));
+        }
+        
+        // ================== JAVASCRIPT 修改重點區域 END ==================
 
         // 3.2 應用程式核心邏輯
         window.showPage = function(pageId, navElement) {
@@ -209,30 +330,35 @@
             document.getElementById(pageId).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             if (navElement) { navElement.classList.add('active'); }
+
+            if (pageId === 'profile-page' && !currentUser) {
+                showAuthView('login'); // 每次進入個人頁面且未登入時，都重設為登入畫面
+            }
+
             if (pageId === 'random-page') updateRandomPageStatus();
             if (pageId === 'challenge-page') renderChallenges();
             if (pageId === 'profile-page') renderProfilePage();
         }
         
-        // 3.3 資料儲存
+        // 3.3 資料儲存 (不變)
         function getPosts() { if (!currentUser) return []; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
         function savePosts(posts) { if (!currentUser) return; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(posts)); }
         function getUserChallenges() { if (!currentUser) return {}; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || {}; }
         function saveUserChallenges(challenges) { if (!currentUser) return; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(challenges)); }
         
-        // 3.4 UI 狀態切換
+        // 3.4 UI 狀態切換 (修改：顯示用戶姓名)
         function setupLoggedInUI(user) {
             document.getElementById('profile-login-view').style.display = 'none';
             document.getElementById('profile-data-view').style.display = 'flex';
-            document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${user.displayName || user.email}`;
+            
+            // 優先顯示 displayName，如果沒有則顯示 email
+            const userName = user.displayName || user.email;
+            document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`;
             
             const profileLogoutBtn = document.getElementById('profile-logout-btn');
             const challengeLogoutBtn = document.getElementById('challenge-logout-btn');
-            
             profileLogoutBtn.style.display = 'block';
             challengeLogoutBtn.style.display = 'block';
-
-            // 確保每次都綁定最新的 handleSignOut 函式
             profileLogoutBtn.onclick = () => handleSignOut();
             challengeLogoutBtn.onclick = () => handleSignOut();
         }
@@ -242,6 +368,9 @@
             document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人功能`;
             document.getElementById('profile-logout-btn').style.display = 'none';
             document.getElementById('challenge-logout-btn').style.display = 'none';
+            showAuthView('login'); // 登出時，確保顯示的是登入畫面
+
+            // 清理其他需要登入才能看的內容
             document.getElementById('challenge-list-container').innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>';
             document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！';
             if(document.getElementById('picker-result')) {
@@ -249,6 +378,7 @@
             }
         }
 
+        // --- 以下的函式都保持不變 ---
         // 3.5 Page 1: 地圖
         window.initMap = function () { isMapReady = true; userGpsPosition = { lat: 25.0479, lng: 121.5171 }; restaurantMarkers = []; map = new google.maps.Map(document.getElementById("map"), { center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true }); placesService = new google.maps.places.PlacesService(map); infoWindow = new google.maps.InfoWindow(); directionsService = new google.maps.DirectionsService(); directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } }); createUserMarker(userGpsPosition); setupMapListeners(); setupAutocomplete(); updateUserGPS(); };
         window.createUserMarker = function(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
@@ -293,10 +423,12 @@
 
         // --- 4. App 初始化 & Auth 狀態監聽 ---
         document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => { heart.addEventListener('click', handleRatingClick); heart.addEventListener('mouseover', handleRatingHover); heart.addEventListener('mouseout', handleRatingMouseout); });
+        
         auth.onAuthStateChanged(user => { 
             if (user) { 
                 currentUser = user; 
                 setupLoggedInUI(user);
+                // 如果用戶剛好在個人頁面，則刷新內容
                 if (document.getElementById('profile-page').classList.contains('active')) {
                     renderProfilePage();
                 }
@@ -305,10 +437,11 @@
                 setupLoggedOutUI();
             } 
         });
+        
+        // 初始載入
         showPage('map-page', document.querySelector('.nav-item')); 
 
     });
-
 </script>
 </body>
 </html>
