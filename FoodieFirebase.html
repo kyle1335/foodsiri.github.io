@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>FoodieApp更新</title>
+  <title>FoodieApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   
   <script
@@ -17,7 +17,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   
   <style>
-    /* CSS 樣式保持不變 */
+    /* CSS 樣式大部分不變 */
     :root { --primary-color: #667eea; --secondary-color: #764ba2; --success-color: #28a745; --background-color: #f8f9fa; --text-color: #333; --text-light: #6c757d; --nav-height: 60px; }
     html, body { height: 100%; margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--background-color); }
     .app-container { width: 100%; height: 100vh; display: flex; flex-direction: column; }
@@ -55,10 +55,12 @@
     .info-window-content i { margin-right: 8px; color: var(--primary-color); width: 16px; text-align: center; }
     .page-header { padding: 15px 20px; background-color: #fff; border-bottom: 1px solid #eee; text-align: center; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
     .page-header h2 { margin: 0; font-size: 18px; color: var(--text-color); display: flex; align-items: center; justify-content: center; flex-grow: 1; }
-    .page-header i { margin-right: 10px; color: var(--primary-color); }
+    .page-header h2 i { margin-right: 10px; color: var(--primary-color); }
     .header-action { font-size: 16px; color: var(--primary-color); text-decoration: none; cursor: pointer; }
+    .header-back-btn { font-size: 20px; color: var(--text-color); cursor: pointer; }
+    .page-header .placeholder { width: 24px; } /* 用於對齊的佔位符 */
     .page-content { flex-grow: 1; overflow-y: auto; padding: 20px; }
-    .placeholder-text { text-align: center; color: var(--text-light); margin-top: 50px; padding: 20px; background-color: #fff; border-radius: 8px; }
+    .placeholder-text { text-align: center; color: var(--text-light); margin-top: 50px; padding: 20px; }
     .btn { display: block; width: 100%; padding: 15px; background-color: var(--success-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; }
     #random-picker-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; box-sizing: border-box; }
     #picker-wheel { width: 280px; height: 280px; border: 10px solid #ddd; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1); }
@@ -66,11 +68,10 @@
     #picker-result { font-size: 20px; font-weight: bold; color: var(--primary-color); text-align: center; height: 60px; padding: 0 10px; }
     .form-group { margin-bottom: 20px; } .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-color); } .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; } .form-group textarea { min-height: 120px; resize: vertical; } .rating-hearts { display: flex; gap: 10px; font-size: 30px; color: #ddd; cursor: pointer; } .rating-hearts .fa-heart:hover, .rating-hearts .fa-heart.active { color: #ff4d6d; } .photo-upload-area { background: #f0f0f0; border: 2px dashed #ccc; border-radius: 8px; padding: 20px; display: flex; justify-content: center; gap: 20px; } .photo-upload-area .btn-upload { background: #fff; color: var(--text-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; } .photo-upload-area .btn-upload i { margin-right: 8px; }
     .challenge-card { background: #fff; border-radius: 12px; margin-bottom: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); } .challenge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; } .challenge-title { font-size: 18px; font-weight: 600; } .challenge-btn-join { background-color: var(--success-color); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 14px; border: none; cursor: pointer; } .challenge-btn-join.joined { background-color: var(--text-light); } .challenge-desc { font-size: 14px; color: var(--text-light); margin-bottom: 15px; } .challenge-ranking-title, .challenge-participants-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; } .challenge-ranking-list, .challenge-participants-list { font-size: 14px; color: #555; list-style: none; padding-left: 0; } .challenge-ranking-list li i { color: #ffd700; margin-right: 4px; }
-    .profile-tabs { display: flex; gap: 10px; padding: 0 20px 15px; background: #fff; border-bottom: 1px solid #eee; overflow-x: auto; } .tab-btn { background: #f0f0f0; border: none; border-radius: 20px; padding: 8px 15px; font-size: 14px; cursor: pointer; white-space: nowrap; } .tab-btn.active { background: var(--primary-color); color: #fff; } .tab-content { display: none; } .tab-content.active { display: block; } .record-card, .post-card { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); } .record-card .title, .post-card .title { font-weight: 600; margin-bottom: 5px; } .record-card .details, .post-card .details { font-size: 14px; color: var(--text-light); } .record-card .cost { font-weight: bold; color: var(--success-color); float: right; } .post-card .content { margin-top: 10px; font-size: 15px; line-height: 1.6; } .post-card .post-rating { margin-top: 10px; color: #ff4d6d; }
-    /* --- 新增 & 修改的 CSS --- */
-    #profile-login-view { padding: 20px; }
-    #profile-login-view h3 { text-align: center; margin-bottom: 20px; font-size: 20px; }
-    .auth-form-container { width: 100%; } /* 新增容器 */
+    .profile-tabs { display: flex; gap: 10px; padding: 15px 20px; background: #fff; border-bottom: 1px solid #eee; overflow-x: auto; flex-shrink: 0; } .tab-btn { background: #f0f0f0; border: none; border-radius: 20px; padding: 8px 15px; font-size: 14px; cursor: pointer; white-space: nowrap; } .tab-btn.active { background: var(--primary-color); color: #fff; } .tab-content { display: none; } .tab-content.active { display: block; } .record-card, .post-card { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); } .record-card .title, .post-card .title { font-weight: 600; margin-bottom: 5px; } .record-card .details, .post-card .details { font-size: 14px; color: var(--text-light); } .record-card .cost { font-weight: bold; color: var(--success-color); float: right; } .post-card .content { margin-top: 10px; font-size: 15px; line-height: 1.6; } .post-card .post-rating { margin-top: 10px; color: #ff4d6d; }
+    /* --- 驗證表單樣式 --- */
+    .auth-form-container { width: 100%; max-width: 400px; margin: 0 auto; padding: 20px;}
+    .auth-form-container h3 { text-align: center; margin-bottom: 20px; font-size: 20px; }
     .auth-form-container input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
     .btn-auth { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; margin-bottom: 10px; color: #fff; font-weight: bold; }
     .btn-auth.primary { background-color: var(--primary-color); }
@@ -84,11 +85,10 @@
   </style>
 </head>
 <body>
-  <!-- HTML 結構保持不變 -->
   <div class="app-container">
     <main>
+      <!-- 主要功能頁面 -->
       <div id="map-page" class="page active">
-        <!-- 地圖頁面內容不變 -->
         <div id="map-panel">
           <div id="map"></div>
           <button class="location-btn" onclick="centerOnUserGPS()"><i class="fas fa-location-arrow"></i></button>
@@ -102,8 +102,7 @@
         </div>
       </div>
       <div id="random-page" class="page">
-        <!-- 隨機選頁面內容不變 -->
-        <div class="page-header"><h2><i class="fa-solid fa-dice"></i>美食隨機選</h2></div>
+        <div class="page-header"><h2><i class="fa-solid fa-dice"></i>美食隨機選</h2><div class="placeholder"></div></div>
         <div id="random-picker-container">
             <div id="picker-arrow"></div>
             <div id="picker-wheel"><div id="picker-result">?</div></div>
@@ -112,8 +111,7 @@
         </div>
       </div>
       <div id="add-review-page" class="page">
-        <!-- 新增評論頁面內容不變 -->
-        <div class="page-header"><h2><i class="fa-solid fa-pencil"></i>新增美食評論</h2></div>
+        <div class="page-header"><h2><i class="fa-solid fa-pencil"></i>新增美食評論</h2><div class="placeholder"></div></div>
         <div class="page-content">
             <div class="form-group"><label for="review-restaurant-name">餐廳名稱</label><input type="text" id="review-restaurant-name" placeholder="輸入吃過的餐廳"></div>
             <div class="form-group"><label for="review-meal-items">餐點項目</label><textarea id="review-meal-items" placeholder="吃了什麼好料？ (例如：小籠包、牛肉麵)"></textarea></div>
@@ -125,71 +123,78 @@
         </div>
       </div>
       <div id="challenge-page" class="page">
-        <!-- 挑戰榜頁面內容不變 -->
-        <div class="page-header"><h2><i class="fa-solid fa-trophy"></i>美食挑戰榜</h2><a id="challenge-logout-btn" class="header-action" style="display: none;">登出</a></div>
+        <div class="page-header"><h2><i class="fa-solid fa-trophy"></i>美食挑戰榜</h2><div class="placeholder"></div></div>
         <div class="page-content" id="challenge-list-container"></div>
       </div>
 
       <!-- ================== HTML 修改重點區域 START ================== -->
+      
+      <!-- 個人頁面: 結構大幅簡化 -->
       <div id="profile-page" class="page">
         <div class="page-header">
-          <h2 id="profile-header"><i class="fa-solid fa-user"></i>個人功能</h2>
-          <a id="profile-logout-btn" class="header-action" style="display: none;">登出</a>
+          <div class="placeholder"></div> <!-- 左側佔位，讓標題居中 -->
+          <h2 id="profile-header"><i class="fa-solid fa-user"></i>個人檔案</h2>
+          <!-- 登入/登出按鈕會由 JS 控制顯示 -->
+          <a id="profile-login-btn" class="header-action" style="display: none;" onclick="showPage('login-page')">登入/註冊</a>
+          <a id="profile-logout-btn" class="header-action" style="display: none;" onclick="handleSignOut()">登出</a>
         </div>
-        <div class="page-content" style="padding:0; overflow:hidden;">
-            <!-- 未登入時顯示的區塊 -->
-            <div id="profile-login-view" class="page-content">
-              
-              <!-- 登入表單 -->
-              <div id="login-container" class="auth-form-container">
-                <h3>登入以使用完整功能</h3>
-                <input type="email" id="login-email-input" placeholder="電子郵件" required>
-                <input type="password" id="login-password-input" placeholder="密碼" required>
-                <button class="btn-auth primary" onclick="handleSignIn()">登入</button>
-                <div class="auth-separator">或</div>
-                <button class="btn-auth secondary" onclick="handleGoogleSignIn()">
-                  <i class="fab fa-google"></i> 使用 Google 登入
-                </button>
-                <div class="auth-switch-link" onclick="showAuthView('register')">
-                  還沒有帳號？點此註冊
-                </div>
-              </div>
+        <!-- Tab 結構不論登入與否都存在 -->
+        <div class="profile-tabs">
+            <button class="tab-btn active" onclick="showProfileTab('accounting', this)">記帳顯示</button>
+            <button class="tab-btn" onclick="showProfileTab('posts', this)">我的貼文</button>
+            <button class="tab-btn" onclick="showProfileTab('favorites', this)">最愛餐廳</button>
+            <button class="tab-btn" onclick="showProfileTab('friends', this)">好友名單</button>
+        </div>
+        <div class="page-content" style="padding-top:0;">
+            <div id="accounting-content" class="tab-content active"></div>
+            <div id="posts-content" class="tab-content"></div>
+            <div id="favorites-content" class="tab-content"></div>
+            <div id="friends-content" class="tab-content"></div>
+        </div>
+      </div>
 
-              <!-- 註冊表單 (預設隱藏) -->
-              <div id="register-container" class="auth-form-container" style="display: none;">
-                <h3>建立您的新帳號</h3>
-                <!-- 姓名欄位 -->
-                <input type="text" id="register-name-input" placeholder="姓名" required>
-                <!-- 信箱欄位 -->
-                <input type="email" id="register-email-input" placeholder="電子郵件" required>
-                <!-- 密碼欄位 -->
-                <input type="password" id="register-password-input" placeholder="設定密碼 (至少6位數)" required>
-                <!-- 送出按鈕 -->
-                <button class="btn-auth primary" onclick="handleRegister()">註冊送出</button>
-                 <div class="auth-switch-link" onclick="showAuthView('login')">
-                  已經有帳號了？點此登入
-                </div>
-              </div>
-
-              <!-- 錯誤訊息顯示區 -->
-              <div id="auth-error"></div>
+      <!-- 新增：獨立的登入頁面 -->
+      <div id="login-page" class="page">
+        <div class="page-header">
+          <i class="fa-solid fa-chevron-left header-back-btn" onclick="goBack()"></i>
+          <h2>會員登入</h2>
+          <div class="placeholder"></div> <!-- 右側佔位 -->
+        </div>
+        <div class="page-content">
+          <div class="auth-form-container">
+            <input type="email" id="login-email-input" placeholder="電子郵件" required>
+            <input type="password" id="login-password-input" placeholder="密碼" required>
+            <div id="login-error" class="auth-error-message"></div>
+            <button class="btn-auth primary" onclick="handleSignIn()">登入</button>
+            <div class="auth-separator">或</div>
+            <button class="btn-auth secondary" onclick="handleGoogleSignIn()">
+              <i class="fab fa-google"></i> 使用 Google 登入
+            </button>
+            <div class="auth-switch-link" onclick="showPage('register-page')">
+              還沒有帳號？點此註冊
             </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- 登入後顯示的區塊 -->
-            <div id="profile-data-view" style="display: none; height: 100%; flex-direction: column;">
-              <div class="profile-tabs">
-                  <button class="tab-btn active" onclick="showProfileTab('accounting', this)">記帳顯示</button>
-                  <button class="tab-btn" onclick="showProfileTab('posts', this)">我的貼文</button>
-                  <button class="tab-btn" onclick="showProfileTab('favorites', this)">最愛餐廳</button>
-                  <button class="tab-btn" onclick="showProfileTab('friends', this)">好友名單</button>
-              </div>
-              <div class="page-content" style="padding-top:0;">
-                  <div id="accounting-content" class="tab-content active"></div>
-                  <div id="posts-content" class="tab-content"></div>
-                  <div id="favorites-content" class="tab-content"></div>
-                  <div id="friends-content" class="tab-content"><p class="placeholder-text">好友功能開發中！</p></div>
-              </div>
+      <!-- 新增：獨立的註冊頁面 -->
+      <div id="register-page" class="page">
+         <div class="page-header">
+          <i class="fa-solid fa-chevron-left header-back-btn" onclick="goBack()"></i>
+          <h2>註冊新帳號</h2>
+          <div class="placeholder"></div> <!-- 右側佔位 -->
+        </div>
+        <div class="page-content">
+          <div class="auth-form-container">
+            <input type="text" id="register-name-input" placeholder="姓名或暱稱" required>
+            <input type="email" id="register-email-input" placeholder="電子郵件" required>
+            <input type="password" id="register-password-input" placeholder="設定密碼 (至少6位數)" required>
+            <div id="register-error" class="auth-error-message"></div>
+            <button class="btn-auth primary" onclick="handleRegister()">註冊送出</button>
+            <div class="auth-switch-link" onclick="showPage('login-page')">
+              已經有帳號了？點此登入
             </div>
+          </div>
         </div>
       </div>
       <!-- ================== HTML 修改重點區域 END ================== -->
@@ -226,151 +231,123 @@
         let isMapReady = false; 
         const POSTS_DB_KEY = 'foodieAppPosts'; 
         const CHALLENGES_DB_KEY = 'foodieAppUserChallenges';
+        let pageHistory = []; // 新增：用於返回功能的頁面歷史堆疊
 
         // ================== JAVASCRIPT 修改重點區域 START ==================
         
-        // 3.1 Firebase Authentication 相關函式
-
-        // 新增：切換登入/註冊畫面的函式
-        window.showAuthView = function(viewName) {
-            const loginContainer = document.getElementById('login-container');
-            const registerContainer = document.getElementById('register-container');
-            const errorDiv = document.getElementById('auth-error');
-            errorDiv.textContent = ''; // 切換時清空錯誤訊息
-
-            if (viewName === 'register') {
-                loginContainer.style.display = 'none';
-                registerContainer.style.display = 'block';
-            } else { // 預設顯示登入
-                loginContainer.style.display = 'block';
-                registerContainer.style.display = 'none';
+        // 3.1 頁面導航與返回邏輯
+        window.showPage = function(pageId, navElement = null) {
+            const activePage = document.querySelector('.page.active');
+            if (activePage) {
+                // 只有在不是從登入/註冊頁面之間切換時才記錄歷史
+                if (!['login-page', 'register-page'].includes(activePage.id) || !['login-page', 'register-page'].includes(pageId)) {
+                    pageHistory.push(activePage.id);
+                }
             }
-        }
-        
-        // 新增：處理註冊的函式
+
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+
+            // 如果是透過底部導航列點擊，則更新導航列狀態並清空歷史
+            if (navElement) {
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                navElement.classList.add('active');
+                pageHistory = []; // 從主導航開始，重置歷史紀錄
+            }
+            
+            // 觸發特定頁面的更新函式
+            if (pageId === 'random-page') updateRandomPageStatus();
+            if (pageId === 'challenge-page') renderChallenges();
+            if (pageId === 'profile-page') renderProfilePage();
+        };
+
+        window.goBack = function() {
+            if (pageHistory.length > 0) {
+                const lastPageId = pageHistory.pop();
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(lastPageId).classList.add('active');
+            } else {
+                // 如果沒有歷史紀錄，預設回到地圖頁
+                showPage('map-page', document.querySelector('.nav-item[onclick*="map-page"]'));
+            }
+        };
+
+        // 3.2 Firebase Authentication 相關函式
         window.handleRegister = function() {
             const name = document.getElementById('register-name-input').value.trim();
             const email = document.getElementById('register-email-input').value;
             const password = document.getElementById('register-password-input').value;
-            const errorDiv = document.getElementById('auth-error');
+            const errorDiv = document.getElementById('register-error');
             errorDiv.textContent = '';
 
             if (!name || !email || !password) {
-                errorDiv.textContent = '所有欄位都必須填寫！';
-                return;
+                errorDiv.textContent = '所有欄位都必須填寫！'; return;
             }
 
             auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    // 註冊成功後，更新使用者的個人資料 (加上姓名)
-                    const user = userCredential.user;
-                    return user.updateProfile({
-                        displayName: name
-                    });
-                })
+                .then(userCredential => userCredential.user.updateProfile({ displayName: name }))
                 .then(() => {
-                    // 更新成功後，Firebase的onAuthStateChanged會自動處理後續UI更新
-                    // 不需在這裡手動切換頁面
-                    console.log("註冊並更新姓名成功！");
+                    // 註冊成功後自動返回上一頁 (通常是個人頁面)
+                    goBack();
                 })
                 .catch(error => {
-                    console.error("註冊錯誤:", error);
                     switch(error.code) {
-                        case 'auth/email-already-in-use':
-                            errorDiv.textContent = '此電子郵件已被註冊。';
-                            break;
-                        case 'auth/invalid-email':
-                            errorDiv.textContent = '電子郵件格式不正確。';
-                            break;
-                        case 'auth/weak-password':
-                            errorDiv.textContent = '密碼強度不足，請至少設定6個字元。';
-                            break;
-                        default:
-                            errorDiv.textContent = '註冊失敗，請稍後再試。';
+                        case 'auth/email-already-in-use': errorDiv.textContent = '此電子郵件已被註冊。'; break;
+                        case 'auth/invalid-email': errorDiv.textContent = '電子郵件格式不正確。'; break;
+                        case 'auth/weak-password': errorDiv.textContent = '密碼強度不足 (至少6位數)。'; break;
+                        default: errorDiv.textContent = '註冊失敗，請稍後再試。';
                     }
                 });
         }
 
-        // 修改：處理登入的函式，讀取正確的輸入框ID
         window.handleSignIn = function() {
             const email = document.getElementById('login-email-input').value;
             const password = document.getElementById('login-password-input').value;
-            const errorDiv = document.getElementById('auth-error');
+            const errorDiv = document.getElementById('login-error');
             errorDiv.textContent = '';
             
             auth.signInWithEmailAndPassword(email, password)
-                .catch(error => {
-                    console.error("登入錯誤:", error);
-                    errorDiv.textContent = '登入失敗，請檢查您的信箱或密碼。';
-                });
+                .then(() => {
+                    // 登入成功後自動返回
+                    goBack();
+                })
+                .catch(error => { errorDiv.textContent = '登入失敗，請檢查信箱或密碼。'; });
         }
         
-        // Google 登入 (不變)
         window.handleGoogleSignIn = function() {
             const provider = new firebase.auth.GoogleAuthProvider();
-            const errorDiv = document.getElementById('auth-error');
-            errorDiv.textContent = '';
             auth.signInWithPopup(provider)
+                .then(() => {
+                    // Google 登入成功後自動返回
+                    goBack();
+                })
                 .catch(error => {
-                    console.error("Google 登入錯誤:", error);
-                    errorDiv.textContent = 'Google 登入失敗，請稍後再試。';
+                    const errorDiv = document.getElementById('login-error');
+                    errorDiv.textContent = 'Google 登入失敗，請稍後再試。'; 
                 });
         }
 
-        // 登出 (不變)
         window.handleSignOut = function() {
             auth.signOut().catch(error => console.error("登出錯誤:", error));
         }
         
-        // ================== JAVASCRIPT 修改重點區域 END ==================
-
-        // 3.2 應用程式核心邏輯
-        window.showPage = function(pageId, navElement) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            if (navElement) { navElement.classList.add('active'); }
-
-            if (pageId === 'profile-page' && !currentUser) {
-                showAuthView('login'); // 每次進入個人頁面且未登入時，都重設為登入畫面
-            }
-
-            if (pageId === 'random-page') updateRandomPageStatus();
-            if (pageId === 'challenge-page') renderChallenges();
-            if (pageId === 'profile-page') renderProfilePage();
-        }
-        
-        // 3.3 資料儲存 (不變)
-        function getPosts() { if (!currentUser) return []; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
-        function savePosts(posts) { if (!currentUser) return; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(posts)); }
-        function getUserChallenges() { if (!currentUser) return {}; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || {}; }
-        function saveUserChallenges(challenges) { if (!currentUser) return; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(challenges)); }
-        
-        // 3.4 UI 狀態切換 (修改：顯示用戶姓名)
+        // 3.3 UI 狀態切換
         function setupLoggedInUI(user) {
-            document.getElementById('profile-login-view').style.display = 'none';
-            document.getElementById('profile-data-view').style.display = 'flex';
+            document.getElementById('profile-login-btn').style.display = 'none';
+            document.getElementById('profile-logout-btn').style.display = 'block';
             
-            // 優先顯示 displayName，如果沒有則顯示 email
             const userName = user.displayName || user.email;
             document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`;
-            
-            const profileLogoutBtn = document.getElementById('profile-logout-btn');
-            const challengeLogoutBtn = document.getElementById('challenge-logout-btn');
-            profileLogoutBtn.style.display = 'block';
-            challengeLogoutBtn.style.display = 'block';
-            profileLogoutBtn.onclick = () => handleSignOut();
-            challengeLogoutBtn.onclick = () => handleSignOut();
+            renderProfilePage(); // 登入後重新渲染個人頁面內容
         }
-        function setupLoggedOutUI() {
-            document.getElementById('profile-login-view').style.display = 'block';
-            document.getElementById('profile-data-view').style.display = 'none';
-            document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人功能`;
-            document.getElementById('profile-logout-btn').style.display = 'none';
-            document.getElementById('challenge-logout-btn').style.display = 'none';
-            showAuthView('login'); // 登出時，確保顯示的是登入畫面
 
-            // 清理其他需要登入才能看的內容
+        function setupLoggedOutUI() {
+            document.getElementById('profile-login-btn').style.display = 'block';
+            document.getElementById('profile-logout-btn').style.display = 'none';
+            document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`;
+            
+            // 清理需要登入才能看的內容
+            renderProfilePage(); // 登出後用 placeholder 重新渲染個人頁面
             document.getElementById('challenge-list-container').innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>';
             document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！';
             if(document.getElementById('picker-result')) {
@@ -378,8 +355,69 @@
             }
         }
 
-        // --- 以下的函式都保持不變 ---
-        // 3.5 Page 1: 地圖
+        // 3.9 Page 5: 個人功能 (更新渲染邏輯)
+        function renderProfilePage() {
+            // 不論是否登入，都執行渲染，函式內部會判斷狀態
+            showProfileTab(document.querySelector('#profile-page .tab-btn.active').dataset.tab || 'accounting', document.querySelector('#profile-page .tab-btn.active'));
+        }
+        
+        window.showProfileTab = function(tabId, tabElement) {
+            document.querySelectorAll('#profile-page .tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.removeAttribute('data-tab');
+            });
+            tabElement.classList.add('active');
+            tabElement.dataset.tab = tabId; // 記住當前 tab
+            
+            document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabId}-content`).classList.add('active');
+
+            // 根據 tabId 呼叫對應的渲染函式
+            if (tabId === 'accounting') renderAccountingRecords();
+            if (tabId === 'posts') renderMyPosts();
+            if (tabId === 'favorites') renderFavoriteRestaurants();
+            if (tabId === 'friends') renderFriendsList();
+        }
+
+        const loggedOutPlaceholder = (message) => `<p class="placeholder-text">請先<a href="#" onclick="showPage('login-page')">登入</a>${message}</p>`;
+
+        function renderAccountingRecords() {
+            const container = document.getElementById('accounting-content');
+            if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的消費紀錄。'); return; }
+            const posts = getPosts().filter(p => p.cost > 0);
+            if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">尚無消費紀錄。</p>`; return; }
+            container.innerHTML = '<h3>消費紀錄</h3>' + posts.map(p => `<div class="record-card"><span class="cost">$${p.cost}</span><div class="title">${p.name}</div><div class="details">${new Date(p.timestamp).toLocaleDateString()}</div></div>`).join('');
+        }
+        function renderMyPosts() {
+            const container = document.getElementById('posts-content');
+            if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); return; }
+            const posts = getPosts();
+            if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`; return; }
+            container.innerHTML = posts.map(p => { let ratingHtml = Array(parseInt(p.rating)).fill('<i class="fa-solid fa-heart"></i>').join(''); return `<div class="post-card"><div class="title">${p.name}</div><div class="details">${new Date(p.timestamp).toLocaleString()}</div><p class="content">${p.content || '（無詳細評論）'}</p><div class="post-rating">${ratingHtml}</div></div>`; }).join('');
+        }
+        function renderFavoriteRestaurants() {
+            const container = document.getElementById('favorites-content');
+            if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的最愛餐廳。'); return; }
+            const favorites = getPosts().filter(p => p.rating >= 4).reduce((acc, cur) => { if (!acc.some(item => item.name === cur.name)) acc.push(cur); return acc; }, []).sort((a, b) => b.rating - a.rating);
+            if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有評分高的餐廳喔！</p>`; return; }
+            container.innerHTML = '<h3>最愛餐廳 (評分4顆心以上)</h3>' + favorites.map(p => `<div class="record-card"><div class="title">${p.name}</div></div>`).join('');
+        }
+        function renderFriendsList() {
+            const container = document.getElementById('friends-content');
+            if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看好友名單。'); return; }
+            container.innerHTML = `<p class="placeholder-text">好友功能開發中！</p>`;
+        }
+        
+        // ================== JAVASCRIPT 修改重點區域 END ==================
+
+        // --- 以下函式保持不變或僅微調 ---
+        // 3.3 資料儲存 (不變)
+        function getPosts() { if (!currentUser) return []; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
+        function savePosts(posts) { if (!currentUser) return; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(posts)); }
+        function getUserChallenges() { if (!currentUser) return {}; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || {}; }
+        function saveUserChallenges(challenges) { if (!currentUser) return; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(challenges)); }
+        
+        // 3.5 Page 1: 地圖 (不變)
         window.initMap = function () { isMapReady = true; userGpsPosition = { lat: 25.0479, lng: 121.5171 }; restaurantMarkers = []; map = new google.maps.Map(document.getElementById("map"), { center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true }); placesService = new google.maps.places.PlacesService(map); infoWindow = new google.maps.InfoWindow(); directionsService = new google.maps.DirectionsService(); directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } }); createUserMarker(userGpsPosition); setupMapListeners(); setupAutocomplete(); updateUserGPS(); };
         window.createUserMarker = function(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
         function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); }
@@ -399,41 +437,29 @@
         function clearRestaurantMarkers() { restaurantMarkers.forEach((marker) => marker.setMap(null)); restaurantMarkers = []; }
 
         // 3.6 Page 2: 美食隨機選
-        function updateRandomPageStatus() { if (!currentUser) { setupLoggedOutUI(); return; } const allPosts = getPosts(); const restaurants = [...new Set(allPosts.map(p => p.name))]; const statusText = document.getElementById('random-status-text'); const pickerResult = document.getElementById('picker-result'); pickerResult.textContent = "?"; pickerResult.style.color = 'var(--primary-color)'; if (restaurants.length === 0) { statusText.textContent = "您還沒有新增任何餐廳喔！請到「新增」頁面加入吧！"; } else { statusText.textContent = `目前有 ${restaurants.length} 家獨特的餐廳在您的口袋名單中。`; } }
-        window.startRandomPick = function() { if (!currentUser) { alert('請先登入才能使用您的美食清單進行抽籤！'); showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]')); return; } const allPosts = getPosts(); const restaurants = [...new Set(allPosts.map(p => p.name))]; if (restaurants.length === 0) { alert("口袋名單是空的，無法抽籤！"); return; } const wheel = document.getElementById('picker-wheel'); const resultDiv = document.getElementById('picker-result'); const pickButton = document.getElementById('random-pick-btn'); pickButton.disabled = true; resultDiv.textContent = '...'; const randomSpins = Math.floor(Math.random() * 5) + 5; const randomStopAngle = Math.floor(Math.random() * 360); wheel.style.transform = `rotate(${randomSpins * 360 + randomStopAngle}deg)`; setTimeout(() => { const randomIndex = Math.floor(Math.random() * restaurants.length); const winner = restaurants[randomIndex]; resultDiv.textContent = winner; resultDiv.style.color = '#28a745'; pickButton.disabled = false; }, 4000); }
+        function updateRandomPageStatus() { if (!currentUser) { document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; document.getElementById('picker-result').textContent = '?'; return; } const allPosts = getPosts(); const restaurants = [...new Set(allPosts.map(p => p.name))]; const statusText = document.getElementById('random-status-text'); const pickerResult = document.getElementById('picker-result'); pickerResult.textContent = "?"; pickerResult.style.color = 'var(--primary-color)'; if (restaurants.length === 0) { statusText.textContent = "您還沒有新增任何餐廳喔！請到「新增」頁面加入吧！"; } else { statusText.textContent = `目前有 ${restaurants.length} 家獨特的餐廳在您的口袋名單中。`; } }
+        window.startRandomPick = function() { if (!currentUser) { alert('請先登入才能使用您的美食清單進行抽籤！'); showPage('login-page'); return; } const allPosts = getPosts(); const restaurants = [...new Set(allPosts.map(p => p.name))]; if (restaurants.length === 0) { alert("口袋名單是空的，無法抽籤！"); return; } const wheel = document.getElementById('picker-wheel'); const resultDiv = document.getElementById('picker-result'); const pickButton = document.getElementById('random-pick-btn'); pickButton.disabled = true; resultDiv.textContent = '...'; const randomSpins = Math.floor(Math.random() * 5) + 5; const randomStopAngle = Math.floor(Math.random() * 360); wheel.style.transform = `rotate(${randomSpins * 360 + randomStopAngle}deg)`; setTimeout(() => { const randomIndex = Math.floor(Math.random() * restaurants.length); const winner = restaurants[randomIndex]; resultDiv.textContent = winner; resultDiv.style.color = '#28a745'; pickButton.disabled = false; }, 4000); }
 
         // 3.7 Page 3: 新增美食評論
         function handleRatingClick(e) { const rating = e.target.dataset.value; document.getElementById('review-rating').dataset.rating = rating; updateHeartDisplay(rating); }
         function handleRatingHover(e) { updateHeartDisplay(e.target.dataset.value); }
         function handleRatingMouseout() { updateHeartDisplay(document.getElementById('review-rating').dataset.rating); }
         function updateHeartDisplay(rating) { document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => { heart.classList.toggle('active', heart.dataset.value <= rating); }); }
-        window.saveReview = function() { if (!currentUser) { alert('請先登入才能儲存評論！'); showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]')); return; } const name = document.getElementById('review-restaurant-name').value.trim(); const rating = document.getElementById('review-rating').dataset.rating; if (!name || rating === "0") { alert("請務必填寫「餐廳名稱」和「喜愛程度」！"); return; } const newPost = { id: Date.now(), name, items: document.getElementById('review-meal-items').value.trim(), cost: Number(document.getElementById('review-cost').value) || 0, rating, content: document.getElementById('review-content').value.trim(), timestamp: new Date().toISOString() }; const posts = getPosts(); posts.unshift(newPost); savePosts(posts); alert("評論已成功儲存！"); ['review-restaurant-name', 'review-meal-items', 'review-cost', 'review-content'].forEach(id => document.getElementById(id).value = ''); document.getElementById('review-rating').dataset.rating = 0; updateHeartDisplay(0); showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]')); }
+        window.saveReview = function() { if (!currentUser) { alert('請先登入才能儲存評論！'); showPage('login-page'); return; } const name = document.getElementById('review-restaurant-name').value.trim(); const rating = document.getElementById('review-rating').dataset.rating; if (!name || rating === "0") { alert("請務必填寫「餐廳名稱」和「喜愛程度」！"); return; } const newPost = { id: Date.now(), name, items: document.getElementById('review-meal-items').value.trim(), cost: Number(document.getElementById('review-cost').value) || 0, rating, content: document.getElementById('review-content').value.trim(), timestamp: new Date().toISOString() }; const posts = getPosts(); posts.unshift(newPost); savePosts(posts); alert("評論已成功儲存！"); ['review-restaurant-name', 'review-meal-items', 'review-cost', 'review-content'].forEach(id => document.getElementById(id).value = ''); document.getElementById('review-rating').dataset.rating = 0; updateHeartDisplay(0); showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]')); }
         
         // 3.8 Page 4: 美食挑戰榜
         const challengesData = [ { id: 'healthy_week', title: '挑戰一週健康餐', desc: '連續七天只吃原型食物和健康烹調的餐點！', rank: '<li>1. Alice (7/7天) 🥇</li> <li>2. David (6/7天) 🥈</li> <li>3. 美食探險家 (5/7天)</li>', participants: 'Alice, David, 美食探險家' }, { id: 'budget_200', title: '省錢大作戰：日均$200', desc: '挑戰連續五天，平均每日餐費不超過200元。', rank: '<li>1. Bob (平均 $185) 🥇</li> <li>2. Charlie (平均 $198) 🥈</li>', participants: 'Bob, Charlie' }, { id: 'vegan_exp', title: '素食體驗週', desc: '挑戰一週完全素食(蛋奶素可)。', rank: '<li>1. Eve (完成) 🥇</li> <li>2. Frank (完成) 🥈</li> <li>3. Grace (完成)</li>', participants: 'Eve, Frank, Grace' }];
         function renderChallenges() { const container = document.getElementById('challenge-list-container'); if (!currentUser) { container.innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; return; } const userChallenges = getUserChallenges(); container.innerHTML = ''; challengesData.forEach(c => { const isJoined = userChallenges[c.id]; const card = document.createElement('div'); card.className = 'challenge-card'; card.innerHTML = `<div class="challenge-header"><div class="challenge-title">${c.title}</div><button class="challenge-btn-join ${isJoined ? 'joined' : ''}" onclick="toggleChallenge('${c.id}')">${isJoined ? '已參加' : '參加'}</button></div><p class="challenge-desc">${c.desc}</p><div><div class="challenge-ranking-title">🏆 排行榜：</div><ul class="challenge-ranking-list" style="flex-direction:column; gap: 5px;">${c.rank}</ul></div><div style="margin-top:15px;"><div class="challenge-participants-title">👥 參與者：</div><div class="challenge-participants-list">${c.participants} ${isJoined ? ', <b>您</b>' : ''}</div></div>`; container.appendChild(card); }); }
-        window.toggleChallenge = function(challengeId) { if (!currentUser) { alert('請先登入才能參加挑戰！'); showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]')); return; } const userChallenges = getUserChallenges(); userChallenges[challengeId] = !userChallenges[challengeId]; saveUserChallenges(userChallenges); renderChallenges(); }
-
-        // 3.9 Page 5: 個人功能
-        function renderProfilePage() { if (currentUser) { showProfileTab('accounting', document.querySelector('#profile-data-view .tab-btn')); } }
-        window.showProfileTab = function(tabId, tabElement) { document.querySelectorAll('#profile-data-view .tab-btn').forEach(btn => btn.classList.remove('active')); tabElement.classList.add('active'); document.querySelectorAll('#profile-data-view .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active'); if (tabId === 'accounting') renderAccountingRecords(); if (tabId === 'posts') renderMyPosts(); if (tabId === 'favorites') renderFavoriteRestaurants(); }
-        function renderAccountingRecords() { const posts = getPosts().filter(p => p.cost > 0); const container = document.getElementById('accounting-content'); if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">尚無消費紀錄。</p>`; return; } container.innerHTML = '<h3>消費紀錄</h3>' + posts.map(p => `<div class="record-card"><span class="cost">$${p.cost}</span><div class="title">${p.name}</div><div class="details">${new Date(p.timestamp).toLocaleDateString()}</div></div>`).join(''); }
-        function renderMyPosts() { const posts = getPosts(); const container = document.getElementById('posts-content'); if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`; return; } container.innerHTML = posts.map(p => { let ratingHtml = Array(parseInt(p.rating)).fill('<i class="fa-solid fa-heart"></i>').join(''); return `<div class="post-card"><div class="title">${p.name}</div><div class="details">${new Date(p.timestamp).toLocaleString()}</div><p class="content">${p.content || '（無詳細評論）'}</p><div class="post-rating">${ratingHtml}</div></div>`; }).join(''); }
-        function renderFavoriteRestaurants() { const container = document.getElementById('favorites-content'); const favorites = getPosts().filter(p => p.rating >= 4).reduce((acc, cur) => { if (!acc.some(item => item.name === cur.name)) acc.push(cur); return acc; }, []).sort((a, b) => b.rating - a.rating); if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有評分高的餐廳喔！</p>`; return; } container.innerHTML = '<h3>最愛餐廳 (評分4顆心以上)</h3>' + favorites.map(p => `<div class="record-card"><div class="title">${p.name}</div></div>`).join(''); }
+        window.toggleChallenge = function(challengeId) { if (!currentUser) { alert('請先登入才能參加挑戰！'); showPage('login-page'); return; } const userChallenges = getUserChallenges(); userChallenges[challengeId] = !userChallenges[challengeId]; saveUserChallenges(userChallenges); renderChallenges(); }
 
         // --- 4. App 初始化 & Auth 狀態監聽 ---
         document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => { heart.addEventListener('click', handleRatingClick); heart.addEventListener('mouseover', handleRatingHover); heart.addEventListener('mouseout', handleRatingMouseout); });
         
         auth.onAuthStateChanged(user => { 
+            currentUser = user;
             if (user) { 
-                currentUser = user; 
                 setupLoggedInUI(user);
-                // 如果用戶剛好在個人頁面，則刷新內容
-                if (document.getElementById('profile-page').classList.contains('active')) {
-                    renderProfilePage();
-                }
             } else { 
-                currentUser = null; 
                 setupLoggedOutUI();
             } 
         });
