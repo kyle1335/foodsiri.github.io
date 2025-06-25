@@ -6,46 +6,32 @@
   <title>FoodieApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   
+  <!-- Firebase SDK 導入 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  
+  <!-- 
+    修正：將 Google Maps API 腳本放在 Firebase 之後，並在主要邏輯之前
+    async defer 是標準做法，callback=initMap 會在 API 載入後呼叫全域的 initMap 函式
+  -->
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
     async
     defer
   ></script>
 
-  <!-- Firebase SDK 導入 -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  
   <style>
-    /* --- 全域與基本樣式 --- */
-    :root { 
-        --primary-color: #667eea; 
-        --secondary-color: #764ba2; 
-        --success-color: #28a745; 
-        --background-color: #f8f9fa; 
-        --text-color: #333; 
-        --text-light: #6c757d; 
-        --nav-height: 60px; 
-    }
-    html, body { 
-        height: 100%; 
-        margin: 0; 
-        overflow: hidden; 
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-        background-color: var(--background-color); 
-    }
+    /* --- 所有 CSS 樣式保持不變，此處省略以節省空間 --- */
+    :root { --primary-color: #667eea; --secondary-color: #764ba2; --success-color: #28a745; --background-color: #f8f9fa; --text-color: #333; --text-light: #6c757d; --nav-height: 60px; }
+    html, body { height: 100%; margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--background-color); }
     .app-container { width: 100%; height: 100vh; display: flex; flex-direction: column; }
     main { flex-grow: 1; overflow: hidden; position: relative; }
     .page { width: 100%; height: 100%; display: none; flex-direction: column; overflow: hidden; }
     .page.active { display: flex; }
-
-    /* --- 導航列 --- */
     .app-nav { height: var(--nav-height); width: 100%; background: #fff; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-around; align-items: center; flex-shrink: 0; }
     .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-light); font-size: 12px; cursor: pointer; transition: color 0.2s; width: 100%; }
     .nav-item i { font-size: 22px; margin-bottom: 4px; }
     .nav-item.active { color: var(--primary-color); }
-
-    /* --- 地圖頁 (#map-page) --- */
     #map-page { flex-direction: column; }
     #map-panel { height: 65%; position: relative; background: #e5e3df; }
     #list-panel { height: 35%; border-top: 1px solid #ddd; display: flex; flex-direction: column; background: white; overflow: hidden; }
@@ -79,8 +65,6 @@
     .opening-hours-details p { margin: 2px 0; font-size: 13px; color: #666; }
     .friend-review { border-left: 3px solid #667eea; padding-left: 10px; margin-left: 21px; font-style: italic; font-size: 13px !important; }
     .friend-review .stars { color: #667eea; }
-
-    /* --- 通用頁面標頭 --- */
     .page-header { padding: 15px 20px; background-color: #fff; border-bottom: 1px solid #eee; text-align: center; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
     .page-header h2 { margin: 0; font-size: 18px; color: var(--text-color); display: flex; align-items: center; justify-content: center; flex-grow: 1; }
     .page-header h2 i { margin-right: 10px; color: var(--primary-color); }
@@ -89,109 +73,31 @@
     .page-header .placeholder { width: 24px; }
     .page-content { flex-grow: 1; overflow-y: auto; padding: 0; }
     .placeholder-text { text-align: center; color: var(--text-light); margin-top: 50px; padding: 20px; }
-    
-    /* --- 個人檔案頁 (#profile-page) --- */
     .profile-tabs { display: flex; background: #fff; border-bottom: 1px solid #eee; flex-shrink: 0; }
     .tab-item { flex: 1; text-align: center; padding: 12px 0; cursor: pointer; color: var(--text-light); font-size: 15px; border-bottom: 3px solid transparent; }
     .tab-item.active { color: var(--primary-color); border-bottom-color: var(--primary-color); font-weight: 600; }
     .profile-tab-content { display: none; height: 100%; overflow-y: auto; }
     .profile-tab-content.active { display: block; }
     .logged-out-placeholder { padding: 20px; text-align: center; color: var(--text-light); }
-
-    /* --- 新增/修改：每日記帳頁面樣式 --- */
     #accounting-content { padding: 0; background-color: var(--background-color); }
-    .accounting-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 20px;
-        background: #fff;
-        border-bottom: 1px solid #eee;
-        position: sticky; top: 0; z-index: 5;
-    }
+    .accounting-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #fff; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 5; }
     .accounting-header h3 { margin: 0; font-size: 16px; color: var(--text-color); }
-    .date-nav-btn {
-        background: none;
-        border: none;
-        font-size: 20px;
-        color: var(--primary-color);
-        cursor: pointer;
-        padding: 5px 10px;
-    }
-    .daily-accounting-list {
-        padding: 10px 20px 20px;
-    }
-    .daily-total-card {
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-        color: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    }
+    .date-nav-btn { background: none; border: none; font-size: 20px; color: var(--primary-color); cursor: pointer; padding: 5px 10px; }
+    .daily-accounting-list { padding: 10px 20px 20px; }
+    .daily-total-card { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
     .daily-total-card .total-title { font-size: 14px; opacity: 0.9; margin-bottom: 5px; }
     .daily-total-card .total-amount { font-size: 28px; font-weight: bold; }
-    .meal-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: #fff;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .meal-info {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-    .meal-icon {
-        font-size: 20px;
-        color: var(--primary-color);
-        width: 25px;
-        text-align: center;
-    }
-    .meal-name {
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--text-color);
-    }
-    .meal-entry {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-    .add-expense-btn {
-        background: none;
-        border: none;
-        font-size: 24px;
-        color: var(--success-color); /* 綠色，如手稿 */
-        cursor: pointer;
-        transition: transform 0.2s;
-    }
+    .meal-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .meal-info { display: flex; align-items: center; gap: 15px; }
+    .meal-icon { font-size: 20px; color: var(--primary-color); width: 25px; text-align: center; }
+    .meal-name { font-size: 16px; font-weight: 600; color: var(--text-color); }
+    .meal-entry { display: flex; align-items: center; gap: 15px; }
+    .add-expense-btn { background: none; border: none; font-size: 24px; color: var(--success-color); cursor: pointer; transition: transform 0.2s; }
     .add-expense-btn:hover { transform: scale(1.1); }
-    .expense-display {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-    .expense-display .cost {
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--secondary-color);
-    }
-    .delete-expense-btn {
-        background: none;
-        border: none;
-        font-size: 16px;
-        color: #aaa;
-        cursor: pointer;
-    }
+    .expense-display { display: flex; align-items: center; gap: 15px; }
+    .expense-display .cost { font-size: 16px; font-weight: 600; color: var(--secondary-color); }
+    .delete-expense-btn { background: none; border: none; font-size: 16px; color: #aaa; cursor: pointer; }
     .delete-expense-btn:hover { color: #dc3545; }
-
-    /* --- 認證頁 (#auth-page) --- */
     #auth-page { justify-content: center; align-items: center; background: linear-gradient(to top, var(--primary-color), var(--secondary-color)); padding: 20px; }
     .auth-container { background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: 100%; max-width: 350px; text-align: center; }
     .auth-container h2 { margin-top: 0; }
@@ -201,13 +107,12 @@
     .auth-divider { text-align: center; margin: 20px 0; color: #aaa; }
     .google-btn { background-color: #db4437; color: white; }
     .toggle-auth { color: var(--primary-color); cursor: pointer; margin-top: 15px; }
-
   </style>
 </head>
 <body>
   <div class="app-container">
     <main>
-      <!-- 地圖頁 -->
+      <!-- HTML 結構保持不變... -->
       <div id="map-page" class="page active">
         <div id="map-panel">
           <div id="map"></div>
@@ -223,692 +128,406 @@
           </div>
         </div>
       </div>
-
-      <!-- 挑戰頁 -->
-      <div id="challenges-page" class="page">
-        <div class="page-header">
-            <h2><i class="fas fa-trophy"></i>美食挑戰</h2>
-        </div>
-        <div class="page-content" style="padding: 20px;">
-            <p class="placeholder-text">此功能正在開發中...</p>
-        </div>
-      </div>
-      
-      <!-- 發文頁 -->
-      <div id="posts-page" class="page">
-        <div class="page-header">
-            <h2><i class="fas fa-plus-square"></i>新增貼文</h2>
-        </div>
-         <div class="page-content" style="padding: 20px;">
-            <p class="placeholder-text">您可以在餐廳的資訊卡中新增貼文。<br>或在這裡直接新增一筆消費紀錄。</p>
-        </div>
-      </div>
-      
-      <!-- 好友頁 -->
-      <div id="friends-page" class="page">
-        <div class="page-header">
-            <h2><i class="fas fa-users"></i>好友動態</h2>
-        </div>
-         <div class="page-content" style="padding: 20px;">
-            <p class="placeholder-text">好友的最新評論將會顯示在地圖上。</p>
-        </div>
-      </div>
-
-      <!-- 個人檔案頁 -->
-      <div id="profile-page" class="page">
-        <div class="page-header">
-          <span class="placeholder"></span>
-          <h2><i class="fas fa-user-circle"></i>個人檔案</h2>
-          <a href="#" class="header-action" onclick="handleSignOut()">登出</a>
-        </div>
-        <div class="profile-tabs">
-          <div class="tab-item active" onclick="showProfileTab('accounting-content', this)">記帳</div>
-          <div class="tab-item" onclick="showProfileTab('myposts-content', this)">我的貼文</div>
-          <div class="tab-item" onclick="showProfileTab('favorites-content', this)">收藏餐廳</div>
-          <div class="tab-item" onclick="showProfileTab('myfriends-content', this)">我的好友</div>
-        </div>
-        <div class="page-content">
-          <div id="accounting-content" class="profile-tab-content active">
-            <!-- 新的記帳內容將會被 JS 渲染於此 -->
-          </div>
-          <div id="myposts-content" class="profile-tab-content">
-              <p class="placeholder-text">尚無貼文。</p>
-          </div>
-          <div id="favorites-content" class="profile-tab-content">
-              <p class="placeholder-text">尚無收藏。</p>
-          </div>
-          <div id="myfriends-content" class="profile-tab-content">
-              <p class="placeholder-text">尚無好友。</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 登入/註冊頁 -->
-      <div id="auth-page" class="page">
-        <div id="login-container" class="auth-container">
-            <h2>登入 FoodieApp</h2>
-            <div class="auth-form">
-                <input type="email" id="login-email" placeholder="電子郵件">
-                <input type="password" id="login-password" placeholder="密碼">
-                <button class="auth-btn" onclick="handleSignIn()">登入</button>
-            </div>
-            <div class="auth-divider">或</div>
-            <button class="auth-btn google-btn" onclick="handleGoogleSignIn()"><i class="fab fa-google"></i> 使用 Google 登入</button>
-            <p class="toggle-auth" onclick="toggleAuthForms()">還沒有帳號？點此註冊</p>
-        </div>
-        <div id="register-container" class="auth-container" style="display: none;">
-            <h2>註冊新帳號</h2>
-            <div class="auth-form">
-                <input type="email" id="register-email" placeholder="電子郵件">
-                <input type="password" id="register-password" placeholder="密碼 (至少6位數)">
-                <button class="auth-btn" onclick="handleRegister()">註冊</button>
-            </div>
-            <p class="toggle-auth" onclick="toggleAuthForms()">已經有帳號了？點此登入</p>
-        </div>
-      </div>
+      <div id="challenges-page" class="page"><div class="page-header"><h2><i class="fas fa-trophy"></i>美食挑戰</h2></div><div class="page-content" style="padding: 20px;"><p class="placeholder-text">此功能正在開發中...</p></div></div>
+      <div id="posts-page" class="page"><div class="page-header"><h2><i class="fas fa-plus-square"></i>新增貼文</h2></div><div class="page-content" style="padding: 20px;"><p class="placeholder-text">您可以在餐廳的資訊卡中新增貼文。<br>或在這裡直接新增一筆消費紀錄。</p></div></div>
+      <div id="friends-page" class="page"><div class="page-header"><h2><i class="fas fa-users"></i>好友動態</h2></div><div class="page-content" style="padding: 20px;"><p class="placeholder-text">好友的最新評論將會顯示在地圖上。</p></div></div>
+      <div id="profile-page" class="page"><div class="page-header"><span class="placeholder"></span><h2><i class="fas fa-user-circle"></i>個人檔案</h2><a href="#" class="header-action" onclick="handleSignOut()">登出</a></div><div class="profile-tabs"><div class="tab-item active" onclick="showProfileTab('accounting-content', this)">記帳</div><div class="tab-item" onclick="showProfileTab('myposts-content', this)">我的貼文</div><div class="tab-item" onclick="showProfileTab('favorites-content', this)">收藏餐廳</div><div class="tab-item" onclick="showProfileTab('myfriends-content', this)">我的好友</div></div><div class="page-content"><div id="accounting-content" class="profile-tab-content active"></div><div id="myposts-content" class="profile-tab-content"><p class="placeholder-text">尚無貼文。</p></div><div id="favorites-content" class="profile-tab-content"><p class="placeholder-text">尚無收藏。</p></div><div id="myfriends-content" class="profile-tab-content"><p class="placeholder-text">尚無好友。</p></div></div></div>
+      <div id="auth-page" class="page"><div id="login-container" class="auth-container"><h2>登入 FoodieApp</h2><div class="auth-form"><input type="email" id="login-email" placeholder="電子郵件"><input type="password" id="login-password" placeholder="密碼"><button class="auth-btn" onclick="handleSignIn()">登入</button></div><div class="auth-divider">或</div><button class="auth-btn google-btn" onclick="handleGoogleSignIn()"><i class="fab fa-google"></i> 使用 Google 登入</button><p class="toggle-auth" onclick="toggleAuthForms()">還沒有帳號？點此註冊</p></div><div id="register-container" class="auth-container" style="display: none;"><h2>註冊新帳號</h2><div class="auth-form"><input type="email" id="register-email" placeholder="電子郵件"><input type="password" id="register-password" placeholder="密碼 (至少6位數)"><button class="auth-btn" onclick="handleRegister()">註冊</button></div><p class="toggle-auth" onclick="toggleAuthForms()">已經有帳號了？點此登入</p></div></div>
     </main>
     <footer class="app-nav">
-      <div class="nav-item active" onclick="showPage('map-page', this)"><i class="fas fa-map-marked-alt"></i><span>地圖</span></div>
-      <div class="nav-item" onclick="showPage('challenges-page', this)"><i class="fas fa-trophy"></i><span>挑戰</span></div>
-      <div class="nav-item" onclick="showPage('posts-page', this)"><i class="fas fa-plus-square"></i><span>發文</span></div>
-      <div class="nav-item" onclick="showPage('friends-page', this)"><i class="fas fa-users"></i><span>好友</span></div>
-      <div class="nav-item" onclick="showPage('profile-page', this)"><i class="fas fa-user"></i><span>我</span></div>
+        <!-- 導航列 HTML 保持不變 -->
+        <div class="nav-item active" onclick="showPage('map-page', this)"><i class="fas fa-map-marked-alt"></i><span>地圖</span></div>
+        <div class="nav-item" onclick="showPage('challenges-page', this)"><i class="fas fa-trophy"></i><span>挑戰</span></div>
+        <div class="nav-item" onclick="showPage('posts-page', this)"><i class="fas fa-plus-square"></i><span>發文</span></div>
+        <div class="nav-item" onclick="showPage('friends-page', this)"><i class="fas fa-users"></i><span>好友</span></div>
+        <div class="nav-item" onclick="showPage('profile-page', this)"><i class="fas fa-user"></i><span>我</span></div>
     </footer>
   </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- 1. Firebase 初始化 ---
-        const firebaseConfig = { apiKey: "AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs", authDomain: "foodiedata-b4982.firebaseapp.com", projectId: "foodiedata-b4982", storageBucket: "foodiedata-b4982.firebasestorage.app", messagingSenderId: "90315404352", appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5", measurementId: "G-5FD72CVKGB" };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+// --- 全域變數 ---
+// 這些變數需要被多個函式（包括全域的 initMap）存取
+let currentUser = null; 
+let map, userGpsPosition, userMarker, restaurantMarkers, debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
+let selectedPlace = null;
+let currentPlaces = []; 
+let isMapReady = false; 
+const POSTS_DB_KEY = 'foodieAppPosts'; 
+let pageHistory = ['map-page']; 
+let accountingCurrentDate = new Date();
 
-        // --- 2. 全域變數 & 模擬數據 ---
-        let currentUser = null; 
-        let map, userGpsPosition, userMarker, restaurantMarkers, debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
-        let selectedPlace = null;
-        let currentPlaces = []; 
-        let isMapReady = false; 
-        const POSTS_DB_KEY = 'foodieAppPosts'; 
-        let pageHistory = ['map-page']; 
-        let accountingCurrentDate = new Date(); // 記帳頁面當前日期
+// 模擬好友數據
+const mockFriendData = { 'friend1': { name: '小明' }, 'friend2': { name: '花花' } };
+const mockFriendReviews = {
+    'ChIJ____wJy_QjQR1bI4m_d1jYg': [{ friendId: 'friend1', rating: 5, comment: '皮薄餡多，CP值超高！必點煎餃。' }],
+    'ChIJO3S-5qi_QjQRVERoyDD9D8M': [{ friendId: 'friend2', rating: 4, comment: '湯頭濃郁，但用餐時間人很多。' }]
+};
 
-        // 模擬好友數據
-        const mockFriendData = { 'friend1': { name: '小明' }, 'friend2': { name: '花花' } };
-        const mockFriendReviews = {
-            'ChIJ____wJy_QjQR1bI4m_d1jYg': [{ friendId: 'friend1', rating: 5, comment: '皮薄餡多，CP值超高！必點煎餃。' }],
-            'ChIJO3S-5qi_QjQRVERoyDD9D8M': [{ friendId: 'friend2', rating: 4, comment: '湯頭濃郁，但用餐時間人很多。' }]
-        };
-        
-        // --- 3. 頁面導航 & 其他通用功能 ---
-        window.showPage = function(pageId, navElement = null) {
-            if (pageHistory[pageHistory.length - 1] !== pageId) {
-                pageHistory.push(pageId);
-            }
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            
-            if (navElement) {
-                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-                navElement.classList.add('active');
-            }
 
-            // 根據頁面觸發渲染
-            if(pageId === 'profile-page') {
-                renderProfilePage();
-            } else if (pageId === 'auth-page' && currentUser) {
-                // 如果已登入卻點到登入頁，直接導向個人檔案
-                showPage('profile-page', document.querySelector('.nav-item:last-child'));
-            }
-        };
+// --- 地圖相關功能 (全域) ---
+// 這些函式需要被 initMap 呼叫，因此定義在全域範圍
+function initMap() {
+    isMapReady = true;
+    userGpsPosition = { lat: 25.0479, lng: 121.5171 };
+    restaurantMarkers = [];
+    map = new google.maps.Map(document.getElementById("map"), { center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true });
+    placesService = new google.maps.places.PlacesService(map);
+    infoWindow = new google.maps.InfoWindow();
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } });
+    
+    createUserMarker(userGpsPosition);
+    setupMapListeners();
+    setupAutocomplete();
+    updateUserGPS();
+};
 
-        window.goBack = function() {
-            if (pageHistory.length > 1) {
-                pageHistory.pop();
-                const prevPageId = pageHistory[pageHistory.length - 1];
-                const navItem = document.querySelector(`.nav-item[onclick*="'${prevPageId}'"]`);
-                showPage(prevPageId, navItem);
-            }
-        };
+function setupMapListeners() {
+    map.addListener("idle", () => { if (!selectedPlace) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } });
+    map.addListener("click", () => { if (selectedPlace) deselectAll(); });
+}
 
-        window.toggleAuthForms = function() {
-            const loginContainer = document.getElementById('login-container');
-            const registerContainer = document.getElementById('register-container');
-            const isLoginVisible = loginContainer.style.display !== 'none';
-            loginContainer.style.display = isLoginVisible ? 'none' : 'block';
-            registerContainer.style.display = isLoginVisible ? 'block' : 'none';
-        };
+function setupAutocomplete() {
+    const input = document.getElementById('search-input');
+    autocomplete = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'tw' }, types: ['establishment', 'geocode'], fields: ['place_id', 'geometry', 'name', 'formatted_address', 'vicinity', 'opening_hours', 'business_status', 'rating'] });
+    input.addEventListener('input', () => { document.getElementById('clear-search').style.display = input.value ? 'flex' : 'none'; });
+    autocomplete.addListener('place_changed', () => { const place = autocomplete.getPlace(); if (place.geometry && place.geometry.location) handlePlaceSelection(place, true); });
+}
 
-        // --- 3.1 Firebase Auth 功能 ---
-        window.handleRegister = function() {
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            auth.createUserWithEmailAndPassword(email, password)
-                .then(userCredential => {
-                    alert('註冊成功！');
-                    showPage('map-page', document.querySelector('.nav-item'));
-                })
-                .catch(error => alert(`註冊失敗：${error.message}`));
-        };
-        
-        window.handleSignIn = function() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            auth.signInWithEmailAndPassword(email, password)
-                .then(userCredential => {
-                    alert('登入成功！');
-                    showPage('map-page', document.querySelector('.nav-item'));
-                })
-                .catch(error => alert(`登入失敗：${error.message}`));
-        };
+function updateUserGPS() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+            userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude };
+            if (userMarker) userMarker.setPosition(userGpsPosition); else createUserMarker(userGpsPosition);
+            map.setCenter(userGpsPosition);
+        }, () => { console.log("無法取得地理位置。"); });
+    }
+};
 
-        window.handleGoogleSignIn = function() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider)
-                .then(result => {
-                    alert('Google 登入成功！');
-                    showPage('map-page', document.querySelector('.nav-item'));
-                })
-                .catch(error => alert(`Google 登入失敗：${error.message}`));
-        };
+function centerOnUserGPS() {
+    if (userGpsPosition) map.setCenter(userGpsPosition);
+};
 
-        window.handleSignOut = function() {
-            if (confirm('確定要登出嗎？')) {
-                auth.signOut().then(() => {
-                    alert('已成功登出。');
-                }).catch(error => alert(`登出時發生錯誤：${error.message}`));
-            }
-        };
+function createUserMarker(position) {
+    if(userMarker) userMarker.setMap(null);
+    userMarker = new google.maps.Marker({ position, map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#4285F4', fillOpacity: 1, strokeColor: 'white', strokeWeight: 2 }, zIndex: 100 });
+};
 
-        function setupLoggedInUI(user) {
-            document.querySelector('.page-header h2[onclick*="handleSignOut"]').nextElementSibling.style.display = 'block';
-        };
-
-        function setupLoggedOutUI() {
-            document.querySelector('.page-header h2[onclick*="handleSignOut"]').nextElementSibling.style.display = 'none';
-        };
-
-        // --- 3.2 本地儲存 (localStorage) ---
-        function getPosts() {
-            if (!currentUser) return [];
-            const key = `${POSTS_DB_KEY}_${currentUser.uid}`;
-            return JSON.parse(localStorage.getItem(key)) || [];
+function searchNearbyRestaurants(location) {
+    if (!isMapReady) return;
+    const listContainer = document.getElementById("list-content-area");
+    listContainer.innerHTML = `<p class="list-status-text">正在搜尋附近餐廳...</p>`;
+    clearRestaurantMarkers();
+    const request = { location: location, radius: 1500, type: 'restaurant' };
+    placesService.nearbySearch(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+            processAndDisplayResults(results, location);
+        } else {
+            listContainer.innerHTML = `<p class="list-status-text">此區域找不到餐廳</p>`;
         }
-
-        function savePosts(posts) {
-            if (!currentUser) return;
-            const key = `${POSTS_DB_KEY}_${currentUser.uid}`;
-            localStorage.setItem(key, JSON.stringify(posts));
-        }
-        
-        function loggedOutPlaceholder(actionText) {
-            return `<div class="logged-out-placeholder">請先<a href="#" onclick="showPage('auth-page')">登入</a>${actionText}</div>`;
-        }
-
-        // --- 3.5 地圖功能 ---
-        window.initMap = function () {
-            isMapReady = true;
-            userGpsPosition = { lat: 25.0479, lng: 121.5171 }; // 預設台北車站
-            restaurantMarkers = [];
-            map = new google.maps.Map(document.getElementById("map"), { center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true });
-            placesService = new google.maps.places.PlacesService(map);
-            infoWindow = new google.maps.InfoWindow();
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } });
-            createUserMarker(userGpsPosition);
-            setupMapListeners();
-            setupAutocomplete();
-            updateUserGPS();
-        };
-        
-        function setupMapListeners() {
-            map.addListener("idle", () => {
-                if (!selectedPlace) {
-                    clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500);
-                }
-            });
-            map.addListener("click", () => {
-                if (selectedPlace) deselectAll();
-            });
-        }
-        
-        function setupAutocomplete() {
-            const input = document.getElementById('search-input');
-            autocomplete = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'tw' }, types: ['establishment', 'geocode'], fields: ['place_id', 'geometry', 'name', 'formatted_address', 'vicinity', 'opening_hours', 'business_status', 'rating'] });
-            input.addEventListener('input', () => { document.getElementById('clear-search').style.display = input.value ? 'flex' : 'none'; });
-            autocomplete.addListener('place_changed', () => {
-                const place = autocomplete.getPlace();
-                if (place.geometry && place.geometry.location) handlePlaceSelection(place, true);
-            });
-        }
-
-        window.updateUserGPS = function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude };
-                    if (userMarker) {
-                        userMarker.setPosition(userGpsPosition);
-                    } else {
-                        createUserMarker(userGpsPosition);
-                    }
-                    map.setCenter(userGpsPosition);
-                }, () => { 
-                    console.log("無法取得地理位置。");
-                });
-            }
-        };
-
-        window.centerOnUserGPS = function() {
-            if (userGpsPosition) map.setCenter(userGpsPosition);
-        };
-        
-        window.createUserMarker = function(position) {
-            if(userMarker) userMarker.setMap(null);
-            userMarker = new google.maps.Marker({
-                position,
-                map,
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 8,
-                    fillColor: '#4285F4',
-                    fillOpacity: 1,
-                    strokeColor: 'white',
-                    strokeWeight: 2,
-                },
-                zIndex: 100
-            });
-        };
-
-        function searchNearbyRestaurants(location) {
-            if (!isMapReady) return;
-            const listContainer = document.getElementById("list-content-area");
-            listContainer.innerHTML = `<p class="list-status-text">正在搜尋附近餐廳...</p>`;
-            clearRestaurantMarkers();
-            const request = { location: location, radius: 1500, type: 'restaurant' };
-            placesService.nearbySearch(request, (results, status) => {
-                if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-                    processAndDisplayResults(results, location);
-                } else {
-                    listContainer.innerHTML = `<p class="list-status-text">此區域找不到餐廳</p>`;
-                }
-            });
-        }
-
-        function processAndDisplayResults(places, center) {
-            const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) }));
-            placesWithDistance.sort((a, b) => a.distance - b.distance);
-            currentPlaces = placesWithDistance;
-            displayFullRestaurantList();
-            clearRestaurantMarkers();
-            currentPlaces.forEach(place => addRestaurantMarker(place, place.distance));
-        }
-
-        function displayFullRestaurantList() {
-            const listContainer = document.getElementById("list-content-area");
-            listContainer.innerHTML = "";
-            if (currentPlaces.length === 0) {
-                listContainer.innerHTML = `<p class="list-status-text">此區域找不到餐廳</p>`;
-                return;
-            }
-            currentPlaces.forEach(place => addRestaurantToList(place));
-        }
-
-        function addRestaurantMarker(place, distance) {
-            const isDistant = distance > 1500;
-            const marker = new google.maps.Marker({
-                position: place.geometry.location,
-                map: map,
-                title: place.name,
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 14,
-                    fillColor: isDistant ? '#9E9E9E' : '#EA4335',
-                    fillOpacity: isDistant ? 0.8 : 1,
-                    strokeWeight: 2,
-                    strokeColor: 'white',
-                },
-                label: { text: '\uf2e7', fontFamily: '"Font Awesome 6 Free"', fontWeight: '900', color: 'white', fontSize: '14px' }
-            });
-            marker.addListener('click', () => { handlePlaceSelection(place); });
-            marker.place_id = place.place_id;
-            restaurantMarkers.push(marker);
-        }
-
-        function addRestaurantToList(place, routeInfo = null) {
-            const listContainer = document.getElementById("list-content-area");
-            const isOpen = place.opening_hours ? place.opening_hours.open_now : null;
-            let statusHtml = '';
-            if (isOpen === true) statusHtml = `<span class="open-status open">營業中</span>`;
-            else if (isOpen === false) statusHtml = `<span class="open-status closed">已打烊</span>`;
-            
-            let distanceHtml = '';
-            if (routeInfo && routeInfo.driving) {
-                distanceHtml = `<span class="item-distance">${routeInfo.driving.distance}</span>`;
-            } else if (place.distance) {
-                distanceHtml = `<span class="item-distance">${Math.round(place.distance)} m</span>`;
-            }
-            
-            const li = document.createElement("div");
-            li.className = "list-item";
-            li.setAttribute("data-place-id", place.place_id);
-            li.onclick = () => handlePlaceSelection(place);
-            li.innerHTML = `
-                <i class="fas fa-utensils item-icon"></i>
-                <div class="item-info">
-                    <div class="item-name">${place.name}</div>
-                    <div class="item-details">${statusHtml} ${place.rating ? `⭐ ${place.rating}` : ''}</div>
-                    <div class="item-address">${place.vicinity}</div>
-                </div>
-                ${distanceHtml}`;
-            listContainer.appendChild(li);
-        }
-        
-        window.handlePlaceSelection = function(place, fromSearch = false) {
-            selectedPlace = place;
-            const targetMarker = restaurantMarkers.find(m => m.place_id === place.place_id);
-            
-            if (fromSearch || !targetMarker) {
-                clearRestaurantMarkers();
-                const marker = addRestaurantMarker(place, 0); // Add a single marker for the searched place
-                calculateAndDisplayRoute(place, marker);
-            } else {
-                calculateAndDisplayRoute(place, targetMarker);
-            }
-            highlightListItem(place.place_id, true);
-        };
-        
-        function calculateAndDisplayRoute(place, marker) {
-            if (!userGpsPosition) {
-                showPlaceDetailsInWindow(place, marker);
-                return;
-            }
-            directionsService.route({
-                origin: userGpsPosition,
-                destination: { placeId: place.place_id },
-                travelMode: google.maps.TravelMode.DRIVING
-            }, (response, status) => {
-                if (status === google.maps.DirectionsStatus.OK) {
-                    directionsRenderer.setDirections(response);
-                    const route = response.routes[0].legs[0];
-                    const routeInfo = { driving: { distance: route.distance.text, duration: route.duration.text } };
-                    showSinglePlaceResult(place, routeInfo);
-                    showPlaceDetailsInWindow(place, marker, routeInfo);
-                } else {
-                    showPlaceDetailsInWindow(place, marker);
-                }
-            });
-        }
-        
-        function showSinglePlaceResult(place, routeInfo) {
-            const listContainer = document.getElementById("list-content-area");
-            listContainer.innerHTML = ''; // Clear the list
-            addRestaurantToList(place, routeInfo);
-        }
-
-        function showPlaceDetailsInWindow(place, marker, routeInfo = null) {
-            const request = { placeId: place.place_id, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address'] };
-            placesService.getDetails(request, (details, status) => {
-                let content = `<div class="info-window-content"><h4>${place.name}</h4>`;
-                const displayDetails = (status === google.maps.places.PlacesServiceStatus.OK && details) ? details : place;
-                const address = displayDetails.formatted_address || displayDetails.vicinity;
-                if (address) content += `<p><i class="fas fa-map-marker-alt"></i>${address}</p>`;
-                if (routeInfo) content += `<p><i class="fas fa-car"></i>${routeInfo.driving.distance} (${routeInfo.driving.duration})</p>`;
-                if (displayDetails.rating) content += `<p><i class="fas fa-star" style="color:#FDBF42;"></i>${displayDetails.rating} (Google)</p>`;
-
-                let friendReviewHtml = '';
-                const friendReviewsForPlace = mockFriendReviews[place.place_id];
-                if (friendReviewsForPlace && friendReviewsForPlace.length > 0) {
-                    const review = friendReviewsForPlace[0]; 
-                    const friend = mockFriendData[review.friendId];
-                    if (friend) {
-                        const friendStars = Array(review.rating).fill('<i class="fas fa-star"></i>').join('');
-                        const shortComment = review.comment.length > 20 ? review.comment.substring(0, 20) + '...' : review.comment;
-                        friendReviewHtml += `<p><i class="fas fa-user-friends"></i><span class="stars">${friendStars}</span> (${friend.name})</p>`;
-                        friendReviewHtml += `<p class="friend-review">“${shortComment}”</p>`;
-                    }
-                }
-                
-                let hoursContent = '';
-                const openingHoursData = (details && details.opening_hours) ? details.opening_hours : place.opening_hours;
-                if (displayDetails.business_status === "CLOSED_PERMANENTLY") {
-                    hoursContent = `<p><i class="fas fa-store-slash"></i><span style="color: #dc3545; font-weight: bold;">永久停業</span></p>`;
-                } else if (openingHoursData) {
-                    const isOpen = typeof openingHoursData.open_now !== 'undefined' ? openingHoursData.open_now : false;
-                    const statusText = isOpen ? "營業中" : "打烊中";
-                    const color = isOpen ? "#28a745" : "#dc3545";
-                    let weeklyHoursHtml = '';
-                    if (openingHoursData.weekday_text && openingHoursData.weekday_text.length > 0) {
-                        const todayIndex = (new Date().getDay() + 6) % 7;
-                        weeklyHoursHtml += `<div class="opening-hours-details" style="display:none;">`;
-                        openingHoursData.weekday_text.forEach((day_hours, index) => {
-                            const isToday = index === todayIndex;
-                            weeklyHoursHtml += `<p style="${isToday ? 'font-weight:bold;' : ''}">${day_hours.replace(':', ':<span style="padding-left: 5px"></span>')}</p>`;
-                        });
-                        weeklyHoursHtml += `</div>`;
-                        hoursContent = `<div class="opening-hours-container"><i class="fas fa-clock"></i><div><div class="opening-hours-header" onclick="toggleHours(this)"><span style="color: ${color}; font-weight: bold;">${statusText}</span><span class="arrow">▾</span></div>${weeklyHoursHtml}</div></div>`;
-                    } else {
-                         hoursContent = `<p><i class="fas fa-clock"></i><span style="color: ${color}; font-weight: bold;">${statusText}</span></p>`;
-                    }
-                }
-                
-                content += friendReviewHtml;
-                content += hoursContent;
-                content += '</div>';
-                infoWindow.setContent(content);
-                infoWindow.open(map, marker);
-            });
-        }
-        window.toggleHours = function(element) { const details = element.parentElement.querySelector('.opening-hours-details'); if (details) { const isHidden = details.style.display === 'none'; details.style.display = isHidden ? 'block' : 'none'; element.classList.toggle('expanded', isHidden); } };
-
-        function deselectAll() {
-            selectedPlace = null;
-            infoWindow.close();
-            directionsRenderer.setDirections({ routes: [] });
-            document.querySelectorAll('.list-item.is-selected').forEach(item => item.classList.remove('is-selected'));
-            searchNearbyRestaurants(map.getCenter());
-        }
-
-        window.clearSearch = function() {
-            document.getElementById('search-input').value = '';
-            document.getElementById('clear-search').style.display = 'none';
-            deselectAll();
-        };
-
-        function highlightListItem(placeId, scroll) {
-            document.querySelectorAll('.list-item').forEach(item => {
-                item.classList.toggle('is-selected', item.getAttribute('data-place-id') === placeId);
-                if (scroll && item.getAttribute('data-place-id') === placeId) {
-                    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            });
-        }
-
-        function clearRestaurantMarkers() {
-            restaurantMarkers.forEach(marker => marker.setMap(null));
-            restaurantMarkers = [];
-        }
-        
-        // --- 3.9 Page 5: 個人檔案功能 (***核心修改***) ---
-        function renderProfilePage() {
-            if (!currentUser) {
-                showPage('auth-page');
-                return;
-            }
-            const activeTab = document.querySelector('.profile-tabs .tab-item.active');
-            if (activeTab) {
-                const tabId = activeTab.getAttribute('onclick').match(/'([^']*)'/)[1];
-                showProfileTab(tabId, activeTab);
-            } else {
-                 showProfileTab('accounting-content', document.querySelector('.profile-tabs .tab-item'));
-            }
-        }
-        
-        window.showProfileTab = function(tabId, tabElement) {
-            document.querySelectorAll('.profile-tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.profile-tabs .tab-item').forEach(t => t.classList.remove('active'));
-            
-            document.getElementById(tabId).classList.add('active');
-            tabElement.classList.add('active');
-            
-            switch (tabId) {
-                case 'accounting-content': renderAccountingRecords(); break;
-                case 'myposts-content': renderMyPosts(); break;
-                case 'favorites-content': renderFavoriteRestaurants(); break;
-                case 'myfriends-content': renderFriendsList(); break;
-            }
-        };
-
-        // 修改: 主渲染函式，作為控制器
-        function renderAccountingRecords() {
-            if (!currentUser) {
-                const container = document.getElementById('accounting-content');
-                container.innerHTML = loggedOutPlaceholder('以使用每日飲食記帳功能。');
-                return;
-            }
-            renderDailyAccountingView(accountingCurrentDate);
-        }
-
-        // 新增: 渲染每日記帳視圖的函式
-        function renderDailyAccountingView(date) {
-            const container = document.getElementById('accounting-content');
-            
-            const posts = getPosts();
-            const startOfDay = new Date(date);
-            startOfDay.setHours(0, 0, 0, 0);
-            const endOfDay = new Date(date);
-            endOfDay.setHours(23, 59, 59, 999);
-
-            const todaysPosts = posts.filter(p => {
-                const postDate = new Date(p.timestamp);
-                return postDate >= startOfDay && postDate <= endOfDay && p.cost > 0;
-            });
-            
-            const dailyTotal = todaysPosts.reduce((sum, p) => sum + Number(p.cost), 0);
-
-            const mealTypes = [
-                { type: 'breakfast', name: '早餐', icon: 'fa-mug-saucer' },
-                { type: 'lunch', name: '午餐', icon: 'fa-utensils' },
-                { type: 'snack', name: '點心', icon: 'fa-cookie-bite' },
-                { type: 'dinner', name: '晚餐', icon: 'fa-drumstick-bite' },
-                { type: 'supper', name: '宵夜', icon: 'fa-pizza-slice' }
-            ];
-
-            let mealItemsHtml = mealTypes.map(meal => {
-                const post = todaysPosts.find(p => p.mealType === meal.type);
-                let entryHtml = '';
-                if (post) {
-                    entryHtml = `
-                        <div class="expense-display">
-                            <span class="cost">$${post.cost.toLocaleString()}</span>
-                            <button class="delete-expense-btn" onclick="deleteExpense('${post.id}')"><i class="fas fa-trash-alt"></i></button>
-                        </div>
-                    `;
-                } else {
-                    entryHtml = `<button class="add-expense-btn" onclick="addExpense('${meal.type}', '${meal.name}')"><i class="fas fa-plus-circle"></i></button>`;
-                }
-
-                return `
-                    <div class="meal-item">
-                        <div class="meal-info">
-                            <i class="fas ${meal.icon} meal-icon"></i>
-                            <span class="meal-name">${meal.name}</span>
-                        </div>
-                        <div class="meal-entry">
-                            ${entryHtml}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            container.innerHTML = `
-                <div class="accounting-header">
-                    <button class="date-nav-btn" onclick="changeDate(-1)"><i class="fas fa-chevron-left"></i></button>
-                    <h3>${date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}</h3>
-                    <button class="date-nav-btn" onclick="changeDate(1)"><i class="fas fa-chevron-right"></i></button>
-                </div>
-                <div class="daily-accounting-list">
-                    <div class="daily-total-card">
-                        <div class="total-title">本日餐飲支出</div>
-                        <div class="total-amount">$${dailyTotal.toLocaleString()}</div>
-                    </div>
-                    ${mealItemsHtml}
-                </div>
-            `;
-        }
-
-        window.changeDate = function(direction) {
-            accountingCurrentDate.setDate(accountingCurrentDate.getDate() + direction);
-            renderDailyAccountingView(accountingCurrentDate);
-        };
-        
-        window.addExpense = function(mealType, mealName) {
-            const costStr = prompt(`請輸入「${mealName}」的金額：`);
-            if (costStr === null) return;
-
-            const cost = Number(costStr);
-            if (isNaN(cost) || cost <= 0) {
-                alert('請輸入有效的正數金額。');
-                return;
-            }
-
-            const posts = getPosts();
-            const newPost = {
-                id: `post_${Date.now()}`,
-                name: `${mealName}消費`,
-                cost: cost,
-                mealType: mealType,
-                timestamp: accountingCurrentDate.getTime(),
-                rating: 0,
-                comment: ''
-            };
-            posts.unshift(newPost);
-            savePosts(posts);
-            renderDailyAccountingView(accountingCurrentDate);
-        };
-
-        window.deleteExpense = function(postId) {
-            if (!confirm('確定要刪除這筆紀錄嗎？')) return;
-            let posts = getPosts();
-            posts = posts.filter(p => p.id !== postId);
-            savePosts(posts);
-            renderDailyAccountingView(accountingCurrentDate);
-        }
-
-        function renderMyPosts() {
-            const container = document.getElementById('myposts-content');
-            if(!currentUser) return;
-            container.innerHTML = `<p class="placeholder-text">我的貼文功能開發中...</p>`;
-        };
-        function renderFavoriteRestaurants() {
-            const container = document.getElementById('favorites-content');
-            if(!currentUser) return;
-            container.innerHTML = `<p class="placeholder-text">收藏餐廳功能開發中...</p>`;
-        };
-        function renderFriendsList() {
-            const container = document.getElementById('myfriends-content');
-            if(!currentUser) return;
-            container.innerHTML = `<p class="placeholder-text">我的好友功能開發中...</p>`;
-        };
-
-        // --- 4. App 初始化 & Auth 狀態監聽 ---
-        auth.onAuthStateChanged(user => { 
-            currentUser = user; 
-            if (user) { 
-                setupLoggedInUI(user); 
-                accountingCurrentDate = new Date();
-                if(document.getElementById('profile-page').classList.contains('active')) {
-                    renderProfilePage();
-                }
-            } else { 
-                setupLoggedOutUI(); 
-                if(document.getElementById('profile-page').classList.contains('active')) {
-                    showPage('map-page', document.querySelector('.nav-item'));
-                }
-            } 
-        });
-        showPage('map-page', document.querySelector('.nav-item')); 
     });
+}
+
+function processAndDisplayResults(places, center) {
+    const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) }));
+    placesWithDistance.sort((a, b) => a.distance - b.distance);
+    currentPlaces = placesWithDistance;
+    displayFullRestaurantList();
+    clearRestaurantMarkers();
+    currentPlaces.forEach(place => addRestaurantMarker(place, place.distance));
+}
+
+function displayFullRestaurantList() {
+    const listContainer = document.getElementById("list-content-area");
+    listContainer.innerHTML = "";
+    if (currentPlaces.length === 0) { listContainer.innerHTML = `<p class="list-status-text">此區域找不到餐廳</p>`; return; }
+    currentPlaces.forEach(place => addRestaurantToList(place));
+}
+
+function addRestaurantMarker(place, distance) {
+    const isDistant = distance > 1500;
+    const marker = new google.maps.Marker({
+        position: place.geometry.location, map: map, title: place.name,
+        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: isDistant ? '#9E9E9E' : '#EA4335', fillOpacity: isDistant ? 0.8 : 1, strokeWeight: 2, strokeColor: 'white' },
+        label: { text: '\uf2e7', fontFamily: '"Font Awesome 6 Free"', fontWeight: '900', color: 'white', fontSize: '14px' }
+    });
+    marker.addListener('click', () => { handlePlaceSelection(place); });
+    marker.place_id = place.place_id;
+    restaurantMarkers.push(marker);
+    return marker;
+}
+
+function addRestaurantToList(place, routeInfo = null) {
+    const listContainer = document.getElementById("list-content-area");
+    const isOpen = place.opening_hours ? place.opening_hours.open_now : null;
+    let statusHtml = '';
+    if (isOpen === true) statusHtml = `<span class="open-status open">營業中</span>`;
+    else if (isOpen === false) statusHtml = `<span class="open-status closed">已打烊</span>`;
+    let distanceHtml = routeInfo && routeInfo.driving ? `<span class="item-distance">${routeInfo.driving.distance}</span>` : (place.distance ? `<span class="item-distance">${Math.round(place.distance)} m</span>` : '');
+    const li = document.createElement("div");
+    li.className = "list-item";
+    li.setAttribute("data-place-id", place.place_id);
+    li.onclick = () => handlePlaceSelection(place);
+    li.innerHTML = `<i class="fas fa-utensils item-icon"></i><div class="item-info"><div class="item-name">${place.name}</div><div class="item-details">${statusHtml} ${place.rating ? `⭐ ${place.rating}` : ''}</div><div class="item-address">${place.vicinity}</div></div>${distanceHtml}`;
+    listContainer.appendChild(li);
+}
+
+function handlePlaceSelection(place, fromSearch = false) {
+    selectedPlace = place;
+    const targetMarker = restaurantMarkers.find(m => m.place_id === place.place_id);
+    if (fromSearch || !targetMarker) {
+        clearRestaurantMarkers();
+        const marker = addRestaurantMarker(place, 0);
+        calculateAndDisplayRoute(place, marker);
+    } else {
+        calculateAndDisplayRoute(place, targetMarker);
+    }
+    highlightListItem(place.place_id, true);
+};
+
+function calculateAndDisplayRoute(place, marker) {
+    if (!userGpsPosition) { showPlaceDetailsInWindow(place, marker); return; }
+    directionsService.route({ origin: userGpsPosition, destination: { placeId: place.place_id }, travelMode: google.maps.TravelMode.DRIVING }, (response, status) => {
+        if (status === google.maps.DirectionsStatus.OK) {
+            directionsRenderer.setDirections(response);
+            const route = response.routes[0].legs[0];
+            const routeInfo = { driving: { distance: route.distance.text, duration: route.duration.text } };
+            showSinglePlaceResult(place, routeInfo);
+            showPlaceDetailsInWindow(place, marker, routeInfo);
+        } else {
+            showPlaceDetailsInWindow(place, marker);
+        }
+    });
+}
+
+function showSinglePlaceResult(place, routeInfo) {
+    const listContainer = document.getElementById("list-content-area");
+    listContainer.innerHTML = '';
+    addRestaurantToList(place, routeInfo);
+}
+
+function showPlaceDetailsInWindow(place, marker, routeInfo = null) {
+    const request = { placeId: place.place_id, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address'] };
+    placesService.getDetails(request, (details, status) => {
+        let content = `<div class="info-window-content"><h4>${place.name}</h4>`;
+        const displayDetails = (status === google.maps.places.PlacesServiceStatus.OK && details) ? details : place;
+        const address = displayDetails.formatted_address || displayDetails.vicinity;
+        if (address) content += `<p><i class="fas fa-map-marker-alt"></i>${address}</p>`;
+        if (routeInfo) content += `<p><i class="fas fa-car"></i>${routeInfo.driving.distance} (${routeInfo.driving.duration})</p>`;
+        if (displayDetails.rating) content += `<p><i class="fas fa-star" style="color:#FDBF42;"></i>${displayDetails.rating} (Google)</p>`;
+        let friendReviewHtml = '';
+        const friendReviewsForPlace = mockFriendReviews[place.place_id];
+        if (friendReviewsForPlace && friendReviewsForPlace.length > 0) {
+            const review = friendReviewsForPlace[0]; const friend = mockFriendData[review.friendId];
+            if (friend) {
+                const friendStars = Array(review.rating).fill('<i class="fas fa-star"></i>').join('');
+                const shortComment = review.comment.length > 20 ? review.comment.substring(0, 20) + '...' : review.comment;
+                friendReviewHtml += `<p><i class="fas fa-user-friends"></i><span class="stars">${friendStars}</span> (${friend.name})</p><p class="friend-review">“${shortComment}”</p>`;
+            }
+        }
+        let hoursContent = '';
+        const openingHoursData = (details && details.opening_hours) ? details.opening_hours : place.opening_hours;
+        if (displayDetails.business_status === "CLOSED_PERMANENTLY") {
+            hoursContent = `<p><i class="fas fa-store-slash"></i><span style="color: #dc3545; font-weight: bold;">永久停業</span></p>`;
+        } else if (openingHoursData) {
+            const isOpen = typeof openingHoursData.open_now !== 'undefined' ? openingHoursData.open_now : false;
+            const statusText = isOpen ? "營業中" : "打烊中"; const color = isOpen ? "#28a745" : "#dc3545";
+            let weeklyHoursHtml = '';
+            if (openingHoursData.weekday_text && openingHoursData.weekday_text.length > 0) {
+                const todayIndex = (new Date().getDay() + 6) % 7;
+                weeklyHoursHtml += `<div class="opening-hours-details" style="display:none;">`;
+                openingHoursData.weekday_text.forEach((day_hours, index) => { weeklyHoursHtml += `<p style="${index === todayIndex ? 'font-weight:bold;' : ''}">${day_hours.replace(':', ':<span style="padding-left: 5px"></span>')}</p>`; });
+                weeklyHoursHtml += `</div>`;
+                hoursContent = `<div class="opening-hours-container"><i class="fas fa-clock"></i><div><div class="opening-hours-header" onclick="toggleHours(this)"><span style="color: ${color}; font-weight: bold;">${statusText}</span><span class="arrow">▾</span></div>${weeklyHoursHtml}</div></div>`;
+            } else { hoursContent = `<p><i class="fas fa-clock"></i><span style="color: ${color}; font-weight: bold;">${statusText}</span></p>`; }
+        }
+        content += friendReviewHtml; content += hoursContent; content += '</div>';
+        infoWindow.setContent(content);
+        infoWindow.open(map, marker);
+    });
+}
+function toggleHours(element) { const details = element.parentElement.querySelector('.opening-hours-details'); if (details) { const isHidden = details.style.display === 'none'; details.style.display = isHidden ? 'block' : 'none'; element.classList.toggle('expanded', isHidden); } };
+
+function deselectAll() {
+    selectedPlace = null; infoWindow.close(); directionsRenderer.setDirections({ routes: [] });
+    document.querySelectorAll('.list-item.is-selected').forEach(item => item.classList.remove('is-selected'));
+    searchNearbyRestaurants(map.getCenter());
+}
+
+function clearSearch() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('clear-search').style.display = 'none';
+    deselectAll();
+};
+
+function highlightListItem(placeId, scroll) {
+    document.querySelectorAll('.list-item').forEach(item => {
+        item.classList.toggle('is-selected', item.getAttribute('data-place-id') === placeId);
+        if (scroll && item.getAttribute('data-place-id') === placeId) item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+}
+
+function clearRestaurantMarkers() {
+    restaurantMarkers.forEach(marker => marker.setMap(null));
+    restaurantMarkers = [];
+}
+
+// --- App 主邏輯 (在 DOMContentLoaded 後執行) ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Firebase 初始化
+    const firebaseConfig = { apiKey: "AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs", authDomain: "foodiedata-b4982.firebaseapp.com", projectId: "foodiedata-b4982", storageBucket: "foodiedata-b4982.firebasestorage.app", messagingSenderId: "90315404352", appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5", measurementId: "G-5FD72CVKGB" };
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    
+    // --- 頁面導航 & 通用功能 ---
+    window.showPage = function(pageId, navElement = null) {
+        if (pageHistory[pageHistory.length - 1] !== pageId) pageHistory.push(pageId);
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        if (navElement) {
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            navElement.classList.add('active');
+        }
+        if(pageId === 'profile-page') renderProfilePage();
+        else if (pageId === 'auth-page' && currentUser) showPage('profile-page', document.querySelector('.nav-item:last-child'));
+    };
+
+    window.toggleAuthForms = function() {
+        const loginContainer = document.getElementById('login-container');
+        const registerContainer = document.getElementById('register-container');
+        const isLoginVisible = loginContainer.style.display !== 'none';
+        loginContainer.style.display = isLoginVisible ? 'none' : 'block';
+        registerContainer.style.display = isLoginVisible ? 'block' : 'none';
+    };
+
+    // --- Firebase Auth 功能 ---
+    window.handleRegister = function() {
+        const email = document.getElementById('register-email').value; const password = document.getElementById('register-password').value;
+        auth.createUserWithEmailAndPassword(email, password).then(() => { alert('註冊成功！'); showPage('map-page', document.querySelector('.nav-item')); }).catch(error => alert(`註冊失敗：${error.message}`));
+    };
+    
+    window.handleSignIn = function() {
+        const email = document.getElementById('login-email').value; const password = document.getElementById('login-password').value;
+        auth.signInWithEmailAndPassword(email, password).then(() => { alert('登入成功！'); showPage('map-page', document.querySelector('.nav-item')); }).catch(error => alert(`登入失敗：${error.message}`));
+    };
+
+    window.handleGoogleSignIn = function() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).then(() => { alert('Google 登入成功！'); showPage('map-page', document.querySelector('.nav-item')); }).catch(error => alert(`Google 登入失敗：${error.message}`));
+    };
+
+    window.handleSignOut = function() {
+        if (confirm('確定要登出嗎？')) auth.signOut().then(() => alert('已成功登出。')).catch(error => alert(`登出時發生錯誤：${error.message}`));
+    };
+
+    function setupLoggedInUI(user) {
+        const signoutBtn = document.querySelector('.header-action[onclick*="handleSignOut"]');
+        if (signoutBtn) signoutBtn.style.display = 'block';
+    };
+
+    function setupLoggedOutUI() {
+        const signoutBtn = document.querySelector('.header-action[onclick*="handleSignOut"]');
+        if (signoutBtn) signoutBtn.style.display = 'none';
+    };
+
+    // --- 本地儲存 (localStorage) ---
+    function getPosts() {
+        if (!currentUser) return [];
+        const key = `${POSTS_DB_KEY}_${currentUser.uid}`;
+        return JSON.parse(localStorage.getItem(key)) || [];
+    }
+    function savePosts(posts) {
+        if (!currentUser) return;
+        const key = `${POSTS_DB_KEY}_${currentUser.uid}`;
+        localStorage.setItem(key, JSON.stringify(posts));
+    }
+    function loggedOutPlaceholder(actionText) {
+        return `<div class="logged-out-placeholder">請先<a href="#" onclick="showPage('auth-page')">登入</a>${actionText}</div>`;
+    }
+
+    // --- 個人檔案頁功能 ---
+    function renderProfilePage() {
+        if (!currentUser) { showPage('auth-page'); return; }
+        const activeTab = document.querySelector('.profile-tabs .tab-item.active');
+        if (activeTab) {
+            const tabId = activeTab.getAttribute('onclick').match(/'([^']*)'/)[1];
+            showProfileTab(tabId, activeTab);
+        } else {
+             showProfileTab('accounting-content', document.querySelector('.profile-tabs .tab-item'));
+        }
+    }
+    
+    window.showProfileTab = function(tabId, tabElement) {
+        document.querySelectorAll('.profile-tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.profile-tabs .tab-item').forEach(t => t.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        tabElement.classList.add('active');
+        switch (tabId) {
+            case 'accounting-content': renderAccountingRecords(); break;
+            case 'myposts-content': renderMyPosts(); break;
+            case 'favorites-content': renderFavoriteRestaurants(); break;
+            case 'myfriends-content': renderFriendsList(); break;
+        }
+    };
+
+    function renderAccountingRecords() {
+        if (!currentUser) {
+            document.getElementById('accounting-content').innerHTML = loggedOutPlaceholder('以使用每日飲食記帳功能。');
+            return;
+        }
+        renderDailyAccountingView(accountingCurrentDate);
+    }
+
+    function renderDailyAccountingView(date) {
+        const container = document.getElementById('accounting-content');
+        const posts = getPosts();
+        const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
+        const todaysPosts = posts.filter(p => { const postDate = new Date(p.timestamp); return postDate >= startOfDay && postDate <= endOfDay && p.cost > 0; });
+        const dailyTotal = todaysPosts.reduce((sum, p) => sum + Number(p.cost), 0);
+        const mealTypes = [ { type: 'breakfast', name: '早餐', icon: 'fa-mug-saucer' }, { type: 'lunch', name: '午餐', icon: 'fa-utensils' }, { type: 'snack', name: '點心', icon: 'fa-cookie-bite' }, { type: 'dinner', name: '晚餐', icon: 'fa-drumstick-bite' }, { type: 'supper', name: '宵夜', icon: 'fa-pizza-slice' } ];
+        let mealItemsHtml = mealTypes.map(meal => {
+            const post = todaysPosts.find(p => p.mealType === meal.type);
+            let entryHtml = post ? `<div class="expense-display"><span class="cost">$${post.cost.toLocaleString()}</span><button class="delete-expense-btn" onclick="deleteExpense('${post.id}')"><i class="fas fa-trash-alt"></i></button></div>` : `<button class="add-expense-btn" onclick="addExpense('${meal.type}', '${meal.name}')"><i class="fas fa-plus-circle"></i></button>`;
+            return `<div class="meal-item"><div class="meal-info"><i class="fas ${meal.icon} meal-icon"></i><span class="meal-name">${meal.name}</span></div><div class="meal-entry">${entryHtml}</div></div>`;
+        }).join('');
+        container.innerHTML = `<div class="accounting-header"><button class="date-nav-btn" onclick="changeDate(-1)"><i class="fas fa-chevron-left"></i></button><h3>${date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}</h3><button class="date-nav-btn" onclick="changeDate(1)"><i class="fas fa-chevron-right"></i></button></div><div class="daily-accounting-list"><div class="daily-total-card"><div class="total-title">本日餐飲支出</div><div class="total-amount">$${dailyTotal.toLocaleString()}</div></div>${mealItemsHtml}</div>`;
+    }
+
+    window.changeDate = function(direction) { accountingCurrentDate.setDate(accountingCurrentDate.getDate() + direction); renderDailyAccountingView(accountingCurrentDate); };
+    window.addExpense = function(mealType, mealName) {
+        const costStr = prompt(`請輸入「${mealName}」的金額：`); if (costStr === null) return;
+        const cost = Number(costStr); if (isNaN(cost) || cost <= 0) { alert('請輸入有效的正數金額。'); return; }
+        const posts = getPosts();
+        posts.unshift({ id: `post_${Date.now()}`, name: `${mealName}消費`, cost: cost, mealType: mealType, timestamp: accountingCurrentDate.getTime(), rating: 0, comment: '' });
+        savePosts(posts); renderDailyAccountingView(accountingCurrentDate);
+    };
+    window.deleteExpense = function(postId) {
+        if (!confirm('確定要刪除這筆紀錄嗎？')) return;
+        let posts = getPosts(); posts = posts.filter(p => p.id !== postId);
+        savePosts(posts); renderDailyAccountingView(accountingCurrentDate);
+    }
+    function renderMyPosts() { if(!currentUser) return; document.getElementById('myposts-content').innerHTML = `<p class="placeholder-text">我的貼文功能開發中...</p>`; };
+    function renderFavoriteRestaurants() { if(!currentUser) return; document.getElementById('favorites-content').innerHTML = `<p class="placeholder-text">收藏餐廳功能開發中...</p>`; };
+    function renderFriendsList() { if(!currentUser) return; document.getElementById('myfriends-content').innerHTML = `<p class="placeholder-text">我的好友功能開發中...</p>`; };
+
+    // --- App 初始化 & Auth 狀態監聽 ---
+    auth.onAuthStateChanged(user => { 
+        currentUser = user; 
+        if (user) { 
+            setupLoggedInUI(user); 
+            accountingCurrentDate = new Date();
+            if(document.getElementById('profile-page').classList.contains('active')) renderProfilePage();
+        } else { 
+            setupLoggedOutUI(); 
+            if(document.getElementById('profile-page').classList.contains('active')) showPage('map-page', document.querySelector('.nav-item'));
+        } 
+    });
+    showPage('map-page', document.querySelector('.nav-item')); 
+});
+
 </script>
 </body>
 </html>
