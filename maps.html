@@ -3,415 +3,429 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>FoodieApp</title>
+  <title>FoodieApp - 愛食記風格版</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   
-  <!-- 使用穩定版 API，確保功能可靠 -->
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
     async
     defer
   ></script>
 
-  <!-- Firebase SDK 導入 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   
   <style>
-    /* CSS 樣式 */
-    :root { --primary-color: #667eea; --secondary-color: #764ba2; --success-color: #28a745; --background-color: #f8f9fa; --text-color: #333; --text-light: #6c757d; --nav-height: 60px; }
-    html, body { height: 100%; margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--background-color); }
+    /* 全局樣式 */
+    :root { --primary-color: #ff5a5f; --secondary-color: #00a699; --text-color: #484848; --text-light: #767676; --background-color: #f7f7f7; --border-color: #ebebeb; --nav-height: 60px; }
+    html, body { height: 100%; margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--background-color); color: var(--text-color); }
     .app-container { width: 100%; height: 100vh; display: flex; flex-direction: column; }
     main { flex-grow: 1; overflow: hidden; position: relative; }
     .page { width: 100%; height: 100%; display: none; flex-direction: column; overflow: hidden; }
     .page.active { display: flex; }
-    .app-nav { height: var(--nav-height); width: 100%; background: #fff; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-around; align-items: center; flex-shrink: 0; }
+    .app-nav { height: var(--nav-height); width: 100%; background: #fff; border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; align-items: center; flex-shrink: 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
     .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-light); font-size: 12px; cursor: pointer; transition: color 0.2s; width: 100%; }
     .nav-item i { font-size: 22px; margin-bottom: 4px; }
     .nav-item.active { color: var(--primary-color); }
+
+    /* 地圖頁面樣式 */
     #map-page { flex-direction: column; }
-    #map-panel { height: 65%; position: relative; background: #e5e3df; }
-    #list-panel { height: 35%; border-top: 1px solid #ddd; display: flex; flex-direction: column; background: white; overflow: hidden; }
+    #map-container { flex-grow: 1; position: relative; }
     #map { width: 100%; height: 100%; }
-    .search-area { padding: 15px; border-bottom: 1px solid #eee; background: var(--background-color); flex-shrink: 0; position: relative; }
-    .search-input { width: 100%; padding: 12px 40px 12px 15px; font-size: 16px; border-radius: 25px; border: 1px solid #ccc; box-sizing: border-box; }
-    .clear-search-btn { position: absolute; top: 50%; right: 25px; transform: translateY(-50%); background: #ccc; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold; color: white; display: none; justify-content: center; align-items: center; }
-    .list-content { overflow-y: auto; flex-grow: 1; }
-    .list-item { display: flex; align-items: flex-start; gap: 15px; padding: 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background-color 0.2s; }
-    .list-item.is-selected { background-color: #e8eaf6; border-left: 4px solid var(--primary-color); padding-left: 11px; }
-    .item-icon { font-size: 18px; color: var(--primary-color); margin-top: 3px; flex-shrink: 0; }
-    .item-info { flex-grow: 1; min-width: 0; }
-    .item-name { font-weight: 600; font-size: 16px; }
-    .item-details, .item-address { font-size: 13px; color: var(--text-light); margin-top: 4px; }
-    .item-address { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .item-distance { font-weight: 500; font-size: 14px; color: var(--text-color); white-space: nowrap; text-align: right; }
-    .open-status.open { color: #28a745; font-weight: bold; }
-    .open-status.closed { color: #dc3545; font-weight: bold; }
-    .list-status-text { text-align: center; color: #999; padding: 40px 20px; }
-    .location-btn { position: absolute; bottom: 20px; right: 20px; background: #fff; color: var(--primary-color); border: none; width: 50px; height: 50px; border-radius: 25px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); cursor: pointer; z-index: 10; font-size: 24px; display: flex; justify-content: center; align-items: center; }
-    .gm-style-iw-d { overflow: hidden !important; }
-    .info-window-content { font-family: inherit; padding: 5px; max-width: 280px; }
-    .info-window-content h4 { font-size: 16px; margin: 0 0 8px 0; font-weight: 600; }
-    .info-window-content p { font-size: 14px; margin: 0 0 5px 0; color: #555; display: flex; align-items: center; }
-    .info-window-content i { margin-right: 8px; color: var(--primary-color); width: 16px; text-align: center; }
-    .page-header { padding: 15px 20px; background-color: #fff; border-bottom: 1px solid #eee; text-align: center; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
-    .page-header h2 { margin: 0; font-size: 18px; color: var(--text-color); display: flex; align-items: center; justify-content: center; flex-grow: 1; }
-    .page-header h2 i { margin-right: 10px; color: var(--primary-color); }
+    .location-btn { position: absolute; bottom: 150px; right: 20px; background: #fff; color: #555; border: none; width: 50px; height: 50px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; z-index: 10; font-size: 22px; display: flex; justify-content: center; align-items: center; }
+    
+    /* 分類篩選條 */
+    .category-filters { position: absolute; top: 15px; left: 0; width: 100%; z-index: 10; overflow-x: auto; white-space: nowrap; padding: 0 15px; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
+    .category-filters::-webkit-scrollbar { display: none; }
+    .filter-btn { display: inline-block; background: #fff; border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 15px; border-radius: 20px; font-size: 14px; cursor: pointer; margin-right: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); transition: all 0.2s; }
+    .filter-btn.active, .filter-btn:hover { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
+
+    /* 餐廳資訊卡 */
+    .restaurant-card-container { position: absolute; bottom: calc(-100% + var(--nav-height)); left: 0; width: 100%; background-color: #fff; border-top-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); z-index: 1001; transition: bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); max-height: calc(100vh - 100px); display: flex; flex-direction: column; }
+    .restaurant-card-container.active { bottom: var(--nav-height); }
+    .card-handle { width: 50px; height: 6px; background-color: #ccc; border-radius: 3px; margin: 8px auto; cursor: grab; }
+    .card-photo { width: 100%; height: 180px; background-size: cover; background-position: center; }
+    .card-content { padding: 15px 20px; overflow-y: auto; flex-grow: 1; }
+    .card-title { margin: 0 0 5px 0; font-size: 22px; }
+    .card-meta, .card-status, .card-address, .card-price { margin: 8px 0; color: #555; display: flex; align-items: center; font-size: 14px; }
+    .card-meta span { margin-right: 12px; }
+    .card-meta .fa-star { color: #f5c518; margin-right: 4px;}
+    .card-status.open { color: #28a745; font-weight: bold; }
+    .card-status.closed { color: #dc3545; font-weight: bold; }
+    .card-address i, .card-price i { margin-right: 8px; color: var(--text-light); width: 16px; text-align: center; }
+    .card-actions { display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px; }
+    .action-btn { background: none; border: none; font-size: 14px; color: #333; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .action-btn i { font-size: 20px; color: var(--primary-color); }
+    #card-favorite-btn.favorited i { font-family: "Font Awesome 6 Free"; font-weight: 900; color: var(--primary-color); } /* Solid heart */
+
+    /* 評論系統 */
+    .reviews-section { margin-top: 20px; }
+    .review-card { background: #fff; border: 1px solid var(--border-color); padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+    .review-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .reviewer-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+    .reviewer-name { font-weight: bold; }
+    .review-timestamp { font-size: 12px; color: #888; }
+    .review-ratings { display: flex; flex-wrap: wrap; gap: 5px 15px; font-size: 13px; color: #666; margin-bottom: 10px; }
+    .review-comment { line-height: 1.6; margin: 10px 0; }
+    .review-images { display: flex; gap: 10px; margin-top: 10px; overflow-x: auto; }
+    .review-images img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; }
+
+    /* 個人頁面樣式 */
+    .page-header { padding: 15px 20px; background-color: #fff; border-bottom: 1px solid var(--border-color); text-align: center; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
+    .page-header h2 { margin: 0; font-size: 18px; color: var(--text-color); }
     .header-action { font-size: 16px; color: var(--primary-color); text-decoration: none; cursor: pointer; }
-    .header-back-btn { font-size: 20px; color: var(--text-color); cursor: pointer; }
-    .page-header .placeholder { width: 24px; }
-    .page-content { flex-grow: 1; overflow-y: auto; padding: 20px; }
-    .placeholder-text { text-align: center; color: var(--text-light); margin-top: 50px; padding: 20px; }
-    .btn { display: block; width: 100%; padding: 15px; background-color: var(--success-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; }
-    #random-picker-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; box-sizing: border-box; }
-    #picker-wheel { width: 280px; height: 280px; border: 10px solid #ddd; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1); }
-    #picker-arrow { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #dc3545; position: absolute; top: -35px; left: 50%; transform: translateX(-50%); z-index: 2; }
-    #picker-result { font-size: 20px; font-weight: bold; color: var(--primary-color); text-align: center; height: 60px; padding: 0 10px; }
-    .form-group { margin-bottom: 20px; } .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-color); } .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; } .form-group textarea { min-height: 120px; resize: vertical; } .rating-hearts { display: flex; gap: 10px; font-size: 30px; color: #ddd; cursor: pointer; } .rating-hearts .fa-heart:hover, .rating-hearts .fa-heart.active { color: #ff4d6d; } .photo-upload-area { background: #f0f0f0; border: 2px dashed #ccc; border-radius: 8px; padding: 20px; display: flex; justify-content: center; gap: 20px; } .photo-upload-area .btn-upload { background: #fff; color: var(--text-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; } .photo-upload-area .btn-upload i { margin-right: 8px; }
-    .challenge-card { background: #fff; border-radius: 12px; margin-bottom: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); } .challenge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; } .challenge-title { font-size: 18px; font-weight: 600; } .challenge-btn-join { background-color: var(--success-color); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 14px; border: none; cursor: pointer; } .challenge-btn-join.joined { background-color: var(--text-light); } .challenge-desc { font-size: 14px; color: var(--text-light); margin-bottom: 15px; } .challenge-ranking-title, .challenge-participants-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; } .challenge-ranking-list, .challenge-participants-list { font-size: 14px; color: #555; list-style: none; padding-left: 0; } .challenge-ranking-list li i { color: #ffd700; margin-right: 4px; }
-    .profile-tabs { display: flex; gap: 10px; padding: 15px 20px; background: #fff; border-bottom: 1px solid #eee; overflow-x: auto; flex-shrink: 0; } .tab-btn { background: #f0f0f0; border: none; border-radius: 20px; padding: 8px 15px; font-size: 14px; cursor: pointer; white-space: nowrap; } .tab-btn.active { background: var(--primary-color); color: #fff; } .tab-content { display: none; } .tab-content.active { display: block; } .record-card, .post-card { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); } .record-card .title, .post-card .title { font-weight: 600; margin-bottom: 5px; } .record-card .details, .post-card .details { font-size: 14px; color: var(--text-light); } .record-card .cost { font-weight: bold; color: var(--success-color); float: right; } .post-card .content { margin-top: 10px; font-size: 15px; line-height: 1.6; } .post-card .post-rating { margin-top: 10px; color: #ff4d6d; }
-    /* --- 驗證表單樣式 --- */
-    .auth-form-container { width: 100%; max-width: 400px; margin: 0 auto; padding: 20px;}
-    .auth-form-container h3 { text-align: center; margin-bottom: 20px; font-size: 20px; }
-    .auth-form-container input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
-    .btn-auth { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; margin-bottom: 10px; color: #fff; font-weight: bold; }
-    .btn-auth.primary { background-color: var(--primary-color); }
-    .btn-auth.secondary { background-color: #fff; color: #4285F4; border: 1px solid #ddd; display:flex; align-items:center; justify-content:center; gap: 10px;}
-    .auth-separator { display: flex; align-items: center; text-align: center; color: #aaa; margin: 20px 0; }
-    .auth-separator::before, .auth-separator::after { content: ''; flex: 1; border-bottom: 1px solid #ddd; }
-    .auth-separator:not(:empty)::before { margin-right: .25em; }
-    .auth-separator:not(:empty)::after { margin-left: .25em; }
-    .auth-switch-link { text-align: center; margin-top: 15px; font-size: 14px; color: var(--primary-color); cursor: pointer; }
-    #auth-error { color: #dc3545; margin-top: 15px; min-height: 20px; font-weight: 500; text-align: center; }
+    .page-content { flex-grow: 1; overflow-y: auto; padding: 15px; }
+    .profile-tabs { display: flex; gap: 10px; padding: 10px 15px; background: #fff; border-bottom: 1px solid var(--border-color); overflow-x: auto; flex-shrink: 0; }
+    .tab-btn { background: #f0f0f0; border: none; border-radius: 20px; padding: 8px 15px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+    .tab-btn.active { background: var(--primary-color); color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .favorite-card { display: flex; align-items: center; gap: 15px; background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .favorite-card img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; }
+    .favorite-info .name { font-weight: 600; margin-bottom: 5px; }
+    .favorite-info .details { font-size: 14px; color: var(--text-light); }
   </style>
 </head>
 <body>
-  <!-- HTML 結構完全不變 -->
   <div class="app-container">
     <main>
+      <!-- 地圖頁 -->
       <div id="map-page" class="page active">
-        <div id="map-panel">
+        <div id="map-container">
           <div id="map"></div>
-          <button class="location-btn" onclick="centerOnUserGPS()"><i class="fas fa-location-arrow"></i></button>
-        </div>
-        <div id="list-panel">
-          <div class="search-area">
-            <input type="text" id="search-input" class="search-input" placeholder="搜尋餐廳或地點...">
-            <button class="clear-search-btn" id="clear-search" onclick="clearSearch()">×</button>
+          <div class="category-filters">
+            <button class="filter-btn active" onclick="searchByCategory('all', this)">全部</button>
+            <button class="filter-btn" onclick="searchByCategory('拉麵', this)">拉麵</button>
+            <button class="filter-btn" onclick="searchByCategory('咖啡', this)">咖啡</button>
+            <button class="filter-btn" onclick="searchByCategory('火鍋', this)">火鍋</button>
+            <button class="filter-btn" onclick="searchByCategory('素食', this)">素食</button>
           </div>
-          <div class="list-content" id="list-content-area"><p class="list-status-text">正在初始化地圖...</p></div>
+          <button class="location-btn" onclick="centerOnUserGPS()"><i class="fas fa-location-crosshairs"></i></button>
+          <div id="restaurant-card" class="restaurant-card-container">
+            <div class="card-handle" onclick="this.parentElement.classList.remove('active')"></div>
+            <div id="card-photo" class="card-photo"></div>
+            <div class="card-content">
+              <h3 id="card-name" class="card-title"></h3>
+              <div class="card-meta">
+                <span id="card-rating"></span>
+                <span id="card-category"></span>
+              </div>
+              <p id="card-status" class="card-status"></p>
+              <p id="card-address" class="card-address"></p>
+              <p id="card-price" class="card-price"></p>
+              <div class="card-actions">
+                <button class="action-btn"><i class="fas fa-diamond-turn-right"></i> 導航</button>
+                <button id="card-favorite-btn" class="action-btn" onclick="toggleFavorite()"><i class="far fa-heart"></i> 收藏</button>
+                <button class="action-btn"><i class="fas fa-share-square"></i> 分享</button>
+              </div>
+              <div id="reviews-section" class="reviews-section">
+                <h4>精選評論</h4>
+                <div id="card-reviews-list"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div id="random-page" class="page">
-        <div class="page-header"><h2><i class="fa-solid fa-dice"></i>美食隨機選</h2><div class="placeholder"></div></div>
-        <div id="random-picker-container">
-            <div id="picker-arrow"></div>
-            <div id="picker-wheel"><div id="picker-result">?</div></div>
-            <button class="btn" id="random-pick-btn" onclick="startRandomPick()">開始抽籤！</button>
-            <p id="random-status-text" class="placeholder-text" style="background: none; margin-top: 20px;"></p>
-        </div>
-      </div>
-      <div id="add-review-page" class="page">
-        <div class="page-header"><h2><i class="fa-solid fa-pencil"></i>新增美食評論</h2><div class="placeholder"></div></div>
-        <div class="page-content">
-            <div class="form-group"><label for="review-restaurant-name">餐廳名稱</label><input type="text" id="review-restaurant-name" placeholder="輸入吃過的餐廳"></div>
-            <div class="form-group"><label for="review-meal-items">餐點項目</label><textarea id="review-meal-items" placeholder="吃了什麼好料？ (例如：小籠包、牛肉麵)"></textarea></div>
-            <div class="form-group"><label for="review-cost">花費金額 (NT$)</label><input type="number" id="review-cost" placeholder="大約花了多少錢？"></div>
-            <div class="form-group"><label>喜愛程度</label><div class="rating-hearts" id="review-rating" data-rating="0"><i class="fa-solid fa-heart" data-value="1"></i><i class="fa-solid fa-heart" data-value="2"></i><i class="fa-solid fa-heart" data-value="3"></i><i class="fa-solid fa-heart" data-value="4"></i><i class="fa-solid fa-heart" data-value="5"></i></div></div>
-            <div class="form-group"><label for="review-content">評論內容 (會成為貼文)</label><textarea id="review-content" placeholder="分享你的心得、推薦或建議..."></textarea></div>
-            <div class="form-group"><label>新增照片 (模擬)</label><div class="photo-upload-area"><div class="btn-upload"><i class="fa-solid fa-images"></i>從相簿選擇</div><div class="btn-upload"><i class="fa-solid fa-camera"></i>開啟相機</div></div></div>
-            <button class="btn" onclick="saveReview()">儲存評論與貼文</button>
-        </div>
-      </div>
-      <div id="challenge-page" class="page">
-        <div class="page-header"><h2><i class="fa-solid fa-trophy"></i>美食挑戰榜</h2><div class="placeholder"></div></div>
-        <div class="page-content" id="challenge-list-container"></div>
-      </div>
+      
+      <!-- 個人頁 -->
       <div id="profile-page" class="page">
         <div class="page-header">
-          <div class="placeholder"></div>
-          <h2 id="profile-header"><i class="fa-solid fa-user"></i>個人檔案</h2>
-          <a id="profile-login-btn" class="header-action" style="display: none;" onclick="showPage('login-page')">登入/註冊</a>
-          <a id="profile-logout-btn" class="header-action" style="display: none;" onclick="handleSignOut()">登出</a>
+          <h2>個人檔案</h2>
+          <a id="auth-action-btn" class="header-action" onclick="handleAuthAction()">登入</a>
         </div>
         <div class="profile-tabs">
-            <button class="tab-btn active" onclick="showProfileTab('accounting', this)">記帳顯示</button>
-            <button class="tab-btn" onclick="showProfileTab('posts', this)">我的貼文</button>
-            <button class="tab-btn" onclick="showProfileTab('favorites', this)">最愛餐廳</button>
-            <button class="tab-btn" onclick="showProfileTab('friends', this)">好友名單</button>
-        </div>
-        <div class="page-content" style="padding-top:0;">
-            <div id="accounting-content" class="tab-content active"></div>
-            <div id="posts-content" class="tab-content"></div>
-            <div id="favorites-content" class="tab-content"></div>
-            <div id="friends-content" class="tab-content"></div>
-        </div>
-      </div>
-      <div id="login-page" class="page">
-        <div class="page-header">
-          <i class="fa-solid fa-chevron-left header-back-btn" onclick="goBack()"></i>
-          <h2>會員登入</h2>
-          <div class="placeholder"></div>
+            <button class="tab-btn active" onclick="showProfileTab('favorites', this)">我的最愛</button>
+            <button class="tab-btn" onclick="showProfileTab('reviews', this)">我的評論</button>
         </div>
         <div class="page-content">
-          <div class="auth-form-container">
-            <input type="email" id="login-email-input" placeholder="電子郵件" required>
-            <input type="password" id="login-password-input" placeholder="密碼" required>
-            <div id="login-error" class="auth-error-message"></div>
-            <button class="btn-auth primary" onclick="handleSignIn()">登入</button>
-            <div class="auth-separator">或</div>
-            <button class="btn-auth secondary" onclick="handleGoogleSignIn()">
-              <i class="fab fa-google"></i> 使用 Google 登入
-            </button>
-            <div class="auth-switch-link" onclick="showPage('register-page')">
-              還沒有帳號？點此註冊
+            <div id="favorites-content" class="tab-content active"></div>
+            <div id="reviews-content" class="tab-content"></div>
+            <div id="logged-out-placeholder" class="placeholder-text">
+                <p>登入以查看您的收藏與評論。</p>
+                <button class="btn" style="background-color: var(--primary-color); max-width: 200px; margin: 20px auto;" onclick="handleAuthAction()">立即登入</button>
             </div>
-          </div>
-        </div>
-      </div>
-      <div id="register-page" class="page">
-         <div class="page-header">
-          <i class="fa-solid fa-chevron-left header-back-btn" onclick="goBack()"></i>
-          <h2>註冊新帳號</h2>
-          <div class="placeholder"></div>
-        </div>
-        <div class="page-content">
-          <div class="auth-form-container">
-            <input type="text" id="register-name-input" placeholder="姓名或暱稱" required>
-            <input type="email" id="register-email-input" placeholder="電子郵件" required>
-            <input type="password" id="register-password-input" placeholder="設定密碼 (至少6位數)" required>
-            <div id="register-error" class="auth-error-message"></div>
-            <button class="btn-auth primary" onclick="handleRegister()">註冊送出</button>
-            <div class="auth-switch-link" onclick="showPage('login-page')">
-              已經有帳號了？點此登入
-            </div>
-          </div>
         </div>
       </div>
     </main>
     <footer class="app-nav">
       <div class="nav-item active" onclick="showPage('map-page', this)"><i class="fa-solid fa-map-location-dot"></i><span>地圖</span></div>
-      <div class="nav-item" onclick="showPage('random-page', this)"><i class="fa-solid fa-dice"></i><span>隨機選</span></div>
-      <div class="nav-item" onclick="showPage('add-review-page', this)"><i class="fa-solid fa-plus-circle"></i><span>新增</span></div>
-      <div class="nav-item" onclick="showPage('challenge-page', this)"><i class="fa-solid fa-trophy"></i><span>挑戰榜</span></div>
       <div class="nav-item" onclick="showPage('profile-page', this)"><i class="fa-solid fa-user"></i><span>個人</span></div>
     </footer>
   </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
 
-        // --- 1. Firebase 初始化 ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs", // 請務必使用您自己的 Firebase 金鑰
-            authDomain: "foodiedata-b4982.firebaseapp.com",
-            projectId: "foodiedata-b4982",
-            storageBucket: "foodiedata-b4982.firebasestorage.app",
-            messagingSenderId: "90315404352",
-            appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5",
-            measurementId: "G-5FD72CVKGB"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+    // --- 1. Firebase 初始化 (請填入您自己的設定) ---
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+    };
+    // firebase.initializeApp(firebaseConfig);
+    // const auth = firebase.auth();
+    console.log("Firebase an-dèanadach. A 'cleachdadh dàta magaidh."); // Firebase not initialized. Using mock data.
 
-        // --- 2. 應用程式變數 ---
-        let currentUser = null;
-        let map, userGpsPosition, userMarker, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
-        let restaurantMarkers = [];
-        let debounceTimer;
-        let isMapReady = false;
-        const POSTS_DB_KEY = 'foodieAppPosts';
-        const CHALLENGES_DB_KEY = 'foodieAppUserChallenges';
-        let pageHistory = [];
+    // --- 2. 全域變數與模擬資料 ---
+    let map, placesService, infoWindow, userMarker;
+    let restaurantMarkers = [];
+    let currentUser = null; // 模擬使用者狀態
+    const restaurantCard = document.getElementById('restaurant-card');
+    let selectedCardPlaceId = null;
 
-        // ================== 函式定義區域 (都在同一個作用域內) ==================
+    // 模擬後端資料
+    const mockRestaurants = [
+        { place_id: 'place_1', name: '蔦 TSUTA Japan Soba Noodles', lat: 25.047, lng: 121.517, rating: 4.8, category: '拉麵', price: '$350 - $500', photo: 'https://lh3.googleusercontent.com/p/AF1QipM-2XN-gKTy2gQlsk_1sZ9EbYpW1W7Q8g3d_g=s1360-w1360-h1020' },
+        { place_id: 'place_2', name: 'Fika Fika Cafe', lat: 25.053, lng: 121.522, rating: 4.5, category: '咖啡', price: '$200 - $400', photo: 'https://lh3.googleusercontent.com/p/AF1QipPz9T3f_k_L-Yj_X-f_c_y_Z_z_x-g_c_h_g=s1360-w1360-h1020' },
+        { place_id: 'place_3', name: '橘色涮涮屋', lat: 25.042, lng: 121.532, rating: 4.6, category: '火鍋', price: '$1000+', photo: 'https://lh3.googleusercontent.com/p/AF1QipP_x_K_L-y_g_z_f_c-y_j_X_h_g_k_f_d_g=s1360-w1360-h1020' },
+        { place_id: 'place_4', name: '小小樹食', lat: 25.040, lng: 121.545, rating: 4.7, category: '素食', price: '$400 - $600', photo: 'https://lh3.googleusercontent.com/p/AF1QipN_z-g_k_f_d_g_h_j_X_c-y_z_f_x_L-y_g=s1360-w1360-h1020' }
+    ];
+    const mockReviews = {
+        'place_1': [{ user: '美食家A', avatar: 'https://i.pravatar.cc/40?u=a', ratings: { taste: 5, ambiance: 4, service: 5 }, comment: '湯頭濃郁，麵條Q彈，是我吃過最棒的醬油拉麵！', images: ['https://lh3.googleusercontent.com/p/AF1QipM-2XN-gKTy2gQlsk_1sZ9EbYpW1W7Q8g3d_g=s1360-w1360-h1020'] }]
+    };
+    const mockFavorites = ['place_1', 'place_4'];
 
-        // 3.1, 3.2, 3.3, 3.4 函式群 (無變更)
-        function showPage(pageId, navElement = null) { const activePage = document.querySelector('.page.active'); if (activePage) { if (!['login-page', 'register-page'].includes(activePage.id) || !['login-page', 'register-page'].includes(pageId)) { pageHistory.push(activePage.id); } } document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(pageId).classList.add('active'); if (navElement) { document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active')); navElement.classList.add('active'); pageHistory = []; } if (pageId === 'random-page') updateRandomPageStatus(); if (pageId === 'challenge-page') renderChallenges(); if (pageId === 'profile-page') renderProfilePage(); }
-        function goBack() { if (pageHistory.length > 0) { const lastPageId = pageHistory.pop(); document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(lastPageId).classList.add('active'); } else { showPage('map-page', document.querySelector('.nav-item[onclick*="map-page"]')); } }
-        function handleRegister() { const name = document.getElementById('register-name-input').value.trim(); const email = document.getElementById('register-email-input').value; const password = document.getElementById('register-password-input').value; const errorDiv = document.getElementById('register-error'); errorDiv.textContent = ''; if (!name || !email || !password) { errorDiv.textContent = '所有欄位都必須填寫！'; return; } auth.createUserWithEmailAndPassword(email, password).then(userCredential => userCredential.user.updateProfile({ displayName: name })).then(() => goBack()).catch(error => { switch (error.code) { case 'auth/email-already-in-use': errorDiv.textContent = '此電子郵件已被註冊。'; break; case 'auth/invalid-email': errorDiv.textContent = '電子郵件格式不正確。'; break; case 'auth/weak-password': errorDiv.textContent = '密碼強度不足 (至少6位數)。'; break; default: errorDiv.textContent = '註冊失敗，請稍後再試。'; } }); }
-        function handleSignIn() { const email = document.getElementById('login-email-input').value; const password = document.getElementById('login-password-input').value; const errorDiv = document.getElementById('login-error'); errorDiv.textContent = ''; auth.signInWithEmailAndPassword(email, password).then(() => goBack()).catch(error => { errorDiv.textContent = '登入失敗，請檢查信箱或密碼。'; }); }
-        function handleGoogleSignIn() { const provider = new firebase.auth.GoogleAuthProvider(); auth.signInWithPopup(provider).then(() => goBack()).catch(error => { const errorDiv = document.getElementById('login-error'); errorDiv.textContent = 'Google 登入失敗，請稍後再試。'; }); }
-        function handleSignOut() { auth.signOut().catch(error => console.error("登出錯誤:", error)); }
-        function setupLoggedInUI(user) { document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block'; const userName = user.displayName || user.email; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`; renderProfilePage(); }
-        function setupLoggedOutUI() { document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; renderProfilePage(); document.getElementById('challenge-list-container').innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; if (document.getElementById('picker-result')) { document.getElementById('picker-result').textContent = '?'; } }
-        function getPosts() { if (!currentUser) return []; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
-        function savePosts(posts) { if (!currentUser) return; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(posts)); }
-        function getUserChallenges() { if (!currentUser) return {}; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || {}; }
-        function saveUserChallenges(challenges) { if (!currentUser) return; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(challenges)); }
+    // --- 3. 地圖初始化與核心功能 ---
+    window.initMap = function() {
+        const initialPosition = { lat: 25.0479, lng: 121.5171 };
         
-        // 3.5 Page 1: 地圖功能
-        function initMap() { isMapReady = true; userGpsPosition = { lat: 25.0479, lng: 121.5171 }; map = new google.maps.Map(document.getElementById("map"), { center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true }); placesService = new google.maps.places.PlacesService(map); infoWindow = new google.maps.InfoWindow(); directionsService = new google.maps.DirectionsService(); directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } }); createUserMarker(userGpsPosition); setupMapListeners(); setupAutocomplete(); updateUserGPS(); }
-        function createUserMarker(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
-        function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener("click", (event) => { if (!event.placeId) { clearSearch(); } }); }
-        function setupAutocomplete() { const input = document.getElementById('search-input'); const clearBtn = document.getElementById('clear-search'); autocomplete = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'tw' }, types: ['establishment', 'geocode'], fields: ['place_id', 'geometry', 'name', 'formatted_address', 'vicinity'] }); input.addEventListener('input', () => { clearBtn.style.display = input.value ? 'flex' : 'none'; }); autocomplete.addListener('place_changed', () => { const place = autocomplete.getPlace(); if (place.geometry && place.geometry.location) { clearSearch(true); handlePlaceSelection(place); } }); }
-        function updateUserGPS() { if (!isMapReady) return; document.getElementById("list-content-area").innerHTML = `<p class="list-status-text">正在獲取您的位置...</p>`; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; createUserMarker(userGpsPosition); centerOnUserGPS(); }, () => searchNearbyRestaurants(map.getCenter()) ); } else { searchNearbyRestaurants(map.getCenter()); } }
-        function centerOnUserGPS() { if (map && userGpsPosition) { map.panTo(userGpsPosition); } }
-        function searchNearbyRestaurants(location) { if (!isMapReady) return; const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = `<p class="list-status-text">正在搜尋附近餐廳...</p>`; clearRestaurantMarkers(); const request = { location: location, radius: 1500, type: 'restaurant' }; placesService.nearbySearch(request, (results, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && results) { processAndDisplayResults(results, location); } else { listContainer.innerHTML = `<p class="list-status-text">此區域找不到餐廳</p>`; } }); }
-        function processAndDisplayResults(places, center) { const listContainer = document.getElementById("list-content-area"); const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) })); placesWithDistance.sort((a, b) => a.distance - b.distance); listContainer.innerHTML = ""; placesWithDistance.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place); }); }
-        function addRestaurantMarker(place) { const marker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name }); marker.addListener('click', () => handlePlaceSelection(place)); marker.place_id = place.place_id; restaurantMarkers.push(marker); }
-        
-        function addRestaurantToList(place, routeInfo = null) {
-            const listContainer = document.getElementById("list-content-area");
-            const item = document.createElement("div");
-            item.className = "list-item";
-            item.dataset.placeId = place.place_id;
-            let openStatusHtml = "";
+        // 自訂地圖樣式 (仿愛食記/清新風格)
+        const mapStyle = [{"elementType":"geometry","stylers":[{"color":"#f5f5f5"}]},{"elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#616161"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#f5f5f5"}]},{"featureType":"administrative.land_parcel","elementType":"labels.text.fill","stylers":[{"color":"#bdbdbd"}]},{"featureType":"poi","elementType":"geometry","stylers":[{"color":"#eeeeee"}]},{"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#e5e5e5"}]},{"featureType":"poi.park","elementType":"labels.text.fill","stylers":[{"color":"#9e9e9e"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#ffffff"}]},{"featureType":"road.arterial","elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#dadada"}]},{"featureType":"road.highway","elementType":"labels.text.fill","stylers":[{"color":"#616161"}]},{"featureType":"road.local","elementType":"labels.text.fill","stylers":[{"color":"#9e9e9e"}]},{"featureType":"transit.line","elementType":"geometry","stylers":[{"color":"#e5e5e5"}]},{"featureType":"transit.station","elementType":"geometry","stylers":[{"color":"#eeeeee"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#c9c9c9"}]},{"featureType":"water","elementType":"labels.text.fill","stylers":[{"color":"#9e9e9e"}]}];
 
-            if (place.business_status === "CLOSED_PERMANENTLY") {
-                openStatusHtml = `<span class="open-status closed">永久停業</span>`;
-            } else if (place.opening_hours) {
-                // 修正：統一使用 isOpen() 方法，消除棄用警告
-                const isOpen = place.opening_hours.isOpen();
-                openStatusHtml = isOpen ? `<span class="open-status open">營業中</span>` : `<span class="open-status closed">休息中</span>`;
+        map = new google.maps.Map(document.getElementById("map"), {
+            center: initialPosition,
+            zoom: 15,
+            styles: mapStyle,
+            disableDefaultUI: true
+        });
+
+        // placesService = new google.maps.places.PlacesService(map); // 真實 API
+        
+        setupMapListeners();
+        updateUserGPS(initialPosition);
+        displayRestaurants(mockRestaurants); // 用模擬資料顯示餐廳
+    };
+    
+    // --- 4. UI 互動與頁面切換 ---
+    window.showPage = function(pageId, navElement) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        navElement.classList.add('active');
+
+        if(pageId === 'profile-page') renderProfilePage();
+    };
+
+    window.showProfileTab = function(tabId, tabElement) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        tabElement.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.getElementById(`${tabId}-content`).classList.add('active');
+        renderProfileTabContent(tabId);
+    };
+
+    // --- 5. 地圖互動邏輯 ---
+    function setupMapListeners() {
+        map.addListener('click', (event) => {
+            if (!event.placeId) {
+                restaurantCard.classList.remove('active');
+                selectedCardPlaceId = null;
             }
+        });
+    }
 
-            const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`;
-            const detailsText = [ratingHtml, openStatusHtml].filter(Boolean).join(' · ');
-            const addressHtml = `<div class="item-address">${place.vicinity || place.formatted_address || ''}</div>`;
-            const distanceHtml = routeInfo ? `<div class="item-distance"><i class="fas fa-route"></i> ${routeInfo.driving.distance}</div>` : (place.distance ? `<div class="item-distance">${Math.round(place.distance)}m</div>` : '');
-            item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div>${addressHtml}<div class="item-details">${detailsText}</div></div>${distanceHtml}`;
-            item.onclick = () => handlePlaceSelection(place);
-            listContainer.appendChild(item);
-        }
-
-        function handlePlaceSelection(place) { const marker = restaurantMarkers.find((m) => m.place_id === place.place_id); if (marker) { map.panTo(marker.getPosition()); } else { map.panTo(place.geometry.location); } highlightListItem(place.place_id, true); calculateAndDisplayRoute(place); }
-        function calculateAndDisplayRoute(place) { if (!userGpsPosition || !place.geometry || !place.geometry.location) { return; } document.getElementById('clear-search').style.display = 'flex'; clearRestaurantMarkers(); const request = { origin: userGpsPosition, destination: place.geometry.location, travelMode: google.maps.TravelMode.DRIVING }; directionsService.route(request, (res, stat) => { if (stat !== 'OK') { directionsRenderer.setDirections({ routes: [] }); addRestaurantMarker(place); showSinglePlaceResult(place); return; } directionsRenderer.setDirections(res); const leg = res.routes[0].legs[0]; const routeInfo = { driving: { distance: leg.distance.text, duration: leg.duration.text } }; const destinationMarker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name }); restaurantMarkers.push(destinationMarker); map.fitBounds(res.routes[0].bounds); showPlaceDetailsInWindow(place, destinationMarker, routeInfo); showSinglePlaceResult(place, routeInfo); }); }
-        function showSinglePlaceResult(place, routeInfo) { const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = ""; addRestaurantToList(place, routeInfo); }
-
-        function showPlaceDetailsInWindow(place, marker, routeInfo = null) {
-            const request = {
-                placeId: place.place_id,
-                fields: [ 'name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address' ]
-            };
-            
-            placesService.getDetails(request, (details, status) => {
-                let content = `<div class="info-window-content"><h4>${place.name}</h4>`;
-                
-                if (status === google.maps.places.PlacesServiceStatus.OK && details) {
-                    const address = details.formatted_address || details.vicinity;
-                    if (address) content += `<p><i class="fas fa-map-marker-alt"></i>${address}</p>`;
-                    if (routeInfo) content += `<p><i class="fas fa-car"></i>${routeInfo.driving.distance} (${routeInfo.driving.duration})</p>`;
-                    if (details.rating) content += `<p><i class="fas fa-star"></i>${details.rating}</p>`;
-                    if (details.formatted_phone_number) content += `<p><i class="fas fa-phone"></i>${details.formatted_phone_number}</p>`;
-                    
-                    if (details.business_status === "CLOSED_PERMANENTLY") {
-                        content += `<p><i class="fas fa-store-slash"></i><span style="color: #dc3545; font-weight: bold;">永久停業</span></p>`;
-                    } else if (details.opening_hours) {
-                        let statusText;
-                        let color;
-
-                        if (details.opening_hours.isOpen()) {
-                            statusText = "營業中";
-                            color = "#28a745";
-                            try {
-                                const jsDay = new Date().getDay();
-                                const weekdayTextIndex = (jsDay + 6) % 7;
-                                const todaySchedule = details.opening_hours.weekday_text[weekdayTextIndex];
-                                if (todaySchedule.includes('–')) {
-                                    const closingTime = todaySchedule.split('–')[1].trim();
-                                    if (closingTime.includes(':')) {
-                                        statusText += `・${closingTime} 關店`;
-                                    }
-                                }
-                            } catch (e) { /* 解析失敗就算了 */ }
-                        } else {
-                            statusText = "休息中";
-                            color = "#dc3545";
-                            let nextOpeningTime = null;
-                            if(details.opening_hours.periods) {
-                                const now = new Date();
-                                const currentDay = now.getDay();
-                                const currentTime = ('0' + now.getHours()).slice(-2) + ('0' + now.getMinutes()).slice(-2);
-                                
-                                for(const period of details.opening_hours.periods) {
-                                    if(period.open.day === currentDay && period.open.time > currentTime) {
-                                        nextOpeningTime = period.open.time;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (nextOpeningTime) {
-                                const openHour = nextOpeningTime.substring(0, 2);
-                                const openMinute = nextOpeningTime.substring(2, 4);
-                                statusText += `・${openHour}:${openMinute} 開始營業`;
-                            }
-                        }
-
-                        const detailsId = `hours-details-${place.place_id.replace(/\W/g, '')}`;
-                        content += `<p style="cursor: pointer; display: flex; align-items: center;" onclick="var el = document.getElementById('${detailsId}'); el.style.display = el.style.display === 'block' ? 'none' : 'block';">
-                                        <i class="fas fa-clock"></i>
-                                        <span style="color: ${color}; font-weight: bold;">${statusText}</span>
-                                        <i class="fas fa-chevron-down" style="font-size: 12px; margin-left: auto; color: #888; padding-left: 8px;"></i>
-                                    </p>`;
-                        
-                        if (details.opening_hours.weekday_text) {
-                            const jsDay = new Date().getDay();
-                            const weekdayTextIndex = (jsDay + 6) % 7;
-                            const hoursList = details.opening_hours.weekday_text.map((day, index) => {
-                                if (index === weekdayTextIndex) {
-                                    return `<li style="font-weight: bold; color: #1a73e8;">${day}</li>`;
-                                }
-                                return `<li>${day}</li>`;
-                            }).join('');
-                            content += `<div id="${detailsId}" style="display: none; padding-left: 28px; font-size: 13px; color: #555; margin-top: -5px; margin-bottom: 5px;">
-                                            <ul style="list-style-type: none; padding: 0; margin: 0;">${hoursList}</ul>
-                                        </div>`;
-                        }
-                    }
-                } else {
-                    content += `<p>無法獲取詳細資訊</p>`;
-                }
-                content += '</div>';
-                infoWindow.setContent(content);
-                infoWindow.open(map, marker);
+    function updateUserGPS(position) {
+        if (userMarker) {
+            userMarker.setPosition(position);
+        } else {
+            userMarker = new google.maps.Marker({
+                position,
+                map,
+                title: "Your Location",
+                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: '#4285F4', fillOpacity: 1, strokeColor: 'white', strokeWeight: 2 },
+                zIndex: 100
             });
         }
+        map.panTo(position);
+    }
+    window.centerOnUserGPS = () => { if(userMarker) map.panTo(userMarker.getPosition()); };
+
+    // --- 6. 餐廳資料處理與顯示 ---
+    function displayRestaurants(restaurants) {
+        clearRestaurantMarkers();
+        restaurants.forEach(place => addRestaurantMarker(place));
+    }
+
+    function addRestaurantMarker(place) {
+        const isHot = place.rating > 4.6;
+        const marker = new google.maps.Marker({
+            position: { lat: place.lat, lng: place.lng },
+            map,
+            title: place.name,
+            icon: {
+                url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+                    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${isHot ? '#ff385c' : '#00a699'}" width="36px" height="36px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>`
+                )}`,
+                scaledSize: new google.maps.Size(36, 36),
+                anchor: new google.maps.Point(18, 36)
+            },
+            zIndex: isHot ? 10 : 1
+        });
+
+        marker.addListener('click', () => handlePlaceSelection(place));
+        marker.addListener('mouseover', () => marker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1));
+        marker.addListener('mouseout', () => marker.setZIndex(isHot ? 10 : 1));
+        restaurantMarkers.push(marker);
+    }
+
+    function clearRestaurantMarkers() {
+        restaurantMarkers.forEach(marker => marker.setMap(null));
+        restaurantMarkers = [];
+    }
+
+    function handlePlaceSelection(place) {
+        selectedCardPlaceId = place.place_id;
+        // 填充卡片資料
+        document.getElementById('card-photo').style.backgroundImage = `url('${place.photo}')`;
+        document.getElementById('card-name').textContent = place.name;
+        document.getElementById('card-rating').innerHTML = `<i class="fas fa-star"></i> ${place.rating}`;
+        document.getElementById('card-category').textContent = place.category;
+        document.getElementById('card-address').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${place.name} 附近的地址`; // 模擬地址
+        document.getElementById('card-price').innerHTML = `<i class="fas fa-dollar-sign"></i> ${place.price}`;
+        document.getElementById('card-status').textContent = '營業中・22:00 關店'; // 模擬狀態
+        document.getElementById('card-status').className = 'card-status open';
         
-        function clearSearch(suppressSearch) { directionsRenderer.setDirections({ routes: [] }); infoWindow.close(); const input = document.getElementById('search-input'); input.value = ''; document.getElementById('clear-search').style.display = 'none'; if (!suppressSearch) { searchNearbyRestaurants(map.getCenter()); } }
-        function highlightListItem(placeId, scroll) { document.querySelectorAll(".list-item.is-selected").forEach((el) => el.classList.remove("is-selected")); const listItem = document.querySelector(`.list-item[data-place-id="${placeId}"]`); if (listItem) { listItem.classList.add("is-selected"); if (scroll) { listItem.scrollIntoView({ behavior: "smooth", block: "center" }); } } }
-        function clearRestaurantMarkers() { restaurantMarkers.forEach((marker) => marker.setMap(null)); restaurantMarkers = []; }
+        // 檢查收藏狀態
+        checkIfFavorite(place.place_id);
 
-        // --- 其他頁面功能 (無變更) ---
-        function updateRandomPageStatus() { if (!currentUser) { document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; document.getElementById('picker-result').textContent = '?'; return; } const allPosts = getPosts(); const restaurants = [...new Set(allPosts.map(p => p.name))]; const statusText = document.getElementById('random-status-text'); const pickerResult = document.getElementById('picker-result'); pickerResult.textContent = "?"; pickerResult.style.color = 'var(--primary-color)'; if (restaurants.length === 0) { statusText.textContent = "您還沒有新增任何餐廳喔！請到「新增」頁面加入吧！"; } else { statusText.textContent = `目前有 ${restaurants.length} 家獨特的餐廳在您的口袋名單中。`; } }
-        function startRandomPick() { if (!currentUser) { alert('請先登入才能使用您的美食清單進行抽籤！'); showPage('login-page'); return; } const allPosts = getPosts(); const restaurants = [...new Set(allPosts.map(p => p.name))]; if (restaurants.length === 0) { alert("口袋名單是空的，無法抽籤！"); return; } const wheel = document.getElementById('picker-wheel'); const resultDiv = document.getElementById('picker-result'); const pickButton = document.getElementById('random-pick-btn'); pickButton.disabled = true; resultDiv.textContent = '...'; const randomSpins = Math.floor(Math.random() * 5) + 5; const randomStopAngle = Math.floor(Math.random() * 360); wheel.style.transform = `rotate(${randomSpins * 360 + randomStopAngle}deg)`; setTimeout(() => { const randomIndex = Math.floor(Math.random() * restaurants.length); const winner = restaurants[randomIndex]; resultDiv.textContent = winner; resultDiv.style.color = '#28a745'; pickButton.disabled = false; }, 4000); }
-        function handleRatingClick(e) { const rating = e.target.dataset.value; document.getElementById('review-rating').dataset.rating = rating; updateHeartDisplay(rating); }
-        function handleRatingHover(e) { updateHeartDisplay(e.target.dataset.value); }
-        function handleRatingMouseout() { updateHeartDisplay(document.getElementById('review-rating').dataset.rating); }
-        function updateHeartDisplay(rating) { document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => { heart.classList.toggle('active', heart.dataset.value <= rating); }); }
-        function saveReview() { if (!currentUser) { alert('請先登入才能儲存評論！'); showPage('login-page'); return; } const name = document.getElementById('review-restaurant-name').value.trim(); const rating = document.getElementById('review-rating').dataset.rating; if (!name || rating === "0") { alert("請務必填寫「餐廳名稱」和「喜愛程度」！"); return; } const newPost = { id: Date.now(), name, items: document.getElementById('review-meal-items').value.trim(), cost: Number(document.getElementById('review-cost').value) || 0, rating, content: document.getElementById('review-content').value.trim(), timestamp: new Date().toISOString() }; const posts = getPosts(); posts.unshift(newPost); savePosts(posts); alert("評論已成功儲存！"); ['review-restaurant-name', 'review-meal-items', 'review-cost', 'review-content'].forEach(id => document.getElementById(id).value = ''); document.getElementById('review-rating').dataset.rating = 0; updateHeartDisplay(0); showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]')); }
-        const challengesData = [ { id: 'healthy_week', title: '挑戰一週健康餐', desc: '連續七天只吃原型食物和健康烹調的餐點！', rank: '<li>1. Alice (7/7天) 🥇</li> <li>2. David (6/7天) 🥈</li> <li>3. 美食探險家 (5/7天)</li>', participants: 'Alice, David, 美食探險家' }, { id: 'budget_200', title: '省錢大作戰：日均$200', desc: '挑戰連續五天，平均每日餐費不超過200元。', rank: '<li>1. Bob (平均 $185) 🥇</li> <li>2. Charlie (平均 $198) 🥈</li>', participants: 'Bob, Charlie' }, { id: 'vegan_exp', title: '素食體驗週', desc: '挑戰一週完全素食(蛋奶素可)。', rank: '<li>1. Eve (完成) 🥇</li> <li>2. Frank (完成) 🥈</li> <li>3. Grace (完成)</li>', participants: 'Eve, Frank, Grace' }];
-        function renderChallenges() { const container = document.getElementById('challenge-list-container'); if (!currentUser) { container.innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; return; } const userChallenges = getUserChallenges(); container.innerHTML = ''; challengesData.forEach(c => { const isJoined = userChallenges[c.id]; const card = document.createElement('div'); card.className = 'challenge-card'; card.innerHTML = `<div class="challenge-header"><div class="challenge-title">${c.title}</div><button class="challenge-btn-join ${isJoined ? 'joined' : ''}" onclick="toggleChallenge('${c.id}')">${isJoined ? '已參加' : '參加'}</button></div><p class="challenge-desc">${c.desc}</p><div><div class="challenge-ranking-title">🏆 排行榜：</div><ul class="challenge-ranking-list" style="flex-direction:column; gap: 5px;">${c.rank}</ul></div><div style="margin-top:15px;"><div class="challenge-participants-title">👥 參與者：</div><div class="challenge-participants-list">${c.participants} ${isJoined ? ', <b>您</b>' : ''}</div></div>`; container.appendChild(card); }); }
-        function toggleChallenge(challengeId) { if (!currentUser) { alert('請先登入才能參加挑戰！'); showPage('login-page'); return; } const userChallenges = getUserChallenges(); userChallenges[challengeId] = !userChallenges[challengeId]; saveUserChallenges(userChallenges); renderChallenges(); }
-        function renderProfilePage() { const activeTabButton = document.querySelector('#profile-page .tab-btn.active'); const tabId = activeTabButton ? (activeTabButton.dataset.tab || 'accounting') : 'accounting'; showProfileTab(tabId, activeTabButton || document.querySelector('#profile-page .tab-btn')); }
-        function showProfileTab(tabId, tabElement) { document.querySelectorAll('#profile-page .tab-btn').forEach(btn => { btn.classList.remove('active'); btn.removeAttribute('data-tab'); }); if (tabElement) { tabElement.classList.add('active'); tabElement.dataset.tab = tabId; } document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active'); if (tabId === 'accounting') renderAccountingRecords(); if (tabId === 'posts') renderMyPosts(); if (tabId === 'favorites') renderFavoriteRestaurants(); if (tabId === 'friends') renderFriendsList(); }
-        const loggedOutPlaceholder = (message) => `<p class="placeholder-text">請先<a href="#" onclick="showPage('login-page')">登入</a>${message}</p>`;
-        function renderAccountingRecords() { const container = document.getElementById('accounting-content'); if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的消費紀錄。'); return; } const posts = getPosts().filter(p => p.cost > 0); if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">尚無消費紀錄。</p>`; return; } container.innerHTML = '<h3>消費紀錄</h3>' + posts.map(p => `<div class="record-card"><span class="cost">$${p.cost}</span><div class="title">${p.name}</div><div class="details">${new Date(p.timestamp).toLocaleDateString()}</div></div>`).join(''); }
-        function renderMyPosts() { const container = document.getElementById('posts-content'); if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); return; } const posts = getPosts(); if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`; return; } container.innerHTML = posts.map(p => { let ratingHtml = Array(parseInt(p.rating)).fill('<i class="fa-solid fa-heart"></i>').join(''); return `<div class="post-card"><div class="title">${p.name}</div><div class="details">${new Date(p.timestamp).toLocaleString()}</div><p class="content">${p.content || '（無詳細評論）'}</p><div class="post-rating">${ratingHtml}</div></div>`; }).join(''); }
-        function renderFavoriteRestaurants() { const container = document.getElementById('favorites-content'); if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的最愛餐廳。'); return; } const favorites = getPosts().filter(p => p.rating >= 4).reduce((acc, cur) => { if (!acc.some(item => item.name === cur.name)) acc.push(cur); return acc; }, []).sort((a, b) => b.rating - a.rating); if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有評分高的餐廳喔！</p>`; return; } container.innerHTML = '<h3>最愛餐廳 (評分4顆心以上)</h3>' + favorites.map(p => `<div class="record-card"><div class="title">${p.name}</div></div>`).join(''); }
-        function renderFriendsList() { const container = document.getElementById('friends-content'); if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看好友名單。'); return; } container.innerHTML = `<p class="placeholder-text">好友功能開發中！</p>`; }
+        // 顯示評論
+        renderReviewsForCard(place.place_id);
+        
+        // 顯示卡片
+        restaurantCard.classList.add('active');
+        map.panTo({ lat: place.lat, lng: place.lng });
+    }
+    
+    window.searchByCategory = function(category, element) {
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        element.classList.add('active');
+        
+        const filteredRestaurants = category === 'all' 
+            ? mockRestaurants 
+            : mockRestaurants.filter(r => r.category === category);
+        displayRestaurants(filteredRestaurants);
+        restaurantCard.classList.remove('active');
+    }
 
-        // --- 4. 初始化 & 狀態監聽 ---
-        document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => { heart.addEventListener('click', handleRatingClick); heart.addEventListener('mouseover', handleRatingHover); heart.addEventListener('mouseout', handleRatingMouseout); });
-        auth.onAuthStateChanged(user => { currentUser = user; if (user) { setupLoggedInUI(user); } else { setupLoggedOutUI(); } });
-        showPage('map-page', document.querySelector('.nav-item'));
+    // --- 7. 收藏與評論邏輯 (模擬) ---
+    function checkIfFavorite(placeId) {
+        const favBtn = document.getElementById('card-favorite-btn');
+        const isFavorite = currentUser && mockFavorites.includes(placeId);
+        favBtn.classList.toggle('favorited', isFavorite);
+    }
+    window.toggleFavorite = function() {
+        if (!currentUser) { alert('請先登入才能收藏！'); return; }
+        if (!selectedCardPlaceId) return;
 
-        // ================== 全域接口掛載 ==================
-        window.initMap = initMap;
-        window.centerOnUserGPS = centerOnUserGPS;
-        window.clearSearch = clearSearch;
-        window.showPage = showPage;
-        window.goBack = goBack;
-        window.startRandomPick = startRandomPick;
-        window.saveReview = saveReview;
-        window.toggleChallenge = toggleChallenge;
-        window.showProfileTab = showProfileTab;
-        window.handleSignOut = handleSignOut;
-        window.handleSignIn = handleSignIn;
-        window.handleGoogleSignIn = handleGoogleSignIn;
-        window.handleRegister = handleRegister;
+        const favBtn = document.getElementById('card-favorite-btn');
+        const isFavorited = favBtn.classList.toggle('favorited');
+        
+        const index = mockFavorites.indexOf(selectedCardPlaceId);
+        if (isFavorited && index === -1) {
+            mockFavorites.push(selectedCardPlaceId);
+        } else if (!isFavorited && index > -1) {
+            mockFavorites.splice(index, 1);
+        }
+        console.log("Current Favorites:", mockFavorites);
+    }
 
-    });
+    function renderReviewsForCard(placeId) {
+        const container = document.getElementById('card-reviews-list');
+        const reviews = mockReviews[placeId] || [];
+        if (reviews.length === 0) {
+            container.innerHTML = '<p style="color: #888; text-align: center;">暫無評論</p>';
+            return;
+        }
+        container.innerHTML = reviews.map(review => `
+            <div class="review-card">
+                <div class="review-header">
+                    <img src="${review.avatar}" class="reviewer-avatar">
+                    <div>
+                        <div class="reviewer-name">${review.user}</div>
+                        <div class="review-timestamp">1天前</div>
+                    </div>
+                </div>
+                <div class="review-ratings">
+                    <span>口味 ${'★'.repeat(review.ratings.taste)}${'☆'.repeat(5-review.ratings.taste)}</span>
+                    <span>環境 ${'★'.repeat(review.ratings.ambiance)}${'☆'.repeat(5-review.ratings.ambiance)}</span>
+                </div>
+                <p class="review-comment">${review.comment}</p>
+                <div class="review-images">
+                    ${review.images.map(img => `<img src="${img}">`).join('')}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // --- 8. 個人頁面邏輯 ---
+    function renderProfilePage() {
+        const loggedOutPlaceholder = document.getElementById('logged-out-placeholder');
+        const profileTabs = document.querySelector('.profile-tabs');
+        if(currentUser) {
+            loggedOutPlaceholder.style.display = 'none';
+            profileTabs.style.display = 'flex';
+            document.getElementById('auth-action-btn').textContent = '登出';
+            // 預設顯示第一個 tab
+            showProfileTab('favorites', document.querySelector('.tab-btn'));
+        } else {
+            loggedOutPlaceholder.style.display = 'block';
+            profileTabs.style.display = 'none';
+            document.getElementById('auth-action-btn').textContent = '登入';
+            document.getElementById('favorites-content').innerHTML = '';
+            document.getElementById('reviews-content').innerHTML = '';
+        }
+    }
+
+    function renderProfileTabContent(tabId) {
+        if (!currentUser) return;
+        if (tabId === 'favorites') {
+            const container = document.getElementById('favorites-content');
+            const favoriteRestaurants = mockRestaurants.filter(r => mockFavorites.includes(r.place_id));
+            if(favoriteRestaurants.length === 0) {
+                 container.innerHTML = '<p class="placeholder-text">還沒有收藏任何餐廳喔！</p>';
+                 return;
+            }
+            container.innerHTML = favoriteRestaurants.map(r => `
+                <div class="favorite-card">
+                    <img src="${r.photo}">
+                    <div class="favorite-info">
+                        <div class="name">${r.name}</div>
+                        <div class="details">${r.category}・<i class="fas fa-star" style="color:#f5c518;"></i> ${r.rating}</div>
+                    </div>
+                </div>
+            `).join('');
+        } else if (tabId === 'reviews') {
+            document.getElementById('reviews-content').innerHTML = '<p class="placeholder-text">我的評論功能開發中。</p>';
+        }
+    }
+
+    // --- 9. 使用者認證 (模擬) ---
+    window.handleAuthAction = function() {
+        if(currentUser) {
+            // 登出
+            currentUser = null;
+            alert('您已登出。');
+        } else {
+            // 登入
+            currentUser = {
+                uid: 'mock_user_123',
+                displayName: '美食探險家'
+            };
+            alert('登入成功！');
+        }
+        renderProfilePage(); // 重新渲染個人頁
+    }
+});
 </script>
 </body>
 </html>
