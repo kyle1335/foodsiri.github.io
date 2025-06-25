@@ -54,7 +54,7 @@
     .details-section-content.collapsible { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
     .details-section-content.collapsible.expanded { max-height: 500px; }
     .details-section-content ul { list-style: none; padding: 0; margin: 0; }
-    .details-section-content p { display: flex; align-items: center; gap: 10px; }
+    .details-section-content p { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
     .details-section-content p i { width: 16px; text-align: center; color: var(--text-light); }
     .hours-list li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
     .hours-list li:last-child { border-bottom: none; }
@@ -63,9 +63,9 @@
     .review-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--secondary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
     .review-author { font-weight: 600; }
     .review-rating { color: var(--warning-color); margin-left: auto; }
-    
-    /* 其他頁面的 CSS 保持不變，為簡潔省略 */
-    .gm-style-iw-d { overflow: hidden !important; } .info-window-content { font-family: inherit; padding: 5px; max-width: 280px; } .info-window-content h4 { font-size: 16px; margin: 0 0 8px 0; font-weight: 600; } .info-window-content p { font-size: 14px; margin: 0 0 5px 0; color: #555; display: flex; align-items: center; } .info-window-content i { margin-right: 8px; color: var(--primary-color); width: 16px; text-align: center; }
+    .list-item { display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; } .list-item:last-child { border-bottom: none; } .list-item .item-icon { font-size: 18px; color: var(--primary-color); flex-shrink: 0; } .list-item .item-info { flex-grow: 1; } .list-item .item-name { font-weight: 600; } .list-item .item-details { font-size: 13px; color: var(--text-light); margin-top: 4px; }
+
+    /* 其他頁面的 CSS 保持不變 */
     .form-group {margin-bottom: 20px;}.form-group label {display: block;margin-bottom: 8px;font-weight: 500;color: var(--text-color);}.form-group input,.form-group textarea {width: 100%;padding: 12px;border: 1px solid #ccc;border-radius: 8px;box-sizing: border-box;font-size: 16px;transition: all 0.2s;}.form-group input:focus,.form-group textarea:focus {border-color: var(--primary-color);box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);outline: none;}.form-group textarea {min-height: 120px;resize: vertical;}.btn {display: flex;align-items: center;justify-content: center;gap: 8px;width: 100%;padding: 15px;background-color: var(--success-color);color: white;border: none;border-radius: 8px;font-size: 16px;font-weight: bold;cursor: pointer;text-align: center;transition: all 0.2s;}.btn:hover:not(:disabled) {background-color: #218838;transform: translateY(-2px);box-shadow: 0 4px 8px rgba(0,0,0,0.1);}.btn:disabled {background-color: #ccc;cursor: not-allowed;transform: none;box-shadow: none;}.rating-hearts {display: flex;gap: 10px;font-size: 30px;color: #ddd;cursor: pointer;}.rating-hearts .fa-heart {transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);}.rating-hearts .fa-heart:hover {transform: scale(1.2);}.rating-hearts .fa-heart.active {color: #ff4d6d;}.photo-upload-area {background: #f0f0f0;border: 2px dashed #ccc;border-radius: 8px;padding: 20px;display: flex;justify-content: center;gap: 20px;flex-wrap: wrap;}.photo-upload-area .btn-upload {background: #fff;color: var(--text-color);padding: 10px 20px;border-radius: 8px;cursor: pointer;border: 1px solid #ddd;transition: all 0.2s;}.photo-upload-area .btn-upload:hover {background-color: var(--primary-color);color: white;transform: translateY(-2px);}.photo-upload-area .btn-upload i {margin-right: 8px;}.photo-preview-container {display: flex;gap: 10px;flex-wrap: wrap;margin-top: 15px;}.photo-preview {position: relative;width: 80px;height: 80px;border-radius: 8px;overflow: hidden;box-shadow: 0 2px 8px rgba(0,0,0,0.1);}.photo-preview img {width: 100%;height: 100%;object-fit: cover;}.photo-preview .remove-btn {position: absolute;top: 4px;right: 4px;background: rgba(220, 53, 69, 0.8);color: white;border: none;border-radius: 50%;width: 20px;height: 20px;font-size: 12px;cursor: pointer;display: flex;align-items: center;justify-content: center;transition: all 0.2s;opacity: 0;}.photo-preview:hover .remove-btn {opacity: 1;}.photo-preview .remove-btn:hover {transform: scale(1.2);background: var(--danger-color);}.upload-progress {width: 100%;height: 4px;background: #f0f0f0;border-radius: 2px;margin-top: 10px;overflow: hidden;}.upload-progress-bar {height: 100%;background: var(--success-color);width: 0%;transition: width 0.3s ease;}#random-picker-container {display: flex;flex-direction: column;align-items: center;justify-content: center;height: 100%;padding: 20px;box-sizing: border-box;}#picker-wheel {width: 280px;height: 280px;border: 10px solid #ddd;border-radius: 50%;position: relative;display: flex;align-items: center;justify-content: center;margin-bottom: 30px;transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1);background: linear-gradient(45deg, #667eea, #764ba2);box-shadow: 0 10px 20px rgba(0,0,0,0.2), inset 0 0 10px rgba(0,0,0,0.3);}#picker-arrow {width: 0;height: 0;border-left: 15px solid transparent;border-right: 15px solid transparent;border-top: 25px solid var(--danger-color);position: absolute;top: -35px;left: 50%;transform: translateX(-50%);z-index: 2;}#picker-result {font-size: 20px;font-weight: bold;color: white;text-align: center;height: 60px;padding: 0 10px;display: flex;align-items: center;justify-content: center;}.challenge-card {background: #fff;border-radius: 12px;margin-bottom: 20px;padding: 20px;box-shadow: 0 4px 15px rgba(0,0,0,0.08);transition: transform 0.2s, box-shadow 0.2s;}.challenge-card:hover {transform: translateY(-3px);box-shadow: 0 6px 20px rgba(0,0,0,0.1);}.challenge-header {display: flex;justify-content: space-between;align-items: center;margin-bottom: 15px;}.challenge-title {font-size: 18px;font-weight: 600;}.challenge-btn-join {background-color: var(--success-color);color: #fff;padding: 8px 15px;border-radius: 20px;font-size: 14px;border: none;cursor: pointer;transition: all 0.2s;}.challenge-btn-join:hover {transform: scale(1.05);}.challenge-btn-join.joined {background-color: var(--text-light);}.challenge-desc {font-size: 14px;color: var(--text-light);margin-bottom: 15px;}.challenge-ranking-title,.challenge-participants-title {font-size: 14px;font-weight: 500;margin-bottom: 8px;}.challenge-ranking-list,.challenge-participants-list {font-size: 14px;color: #555;list-style: none;padding-left: 0;margin: 0;}.challenge-ranking-list li {padding: 4px 0;}.challenge-ranking-list li i {color: #ffd700;margin-right: 4px;}.profile-tabs {display: flex;gap: 10px;padding: 10px 20px;background: #fff;border-bottom: 1px solid #eee;overflow-x: auto;flex-shrink: 0;}.tab-btn {background: #f0f0f0;border: none;border-radius: 20px;padding: 8px 15px;font-size: 14px;cursor: pointer;white-space: nowrap;transition: all 0.2s;}.tab-btn.active {background: var(--primary-color);color: #fff;box-shadow: 0 2px 5px rgba(102, 126, 234, 0.4);}.tab-content {display: none;}.tab-content.active {display: block;}.record-card,.post-card {background: #fff;padding: 15px;border-radius: 8px;margin-bottom: 10px;box-shadow: 0 2px 4px rgba(0,0,0,0.05);transition: transform 0.2s, box-shadow 0.2s;}.record-card:hover,.post-card:hover {transform: translateY(-2px);box-shadow: 0 4px 8px rgba(0,0,0,0.08);}.record-card .title,.post-card .title {font-weight: 600;margin-bottom: 5px;}.record-card .details,.post-card .details {font-size: 14px;color: var(--text-light);}.record-card .cost {font-weight: bold;color: var(--success-color);float: right;}.post-card .content {margin-top: 10px;font-size: 15px;line-height: 1.6;}.post-card .post-rating {margin-top: 10px;color: #ff4d6d;}.post-card .post-photos {display: flex;gap: 8px;margin-top: 10px;flex-wrap: wrap;}.post-photo {width: 60px;height: 60px;border-radius: 6px;object-fit: cover;cursor: pointer;transition: transform 0.2s, box-shadow 0.2s;}.post-photo:hover {transform: scale(1.05);box-shadow: 0 2px 5px rgba(0,0,0,0.2);}.auth-form-container {width: 100%;max-width: 400px;margin: 0 auto;padding: 20px;}.auth-form-container h3 {text-align: center;margin-bottom: 20px;font-size: 20px;}.auth-form-container input {width: 100%;padding: 12px;border: 1px solid #ccc;border-radius: 8px;box-sizing: border-box;margin-bottom: 15px;font-size: 16px;}.btn-auth {width: 100%;padding: 12px;font-size: 16px;border-radius: 8px;border: none;cursor: pointer;margin-bottom: 10px;color: #fff;font-weight: bold;transition: all 0.2s;}.btn-auth.primary {background-color: var(--primary-color);}.btn-auth.primary:hover {background-color: #5a6fd8;transform: translateY(-2px);}.btn-auth.secondary {background-color: #fff;color: #4285F4;border: 1px solid #ddd;display:flex;align-items:center;justify-content:center;gap: 10px;}.btn-auth.secondary:hover {background-color: #f8f9fa;}.auth-separator {display: flex;align-items: center;text-align: center;color: #aaa;margin: 20px 0;}.auth-separator::before,.auth-separator::after {content: '';flex: 1;border-bottom: 1px solid #ddd;}.auth-separator:not(:empty)::before {margin-right: .25em;}.auth-separator:not(:empty)::after {margin-left: .25em;}.auth-switch-link {text-align: center;margin-top: 15px;font-size: 14px;color: var(--primary-color);cursor: pointer;}.auth-error-message {color: var(--danger-color);margin-bottom: 15px;min-height: 20px;font-weight: 500;text-align: center;}.toast-container {position: fixed;top: 20px;right: 20px;z-index: 10000;display: flex;flex-direction: column;gap: 10px;}.toast {background: #333;color: white;padding: 15px 20px;border-radius: 8px;box-shadow: 0 4px 10px rgba(0,0,0,0.2);animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;}.toast.success {background: var(--success-color);}.toast.error {background: var(--danger-color);}.toast.warning {background: var(--warning-color);color: #333;}@keyframes slideInRight {from {transform: translateX(120%);}to {transform: translateX(0);}}@keyframes fadeOut {from {opacity: 1;}to {opacity: 0;}}.loading-spinner {display: inline-block;width: 18px;height: 18px;border: 3px solid rgba(255,255,255,0.3);border-top-color: #fff;border-radius: 50%;animation: spin 1s linear infinite;}@keyframes spin {0% {transform: rotate(0deg);}100% {transform: rotate(360deg);}}
   </style>
 </head>
@@ -80,13 +80,9 @@
           <button class="clear-search-btn" id="clear-search" onclick="clearSearch()">×</button>
         </div>
         <button class="location-btn" onclick="centerOnUserGPS()"><i class="fas fa-location-arrow"></i></button>
-        
-        <!-- 全新詳情面板 -->
         <div id="details-panel" class="details-panel">
-          <div class="drag-handle" onclick="toggleDetailsPanel()"></div>
-          <div class="details-content" id="details-content-area">
-            <!-- 內容由 JS 動態生成 -->
-          </div>
+          <div class="drag-handle"></div>
+          <div class="details-content" id="details-content-area"></div>
         </div>
       </div>
       
@@ -169,14 +165,57 @@
             createUserMarker(userGpsPosition); setupMapListeners(); setupAutocomplete(); updateUserGPS(); resetDetailsPanel();
         };
         function createUserMarker(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
-        function setupMapListeners() { map.addListener("idle", () => { if (!selectedPlace) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener('click', () => { clearSearch(); }); }
+        
+        function setupMapListeners() {
+            map.addListener("idle", () => {
+                if (!selectedPlace) {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500);
+                }
+            });
+            map.addListener('click', () => { clearSearch(); });
+        }
+        
         function setupAutocomplete() { const input = document.getElementById('search-input'); const clearBtn = document.getElementById('clear-search'); autocomplete = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'tw' }, types: ['establishment', 'geocode'], fields: ['place_id', 'geometry', 'name'] }); input.addEventListener('input', () => { clearBtn.style.display = input.value ? 'flex' : 'none'; }); autocomplete.addListener('place_changed', () => { const place = autocomplete.getPlace(); if (place.geometry && place.geometry.location) { handlePlaceSelection(place); } }); }
         window.updateUserGPS = function() { if (!isMapReady) return; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; createUserMarker(userGpsPosition); centerOnUserGPS(); }, () => searchNearbyRestaurants(map.getCenter()) ); } else { searchNearbyRestaurants(map.getCenter()); } };
         window.centerOnUserGPS = function() { if (map && userGpsPosition) map.panTo(userGpsPosition); };
-        function searchNearbyRestaurants(location) { if (!isMapReady || !placesService) return; resetDetailsPanel("正在搜尋附近餐廳..."); clearRestaurantMarkers(); const request = { location: location, radius: 1500, type: 'restaurant' }; placesService.nearbySearch(request, (results, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && results) { processAndDisplayResults(results, location); } else { resetDetailsPanel("此區域找不到餐廳"); } }); }
-        function processAndDisplayResults(places, center) { const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) })); placesWithDistance.sort((a, b) => a.distance - b.distance); const contentArea = document.getElementById('details-content-area'); contentArea.innerHTML = ''; places.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place, contentArea); }); document.getElementById('details-panel').classList.add('visible'); }
-        function addRestaurantMarker(place) { const marker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name, animation: google.maps.Animation.DROP, icon: { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", fillColor: '#EA4335', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) } }); marker.addListener('click', (e) => { e.domEvent.stopPropagation(); handlePlaceSelection(place, marker); }); marker.place_id = place.place_id; restaurantMarkers.push(marker); }
-        function addRestaurantToList(place, container) { const item = document.createElement("div"); item.className = "list-item"; item.style.cssText = "border-left: none; padding: 15px 0;"; const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`; const addressHtml = `<div class="item-address">${place.vicinity || ''}</div>`; item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div>${addressHtml}<div class="item-details">${ratingHtml}</div></div>`; item.onclick = () => { const marker = restaurantMarkers.find(m => m.place_id === place.place_id); handlePlaceSelection(place, marker); }; container.appendChild(item); }
+        
+        function searchNearbyRestaurants(location) {
+            if (!isMapReady || !placesService) return;
+            resetDetailsPanel("正在搜尋附近餐廳...");
+            clearRestaurantMarkers();
+            const request = { location: location, radius: 1500, type: 'restaurant' };
+            placesService.nearbySearch(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                    processAndDisplayResults(results);
+                } else {
+                    resetDetailsPanel("此區域找不到餐廳");
+                }
+            });
+        }
+        
+        function processAndDisplayResults(places) {
+            const contentArea = document.getElementById('details-content-area');
+            contentArea.innerHTML = '<h3>附近餐廳</h3>';
+            places.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place, contentArea); });
+            document.getElementById('details-panel').classList.add('visible');
+        }
+
+        function addRestaurantMarker(place) {
+            const marker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name, animation: google.maps.Animation.DROP });
+            marker.addListener('click', (e) => { e.domEvent.stopPropagation(); handlePlaceSelection(place, marker); });
+            marker.place_id = place.place_id;
+            restaurantMarkers.push(marker);
+        }
+
+        function addRestaurantToList(place, container) {
+            const item = document.createElement("div");
+            item.className = "list-item";
+            const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`;
+            item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div><div class="item-details">${place.vicinity || ''}<br>${ratingHtml}</div></div>`;
+            item.onclick = () => handlePlaceSelection(place);
+            container.appendChild(item);
+        }
         
         window.handlePlaceSelection = function(place, marker) {
             selectedPlace = place; clearRestaurantMarkers(); directionsRenderer.setDirections({routes: []});
@@ -209,21 +248,21 @@
         function renderDetailsPanel(place, routeInfo) {
             const contentArea = document.getElementById('details-content-area');
             contentArea.innerHTML = `<div class="details-placeholder"><p>正在載入餐廳詳情...</p></div>`; document.getElementById('details-panel').classList.add('visible');
-            const request = { placeId: place.place_id, fields: ['name', 'rating', 'user_ratings_total', 'formatted_phone_number', 'opening_hours', 'vicinity', 'formatted_address', 'photos'] };
+            const request = { placeId: place.place_id, fields: ['name', 'rating', 'user_ratings_total', 'formatted_phone_number', 'opening_hours', 'vicinity', 'formatted_address'] };
             placesService.getDetails(request, (details, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && details) {
                     const drivingTime = routeInfo?.driving?.duration.text || 'N/A';
                     const walkingTime = routeInfo?.walking?.duration.text || 'N/A';
                     let hoursHtml = '<ul><li>未提供營業時間資訊</li></ul>';
-                    if (details.opening_hours) { hoursHtml = `<ul class="hours-list">${details.opening_hours.weekday_text.map(day => `<li>${day.replace(':', ': ')}</li>`).join('')}</ul>`; }
-                    const mockFriendReviews = DataManager.getPosts().filter(p => p.name === details.name);
-                    const friendReviewsHtml = mockFriendReviews.length > 0 ? mockFriendReviews.map(review => `<div class="review-card"><div class="review-card-header"><div class="review-avatar">${currentUser?.displayName?.charAt(0) || '我'}</div><div class="review-author">${currentUser?.displayName || '我'}</div><div class="review-rating">${'★'.repeat(review.rating)}</div></div><div class="details-section-content">${review.content || '(無評論內容)'}</div></div>`).join('') : '<p>尚無好友評論。</p>';
+                    if (details.opening_hours) { hoursHtml = `<ul class="hours-list">${details.opening_hours.weekday_text.map(day => `<li>${day.replace(/：/g, ': ')}</li>`).join('')}</ul>`; }
+                    const myReviews = DataManager.getPosts().filter(p => p.name === details.name); // 簡化為只顯示自己的評論
+                    const reviewsHtml = myReviews.length > 0 ? myReviews.map(review => `<div class="review-card"><div class="review-card-header"><div class="review-avatar">${currentUser?.displayName?.charAt(0) || '我'}</div><div class="review-author">${currentUser?.displayName || '我'}</div><div class="review-rating">${'★'.repeat(review.rating)}</div></div><div class="details-section-content">${Utils.sanitizeHTML(review.content) || '(無評論內容)'}</div></div>`).join('') : '<p>尚無相關評論。</p>';
                     contentArea.innerHTML = `
-                        <div class="details-header"><div class="details-header-info"><h3>${details.name}</h3><p>${details.rating || 'N/A'} ★ (${details.user_ratings_total || 0} 則評論)</p></div></div>
+                        <div class="details-header"><div class="details-header-info"><h3>${details.name}</h3><p>${details.rating || 'N/A'} ★ (${details.user_ratings_total || 0} 則 Google 評論)</p></div></div>
                         <div class="route-info"><div class="route-option"><i class="fas fa-car"></i><span class="time">${drivingTime}</span><span class="mode">開車</span></div><div class="route-option"><i class="fas fa-walking"></i><span class="time">${walkingTime}</span><span class="mode">步行</span></div></div>
                         <div class="details-section"><div class="details-section-content"><p><i class="fas fa-map-marker-alt"></i> ${details.formatted_address || details.vicinity}</p><p><i class="fas fa-phone"></i> ${details.formatted_phone_number || '未提供'}</p></div></div>
                         <div class="details-section"><div class="details-section-title" onclick="this.nextElementSibling.classList.toggle('expanded')"><span>營業時間</span><i class="fas fa-chevron-down"></i></div><div class="details-section-content collapsible">${hoursHtml}</div></div>
-                        <div class="details-section"><div class="details-section-title">好友評論</div><div class="details-section-content">${friendReviewsHtml}</div></div>
+                        <div class="details-section"><div class="details-section-title">我的評論</div><div class="details-section-content">${reviewsHtml}</div></div>
                     `;
                 } else { contentArea.innerHTML = '<div class="details-placeholder"><p>無法載入餐廳詳情</p></div>'; }
             });
@@ -235,15 +274,18 @@
             panel.classList.remove('visible');
             contentArea.innerHTML = `<div class="details-placeholder"><i class="fas fa-utensils"></i><p>${message}</p></div>`;
         }
-        window.toggleDetailsPanel = function() { /* 可選：實現面板展開/收合邏輯 */ };
+        
         window.clearSearch = function(suppressSearch = false) {
             selectedPlace = null; directionsRenderer.setDirections({routes: []});
-            document.getElementById('details-panel').classList.remove('visible'); document.getElementById('search-input').value = ''; document.getElementById('clear-search').style.display = 'none';
-            if (!suppressSearch) { setTimeout(() => { searchNearbyRestaurants(map.getCenter()); }, 300); }
+            document.getElementById('search-input').value = ''; document.getElementById('clear-search').style.display = 'none';
+            if (!suppressSearch) { 
+                document.getElementById('details-panel').classList.remove('visible');
+                setTimeout(() => { searchNearbyRestaurants(map.getCenter()); }, 300); 
+            }
         }
+        function clearRestaurantMarkers() { restaurantMarkers.forEach(marker => marker.setMap(null)); restaurantMarkers = []; }
 
         // === 10-16. 其他功能JS (為簡潔省略，與前一版本相同) ===
-        // ... (隨機選、評論、挑戰、個人頁面、認證、初始化等所有其他 JS 程式碼)
         function updateRandomPageStatus() { if (!currentUser) { document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; document.getElementById('picker-result').textContent = '?'; return; } const restaurants = [...new Set(DataManager.getPosts().map(p => p.name))]; const statusText = document.getElementById('random-status-text'); document.getElementById('picker-result').textContent = "?"; statusText.textContent = restaurants.length === 0 ? "您還沒有新增任何餐廳喔！請到「新增」頁面加入吧！" : `目前有 ${restaurants.length} 家獨特的餐廳在您的口袋名單中。`; }
         window.startRandomPick = function() { if (!currentUser) { Utils.showToast('請先登入！', 'warning'); showPage('login-page'); return; } const restaurants = [...new Set(DataManager.getPosts().map(p => p.name))]; if (restaurants.length === 0) { Utils.showToast("口袋名單是空的，無法抽籤！", 'warning'); return; } const wheel = document.getElementById('picker-wheel'), resultDiv = document.getElementById('picker-result'), pickButton = document.getElementById('random-pick-btn'); pickButton.disabled = true; resultDiv.textContent = '...'; const randomSpins = Math.floor(Math.random() * 5) + 5, randomStopAngle = Math.floor(Math.random() * 360); wheel.style.transform = `rotate(${randomSpins * 360 + randomStopAngle}deg)`; setTimeout(() => { const winner = restaurants[Math.floor(Math.random() * restaurants.length)]; resultDiv.textContent = winner; Utils.showToast(`抽中了：${winner}！`, 'success'); pickButton.disabled = false; }, 4000); };
         function handleRatingClick(e) { const rating = e.target.dataset.value; document.getElementById('review-rating').dataset.rating = rating; updateHeartDisplay(rating); } function handleRatingHover(e) { updateHeartDisplay(e.target.dataset.value); } function handleRatingMouseout() { updateHeartDisplay(document.getElementById('review-rating').dataset.rating); } function updateHeartDisplay(rating) { document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => heart.classList.toggle('active', heart.dataset.value <= rating)); }
