@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>FoodieApp</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+  
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  
+  <!-- 引入 Chart.js 用於繪製圓餅圖 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
+    async
+    defer
+  ></script>
+
+  <style>
+    /* --- 全域與基本樣式 --- */
+    :root { 
+        --primary-color: #4285F4; /* Google Blue */
+        --background-color: #f8f9fa;
+        --text-color: #3C4043; 
+        --text-light: #5f6368; 
+        --nav-height: 60px; 
+    }
+    html, body { height: 100%; margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--background-color); }
+    .app-container { width: 100%; height: 100vh; display: flex; flex-direction: column; }
+    main { flex-grow: 1; overflow: hidden; position: relative; }
+    .page { width: 100%; height: 100%; display: none; flex-direction: column; overflow: hidden; }
+    .page.active { display: flex; }
+    
+    /* --- 導航列 --- */
+    .app-nav { height: var(--nav-height); width: 100%; background: #fff; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-around; align-items: center; flex-shrink: 0; z-index: 100; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-light); font-size: 12px; cursor: pointer; width: 100%; height: 100%; }
+    .nav-item i { font-size: 22px; margin-bottom: 4px; }
+    .nav-item.active { color: var(--primary-color); }
+
+    /* --- 地圖頁 --- */
+    #map-page { padding: 0; position: relative; }
+    #map { width: 100%; height: 100%; }
+    .map-controls { position: absolute; bottom: 80px; right: 15px; z-index: 10; }
+    .map-control-btn { background: white; border: none; width: 50px; height: 50px; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: pointer; font-size: 22px; color: var(--primary-color); }
+    .info-window-content p, .info-window-content h4 { font-family: inherit; margin: 0 0 8px 0; }
+    .info-window-content h4 { font-weight: 600; font-size: 16px; }
+    .info-window-content i { margin-right: 8px; color: var(--primary-color); width: 16px; text-align: center; }
+    .status.open { color: #34A853; font-weight: bold;}
+    .status.closed { color: #EA4335; font-weight: bold;}
+
+    /* --- 個人資料 & 記帳頁 --- */
+    #profile-page { padding: 0; }
+    .page-header { padding: 15px 20px; background-color: #fff; border-bottom: 1px solid #eee; text-align: center; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
+    .page-header h2 { margin: 0; font-size: 18px; }
+    .header-action { font-size: 16px; color: var(--primary-color); cursor: pointer; }
+    .header-action-placeholder { width: 60px; }
+    #profile-page .page-content { padding: 0; }
+    .profile-tabs { display: flex; background: #fff; border-bottom: 1px solid #eee; flex-shrink: 0; }
+    .tab-item { flex: 1; text-align: center; padding: 14px 0; cursor: pointer; color: var(--text-light); font-size: 15px; border-bottom: 3px solid transparent; }
+    .tab-item.active { color: var(--primary-color); border-bottom-color: var(--primary-color); font-weight: 600; }
+    .profile-tab-content { display: none; height: 100%; overflow-y: auto; }
+    .profile-tab-content.active { display: block; }
+    #accounting-content { flex-direction: column; height: 100%; }
+    .accounting-view { flex-grow: 1; overflow-y: auto; }
+    .accounting-tabs { display: flex; border-top: 1px solid #eee; background: #fff; flex-shrink: 0; }
+    .accounting-tab-item { flex: 1; text-align: center; padding: 14px 0; cursor: pointer; color: var(--text-light); font-weight: 500; border-top: 3px solid transparent; }
+    .accounting-tab-item.active { color: var(--primary-color); border-top-color: var(--primary-color); }
+    .stats-view { padding: 20px; }
+    .stats-header { text-align: center; margin-bottom: 20px; }
+    .stats-header h3 { font-size: 22px; margin: 0 0 5px 0; }
+    .stats-header .total-expense { font-size: 28px; font-weight: bold; color: var(--primary-color); }
+    #pie-chart-container { max-width: 300px; margin: 0 auto; }
+    .placeholder-text { text-align: center; padding: 40px 20px; color: var(--text-light); }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <main>
+      <div id="map-page" class="page active"><div id="map"></div><div class="map-controls"><button class="map-control-btn" onclick="centerOnUserGPS()"><i class="fas fa-crosshairs"></i></button></div></div>
+      <div id="profile-page" class="page"></div>
+      <!-- 其他頁面可以放在這裡 -->
+    </main>
+    <footer class="app-nav">
+      <div class="nav-item active" onclick="showPage('map-page', this)"><i class="fas fa-map-marked-alt"></i><span>地圖</span></div>
+      <div class="nav-item"><i class="fas fa-dice"></i><span>隨機選</span></div>
+      <div class="nav-item"><i class="fas fa-plus"></i><span>新增</span></div>
+      <div class="nav-item"><i class="fas fa-trophy"></i><span>挑戰</span></div>
+      <div class="nav-item" onclick="showPage('profile-page', this)"><i class="fas fa-user"></i><span>個人資料</span></div>
+    </footer>
+  </div>
+
+<script>
+// --- 全域變數 ---
+let currentUser = null, map, userGpsPosition, infoWindow, placesService;
+let userMarker = null, pieChart = null;
+let restaurantMarkers = [];
+let accountingViewMode = 'daily';
+const POSTS_DB_KEY = 'foodieAppPosts';
+const MEAL_TYPES = [ { type: 'breakfast', name: '早餐', color: '#42A5F5' }, { type: 'lunch', name: '午餐', color: '#66BB6A' }, { type: 'snack', name: '點心', color: '#FFEE58' }, { type: 'dinner', name: '晚餐', color: '#FFA726' }, { type: 'supper', name: '宵夜', color: '#26C6DA' }, { type: 'other', name: '其他', color: '#BDBDBD' } ];
+const mockFriendReviews = { 'ChIJ____wJy_QjQR1bI4m_d1jYg': { friendId: 'friend1', rating: 4, comment: '氣氛超棒，甜點必吃！' } };
+
+// --- 地圖核心功能 (目標2, 4, 5) ---
+function initMap() {
+    userGpsPosition = { lat: 25.0479, lng: 121.5171 };
+    map = new google.maps.Map(document.getElementById("map"), { center: userGpsPosition, zoom: 16, disableDefaultUI: true });
+    placesService = new google.maps.places.PlacesService(map);
+    infoWindow = new google.maps.InfoWindow();
+    map.addListener("idle", () => setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500));
+    updateUserGPS();
+}
+function updateUserGPS() {
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(position => {
+            userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude };
+            setUserMarker(userGpsPosition);
+            map.setCenter(userGpsPosition);
+        }, () => setUserMarker(userGpsPosition), { enableHighAccuracy: true });
+    }
+}
+function setUserMarker(position) {
+    if (userMarker) userMarker.setPosition(position);
+    else userMarker = new google.maps.Marker({ position, map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#4285F4', fillOpacity: 1, strokeColor: 'white', strokeWeight: 2 }, zIndex: 100 });
+}
+function centerOnUserGPS() { if (map && userGpsPosition) map.setCenter(userGpsPosition); }
+function searchNearbyRestaurants(location) {
+    placesService.nearbySearch({ location, radius: 2000, type: 'restaurant' }, (results, status) => {
+        if (status === 'OK' && results) {
+            restaurantMarkers.forEach(m => m.setMap(null));
+            restaurantMarkers = [];
+            results.forEach(place => addRestaurantMarker(place, location));
+        }
+    });
+}
+function addRestaurantMarker(place, center) {
+    const distance = google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location);
+    const isDistant = distance > 1500; // 目標2：超過1.5公里
+    const marker = new google.maps.Marker({
+        position: place.geometry.location, map, title: place.name,
+        icon: { url: "https://maps.google.com/mapfiles/ms/icons/restaurant.png" },
+        opacity: isDistant ? 0.6 : 1.0 // 遠距離標籤變淡
+    });
+    marker.addListener('click', () => showPlaceDetails(place, marker));
+    restaurantMarkers.push(marker);
+}
+function showPlaceDetails(place, marker) {
+    placesService.getDetails({ placeId: place.place_id, fields: ['name', 'rating', 'opening_hours', 'vicinity'] }, (details, status) => {
+        if (status !== 'OK' || !details) return;
+        const friendReview = mockFriendReviews[place.place_id];
+        let friendReviewHtml = '';
+        if (currentUser && friendReview) { // 目標4：好友評分
+            const friendStars = Array(friendReview.rating).fill('<i class="fas fa-star" style="color:#667eea;"></i>').join('');
+            const shortComment = friendReview.comment.substring(0, 20) + (friendReview.comment.length > 20 ? '...' : '');
+            friendReviewHtml = `<p><i class="fas fa-user-friends"></i> <strong>好友評分:</strong> ${friendStars}</p><p style="font-style:italic; margin-left: 24px;">“${shortComment}”</p>`;
+        }
+
+        let hoursHtml = '<p><i class="fas fa-clock"></i> 暫無營業時間資訊</p>';
+        if (details.opening_hours) { // 目標2：營業時間優化
+            const isOpen = details.opening_hours.isOpen();
+            hoursHtml = `<p><i class="fas fa-clock"></i> <span class="status ${isOpen ? 'open' : 'closed'}">${isOpen ? '營業中' : '休息中'}</span></p>`;
+        }
+        
+        infoWindow.setContent(`
+            <div class="info-window-content">
+                <h4>${details.name}</h4><p><i class="fas fa-map-marker-alt"></i> ${details.vicinity}</p>
+                <p><i class="fas fa-star" style="color:#FDBF42;"></i> <strong>Google評分:</strong> ${details.rating || '無'}</p>
+                ${hoursHtml}${friendReviewHtml}
+            </div>`); // 目標5：好友評論在營業時間下方
+        infoWindow.open({ anchor: marker, map });
+    });
+}
+
+// --- App 主邏輯 ---
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Firebase & Auth ---
+    const firebaseConfig = { apiKey: "AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs", authDomain: "foodiedata-b4982.firebaseapp.com" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    auth.onAuthStateChanged(user => { currentUser = user; renderProfilePage(); });
+
+    // --- 頁面導航 ---
+    window.showPage = (pageId, navElement) => {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (navElement) navElement.classList.add('active');
+        if (pageId === 'profile-page') renderProfilePage();
+    };
+
+    // --- 個人資料 & 記帳功能 (目標1, 3) ---
+    function renderProfilePage() {
+        const container = document.getElementById('profile-page');
+        if (currentUser) {
+            container.innerHTML = `
+                <div class="page-header"><div class="header-action-placeholder"></div><h2><i class="fas fa-user-circle"></i>${currentUser.displayName || '個人資料'}</h2><a href="#" class="header-action" onclick="firebase.auth().signOut()">登出</a></div>
+                <div class="profile-tabs"><div class="tab-item active" onclick="showProfileTab('accounting', this)">記帳顯示</div><div class="tab-item" onclick="showProfileTab('posts', this)">我的貼文</div><div class="tab-item" onclick="showProfileTab('favorites', this)">最愛餐廳</div></div>
+                <div class="page-content" id="profile-content-area"></div>`;
+            showProfileTab('accounting', document.querySelector('#profile-page .tab-item'));
+        } else {
+            container.innerHTML = `<div class="page-header"><div class="header-action-placeholder"></div><h2><i class="fas fa-user-circle"></i>個人資料</h2><a href="#" class="header-action" onclick="googleSignIn()">登入</a></div><div class="page-content"><p class="placeholder-text">登入以使用完整功能</p></div>`;
+        }
+    }
+    window.googleSignIn = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    window.showProfileTab = (tabId, element) => {
+        document.querySelectorAll('#profile-page .tab-item').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        const contentArea = document.getElementById('profile-content-area');
+        if (tabId === 'accounting') contentArea.innerHTML = `<div id="accounting-content" class="profile-tab-content active"></div>`;
+        else contentArea.innerHTML = `<div class="profile-tab-content active"><p class="placeholder-text">功能開發中</p></div>`;
+        if (tabId === 'accounting') renderAccountingView();
+    };
+    function renderAccountingView() {
+        const contentContainer = document.getElementById('accounting-content');
+        if (!contentContainer) return;
+        let viewHtml = (accountingViewMode === 'daily') ? getDailyViewHtml() : getStatsViewHtml(accountingViewMode);
+        contentContainer.innerHTML = `<div class="accounting-view">${viewHtml}</div><div class="accounting-tabs"><div class="accounting-tab-item ${accountingViewMode === 'daily' ? 'active' : ''}" onclick="switchAccountingView('daily')">日</div><div class="accounting-tab-item ${accountingViewMode === 'weekly' ? 'active' : ''}" onclick="switchAccountingView('weekly')">週</div><div class="accounting-tab-item ${accountingViewMode === 'monthly' ? 'active' : ''}" onclick="switchAccountingView('monthly')">月</div></div>`;
+        if (accountingViewMode !== 'daily') renderPieChart(accountingViewMode);
+    }
+    function getDailyViewHtml() { return `<div class="daily-view-header"><h3>${new Date().toLocaleDateString()} 飲食支出</h3></div><p class="placeholder-text">每日記帳功能開發中</p>`; }
+    function getStatsViewHtml(mode) {
+        const { total, title } = getStatsData(mode);
+        return `<div class="stats-view"><div class="stats-header"><h3>${title}</h3><div class="total-expense">$${total.toLocaleString()}</div></div><div id="pie-chart-container"><canvas id="expense-pie-chart"></canvas></div></div>`;
+    }
+    function renderPieChart(mode) {
+        const ctx = document.getElementById('expense-pie-chart'); if (!ctx) return;
+        const { dataByCategory } = getStatsData(mode);
+        const labels = Object.keys(dataByCategory), data = Object.values(dataByCategory);
+        const backgroundColors = labels.map(label => MEAL_TYPES.find(m => m.name === label)?.color || '#ccc');
+        if (pieChart) pieChart.destroy();
+        pieChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: backgroundColors }] }, options: { responsive: true } });
+    }
+    function getStatsData(mode) { // 目標1：週/月支出
+        const now = new Date();
+        const posts = JSON.parse(localStorage.getItem(`${POSTS_DB_KEY}_${currentUser.uid}`)) || []; // 模擬從localStorage讀取
+        let startDate = new Date(now), title = '';
+        if (mode === 'weekly') { startDate.setDate(now.getDate() - 7); title = '近 7 天支出'; }
+        else { startDate = new Date(now.getFullYear(), now.getMonth(), 1); title = '本月支出'; }
+        const filteredPosts = posts.filter(p => new Date(p.timestamp) >= startDate);
+        let total = 0;
+        const dataByCategory = MEAL_TYPES.reduce((acc, m) => ({...acc, [m.name]: 0}), {});
+        filteredPosts.forEach(p => { total += Number(p.cost); dataByCategory[MEAL_TYPES.find(m => m.type === p.mealType)?.name || '其他'] += Number(p.cost); });
+        for (const key in dataByCategory) if (dataByCategory[key] === 0) delete dataByCategory[key];
+        return { total, title, dataByCategory };
+    }
+    window.switchAccountingView = (mode) => { accountingViewMode = mode; renderAccountingView(); };
+
+    // --- App 初始化 ---
+    showPage('map-page', document.querySelector('.nav-item'));
+});
+</script>
+</body>
+</html>
