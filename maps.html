@@ -363,15 +363,27 @@
                 userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 });
             }
         }
-
+        
+        // ======================= ★★★ 修改重點區域 START ★★★ =======================
         function setupMapListeners() {
+            // 地圖閒置時，自動搜尋附近餐廳 (如果沒有在看路線規劃的話)
             map.addListener("idle", () => {
                 if (!directionsRenderer.getDirections()) {
                     clearTimeout(debounceTimer);
                     debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500);
                 }
             });
+
+            // 新增：點擊地圖空白處的監聽器，用來清除選取狀態
+            map.addListener("click", (event) => {
+                // 只有在點擊空白區域 (而不是 Google 原生地標) 時才清除狀態
+                if (!event.placeId) {
+                    // 呼叫 clearSearch() 來重置地圖和列表
+                    clearSearch();
+                }
+            });
         }
+        // ======================= ★★★ 修改重點區域 END ★★★ =======================
 
         function setupAutocomplete() {
             const input = document.getElementById('search-input');
@@ -381,7 +393,7 @@
             autocomplete.addListener('place_changed', () => {
                 const place = autocomplete.getPlace();
                 if (place.geometry && place.geometry.location) {
-                    clearSearch(true);
+                    clearSearch(true); // 先清除，但不重搜
                     handlePlaceSelection(place);
                 }
             });
@@ -443,6 +455,7 @@
                 title: place.name,
                 icon: { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", fillColor: '#EA4335', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }
             });
+            // 為每個標記加上點擊事件監聽器
             marker.addListener('click', () => handlePlaceSelection(place));
             marker.place_id = place.place_id;
             restaurantMarkers.push(marker);
@@ -508,18 +521,13 @@
             addRestaurantToList(place, routeInfo);
         }
 
-        // ======================= ★★★ 修改重點區域 START ★★★ =======================
         function showPlaceDetailsInWindow(place, marker, routeInfo = null) {
-            // 1. 在 fields 陣列中加入我們需要的新欄位
             const request = {
                 placeId: place.place_id,
                 fields: [
                     'name', 'rating', 'formatted_phone_number', 'opening_hours', 
                     'vicinity', 'business_status', 'formatted_address',
-                    'price_level',          // 新增：請求價位等級
-                    'serves_dine_in',       // 新增：請求是否提供內用
-                    'serves_takeout',       // 新增：請求是否提供外帶
-                    'serves_delivery'       // 新增：請求是否提供外送
+                    'price_level', 'serves_dine_in', 'serves_takeout', 'serves_delivery'
                 ]
             };
             
@@ -527,8 +535,6 @@
                 let content = `<div class="info-window-content"><h4>${place.name}</h4>`;
                 
                 if (status === google.maps.places.PlacesServiceStatus.OK && details) {
-                    
-                    // 2. 處理服務選項 (內用、外帶、外送)
                     const serviceOptions = [];
                     if (typeof details.serves_dine_in !== 'undefined') {
                         serviceOptions.push(details.serves_dine_in ? '✓ 內用' : '✗ 內用');
@@ -545,34 +551,25 @@
 
                     const address = details.formatted_address || details.vicinity;
                     if (address) content += `<p><i class="fas fa-map-marker-alt"></i>${address}</p>`;
-                    
                     if (routeInfo) content += `<p><i class="fas fa-car"></i>${routeInfo.driving.distance} (${routeInfo.driving.duration})</p>`;
-                    
                     if (details.rating) content += `<p><i class="fas fa-star"></i>${details.rating}</p>`;
-
-                    // 3. 處理價位等級，將數字轉換為 '$' 符號
                     if (details.price_level) {
                         content += `<p><i class="fas fa-dollar-sign"></i>${'$'.repeat(details.price_level)}</p>`;
                     }
-
                     if (details.formatted_phone_number) content += `<p><i class="fas fa-phone"></i>${details.formatted_phone_number}</p>`;
                     
-                    // 4. 處理營業時間，增加可展開的詳細列表
                     if (details.business_status === "CLOSED_PERMANENTLY") {
                         content += `<p><i class="fas fa-store-slash"></i><span style="color: #dc3545; font-weight: bold;">永久停業</span></p>`;
                     } else if (details.opening_hours) {
                         const isOpen = details.opening_hours.isOpen();
                         const statusText = isOpen ? "營業中" : "休息中";
                         const color = isOpen ? "#28a745" : "#dc3545";
-                        
-                        const detailsId = `hours-details-${place.place_id.replace(/\W/g, '')}`; // 建立一個安全的 ID
-
+                        const detailsId = `hours-details-${place.place_id.replace(/\W/g, '')}`;
                         content += `<p style="cursor: pointer; display: flex; align-items: center;" onclick="var el = document.getElementById('${detailsId}'); el.style.display = el.style.display === 'block' ? 'none' : 'block';">
                                         <i class="fas fa-clock"></i>
                                         <span style="color: ${color}; font-weight: bold;">${statusText}</span>
                                         <i class="fas fa-chevron-down" style="font-size: 12px; margin-left: 8px; color: #888;"></i>
                                     </p>`;
-                        
                         if (details.opening_hours.weekday_text) {
                             const hoursList = details.opening_hours.weekday_text.map(day => `<li>${day}</li>`).join('');
                             content += `<div id="${detailsId}" style="display: none; padding-left: 28px; font-size: 13px; color: #555; margin-top: -5px; margin-bottom: 5px;">
@@ -583,13 +580,11 @@
                 } else {
                     content += `<div>無法獲取詳細資訊</div>`;
                 }
-                
                 content += '</div>';
                 infoWindow.setContent(content);
                 infoWindow.open(map, marker);
             });
         }
-        // ======================= ★★★ 修改重點區域 END ★★★ =======================
         
         function clearSearch(suppressSearch) {
             directionsRenderer.setDirections({ routes: [] });
@@ -597,6 +592,7 @@
             const input = document.getElementById('search-input');
             input.value = '';
             document.getElementById('clear-search').style.display = 'none';
+            // 只有在不是為了顯示新結果而清除時，才重新搜尋
             if (!suppressSearch) {
                 searchNearbyRestaurants(map.getCenter());
             }
