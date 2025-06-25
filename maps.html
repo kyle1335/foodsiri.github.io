@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>FoodieApp - 個人化推薦</title>
+  <title>FoodieApp - 新版API推薦系統</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   
   <!-- Firebase v8 SDK -->
@@ -11,69 +11,25 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- Google Maps API -->
+  <!-- 修正：加入 async defer -->
   <script 
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-7oBwox1D3s2MW5SFlLKHkTEuUN0z26w&libraries=places,geometry&callback=initMap" 
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places,marker&callback=initMap" 
     async 
     defer
   ></script>
 
   <style>
-    html, body {
-      height: 100%; margin: 0; padding: 0; font-family: sans-serif;
-    }
-    #map {
-      height: 100%;
-      width: 100%;
-    }
-    .auth-buttons {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 10;
-      background: white;
-      padding: 5px;
-      border-radius: 5px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    }
-    .auth-buttons button {
-      padding: 8px 12px;
-      border: none;
-      background-color: #4285F4;
-      color: white;
-      cursor: pointer;
-      border-radius: 3px;
-    }
-    #logoutBtn {
-        background-color: #db4437;
-    }
-    #recommendations {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #fff;
-      padding: 15px;
-      z-index: 10;
-      max-width: 90%;
-      width: 350px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      max-height: 200px;
-      overflow-y: auto;
-    }
-    #recommendations h4 {
-        margin-top: 0;
-        color: #333;
-    }
-    #recommendations p {
-        margin: 8px 0;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #eee;
-    }
-    #recommendations p:last-child {
-        border-bottom: none;
-    }
+    html, body, #map { height: 100%; margin: 0; padding: 0; font-family: sans-serif; }
+    .auth-buttons { position: fixed; top: 10px; right: 10px; z-index: 10; background: white; padding: 5px; border-radius: 5px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    .auth-buttons button { padding: 8px 12px; border: none; background-color: #4285F4; color: white; cursor: pointer; border-radius: 3px; }
+    #logoutBtn { background-color: #db4437; }
+    #recommendations { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #fff; padding: 15px; z-index: 10; max-width: 90%; width: 350px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); max-height: 200px; overflow-y: auto; }
+    #recommendations h4 { margin-top: 0; color: #333; }
+    #recommendations p { margin: 8px 0; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+    #recommendations p:last-child { border-bottom: none; }
+    /* Advanced Marker 的自訂圖標樣式 */
+    .custom-marker { border-radius: 50%; padding: 5px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
+    .custom-marker img { width: 24px; height: 24px; display: block; }
   </style>
 </head>
 <body>
@@ -96,29 +52,32 @@
     const db = firebase.firestore();
 
     // --- 2. 全域變數 ---
-    let map, placesService, userPosition;
+    let map, userPosition;
     let recommendationMarkers = [];
 
     // --- 3. Google Maps 初始化 ---
-    function initMap() {
-      map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 25.033, lng: 121.565 }, // 預設台北 101
+    async function initMap() {
+      // 引入新版 AdvancedMarkerElement
+      const { Map } = await google.maps.importLibrary("maps");
+      const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+
+      map = new Map(document.getElementById("map"), {
+        center: { lat: 25.033, lng: 121.565 },
         zoom: 14,
         disableDefaultUI: true,
         zoomControl: true,
+        mapId: "YOUR_MAP_ID" // 建議使用自訂地圖樣式，需在 Cloud Console 設定 Map ID
       });
-      placesService = new google.maps.places.PlacesService(map);
       
-      // 在地圖初始化後，檢查使用者是否已登入，若已登入則直接開始流程
       if (auth.currentUser) {
-        centerOnUserGPSAndRecommend();
+        centerOnUserGPSAndRecommend(AdvancedMarkerElement);
       } else {
         alert("請登入以獲取個人化推薦。");
       }
     }
 
     // --- 4. 核心功能函式 ---
-    function centerOnUserGPSAndRecommend() {
+    function centerOnUserGPSAndRecommend(AdvancedMarkerElement) {
       const recDiv = document.getElementById("recommendations");
       recDiv.style.display = 'block';
       recDiv.innerHTML = "<h4><i class='fas fa-spinner fa-spin'></i> 正在獲取您的位置...</h4>";
@@ -126,71 +85,38 @@
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            userPosition = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            };
+            userPosition = { lat: position.coords.latitude, lng: position.coords.longitude };
             map.setCenter(userPosition);
             map.setZoom(15);
             
-            // 標記使用者位置
-            new google.maps.Marker({
-              position: userPosition,
-              map,
-              title: "你的位置",
-              icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 8,
-                fillColor: "#4285F4",
-                fillOpacity: 1,
-                strokeWeight: 2,
-                strokeColor: "white"
-              },
-              zIndex: 10 // 確保在最上層
-            });
-
-            // ★ 關鍵：在成功獲取位置後，才觸發推薦
-            generatePersonalRecommendation();
+            new AdvancedMarkerElement({ position: userPosition, map, title: "你的位置" });
+            generatePersonalRecommendation(AdvancedMarkerElement);
           },
           () => {
             alert("無法獲取您的位置，將使用預設地點進行推薦。");
-            userPosition = { lat: 25.033, lng: 121.565 }; // 備用位置
-            generatePersonalRecommendation();
+            userPosition = { lat: 25.033, lng: 121.565 };
+            generatePersonalRecommendation(AdvancedMarkerElement);
           }
         );
-      } else {
-        alert("您的瀏覽器不支援地理位置功能。");
       }
     }
 
-    async function generatePersonalRecommendation() {
+    async function generatePersonalRecommendation(AdvancedMarkerElement) {
       const user = auth.currentUser;
       const recDiv = document.getElementById("recommendations");
       
-      if (!user) {
-        recDiv.innerHTML = "<h4>請先登入以獲得推薦</h4>";
-        return;
-      }
-      if (!userPosition) {
-        recDiv.innerHTML = "<h4>正在等待您的位置...</h4>";
-        return;
-      }
-
-      recDiv.innerHTML = "<h4><i class='fas fa-spinner fa-spin'></i> 正在為您分析喜好...</h4>";
+      if (!user || !userPosition) return;
+      recDiv.innerHTML = `<h4><i class='fas fa-spinner fa-spin'></i> 正在為您分析喜好...</h4>`;
 
       try {
         const snapshot = await db.collection("reviews").where("userId", "==", user.uid).limit(20).get();
-        let favoriteCategory = "restaurant"; // 預設關鍵字
-
+        let favoriteCategory = "餐廳";
         if (!snapshot.empty) {
             const categoryCount = {};
             snapshot.forEach(doc => {
                 const category = doc.data().category;
-                if (category) {
-                    categoryCount[category] = (categoryCount[category] || 0) + 1;
-                }
+                if (category) categoryCount[category] = (categoryCount[category] || 0) + 1;
             });
-
             if (Object.keys(categoryCount).length > 0) {
                  favoriteCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0][0];
             }
@@ -198,38 +124,35 @@
         
         recDiv.innerHTML = `<h4><i class='fas fa-search'></i> 正在為您搜尋附近的「${favoriteCategory}」...</h4>`;
         
+        // 使用新版 Place.searchNearby API
         const request = {
-            location: userPosition,
-            radius: 2000,
-            keyword: favoriteCategory,
-            type: "restaurant",
-            rankby: "prominence" // 優先顯示知名地點
+            locationRestriction: {
+                center: userPosition,
+                radius: 2000,
+            },
+            textQuery: favoriteCategory,
+            fields: ["displayName", "location", "rating", "id"], // 請求需要的欄位
+            language: 'zh-TW',
         };
-
-        placesService.nearbySearch(request, (results, status) => {
-            clearRecommendationMarkers();
-            if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-                recDiv.innerHTML = `<h4>為您推薦的「${favoriteCategory}」店家：</h4>`;
-                results.slice(0, 3).forEach(place => {
-                    const marker = new google.maps.Marker({ 
-                        position: place.geometry.location, 
-                        map,
-                        title: place.name,
-                        icon: { // 推薦店家使用不同顏色
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 6,
-                            fillColor: "#fbbc05", // 黃色
-                            fillOpacity: 1,
-                            strokeWeight: 1,
-                        }
-                    });
-                    recommendationMarkers.push(marker);
-                    recDiv.innerHTML += `<p><strong>${place.name}</strong> (${place.rating}⭐)<br/>${place.vicinity}</p>`;
+        
+        const { places } = await google.maps.places.Place.searchNearby(request);
+        
+        clearRecommendationMarkers();
+        if (places && places.length > 0) {
+            recDiv.innerHTML = `<h4>為您推薦的「${favoriteCategory}」店家：</h4>`;
+            places.slice(0, 3).forEach(place => {
+                const marker = new AdvancedMarkerElement({
+                    position: place.location,
+                    map,
+                    title: place.displayName
                 });
-            } else {
-                recDiv.innerHTML = "<h4>附近找不到符合您喜好的店家。</h4>";
-            }
-        });
+                recommendationMarkers.push(marker);
+                recDiv.innerHTML += `<p><strong>${place.displayName}</strong> (${place.rating || 'N/A'}⭐)</p>`;
+            });
+        } else {
+            recDiv.innerHTML = "<h4>附近找不到符合您喜好的店家。</h4>";
+        }
+
       } catch (error) {
           console.error("推薦功能出錯:", error);
           recDiv.innerHTML = "<h4>推薦功能出錯，請稍後再試。</h4>";
@@ -237,7 +160,7 @@
     }
     
     function clearRecommendationMarkers() {
-        recommendationMarkers.forEach(marker => marker.setMap(null));
+        recommendationMarkers.forEach(marker => { marker.map = null; });
         recommendationMarkers = [];
     }
 
@@ -249,38 +172,29 @@
       auth.signInWithEmailAndPassword(email, password)
         .catch(err => alert("登入失敗: " + err.message));
     });
-
     document.getElementById("logoutBtn").addEventListener("click", () => {
       auth.signOut();
     });
-
     auth.onAuthStateChanged(user => {
       const loginBtn = document.getElementById("loginBtn");
       const logoutBtn = document.getElementById("logoutBtn");
       const recDiv = document.getElementById("recommendations");
-
       if (user) {
-        // 使用者登入
         loginBtn.style.display = "none";
         logoutBtn.style.display = "inline";
-        
-        // ★ 關鍵：登入成功後，重新觸發推薦流程
-        if (map) { // 確保地圖已初始化
-             centerOnUserGPSAndRecommend();
+        if (map) {
+             centerOnUserGPSAndRecommend(google.maps.marker.AdvancedMarkerElement);
         }
-
       } else {
-        // 使用者登出
         loginBtn.style.display = "inline";
         logoutBtn.style.display = "none";
-        recDiv.style.display = 'none'; // 登出後隱藏推薦區
-        clearRecommendationMarkers(); // 清除地圖上的推薦標記
+        recDiv.style.display = 'none';
+        clearRecommendationMarkers();
       }
     });
     
-    // ★ 關鍵：將 initMap 掛載到 window，讓 Google Maps API 可以呼叫
+    // ★ 關鍵：將 initMap 掛載到 window
     window.initMap = initMap;
-
   </script>
 </body>
 </html>
