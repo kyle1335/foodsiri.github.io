@@ -11,7 +11,6 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- 修正：加入 async defer -->
   <script 
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-7oBwox1D3s2MW5SFlLKHkTEuUN0z26wY&libraries=places,marker&callback=initMap" 
     async 
@@ -27,7 +26,6 @@
     #recommendations h4 { margin-top: 0; color: #333; }
     #recommendations p { margin: 8px 0; padding-bottom: 8px; border-bottom: 1px solid #eee; }
     #recommendations p:last-child { border-bottom: none; }
-    /* Advanced Marker 的自訂圖標樣式 */
     .custom-marker { border-radius: 50%; padding: 5px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
     .custom-marker img { width: 24px; height: 24px; display: block; }
   </style>
@@ -54,30 +52,27 @@
     // --- 2. 全域變數 ---
     let map, userPosition;
     let recommendationMarkers = [];
+    let AdvancedMarkerElement;
 
     // --- 3. Google Maps 初始化 ---
     async function initMap() {
-      // 引入新版 AdvancedMarkerElement
       const { Map } = await google.maps.importLibrary("maps");
-      const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+      AdvancedMarkerElement = (await google.maps.importLibrary("marker")).AdvancedMarkerElement;
 
       map = new Map(document.getElementById("map"), {
         center: { lat: 25.033, lng: 121.565 },
         zoom: 14,
         disableDefaultUI: true,
         zoomControl: true,
-        mapId: "YOUR_MAP_ID" // 建議使用自訂地圖樣式，需在 Cloud Console 設定 Map ID
+        mapId: "YOUR_MAP_ID"
       });
       
-      if (auth.currentUser) {
-        centerOnUserGPSAndRecommend(AdvancedMarkerElement);
-      } else {
-        alert("請登入以獲取個人化推薦。");
-      }
+      // ★ 修正：不再檢查登入狀態，直接為所有用戶啟用推薦功能
+      centerOnUserGPSAndRecommend();
     }
 
     // --- 4. 核心功能函式 ---
-    function centerOnUserGPSAndRecommend(AdvancedMarkerElement) {
+    function centerOnUserGPSAndRecommend() {
       const recDiv = document.getElementById("recommendations");
       recDiv.style.display = 'block';
       recDiv.innerHTML = "<h4><i class='fas fa-spinner fa-spin'></i> 正在獲取您的位置...</h4>";
@@ -89,57 +84,74 @@
             map.setCenter(userPosition);
             map.setZoom(15);
             
+            // 由於用戶標記是固定的，可以不清除舊的
             new AdvancedMarkerElement({ position: userPosition, map, title: "你的位置" });
-            generatePersonalRecommendation(AdvancedMarkerElement);
+            generateRecommendation();
           },
           () => {
             alert("無法獲取您的位置，將使用預設地點進行推薦。");
-            userPosition = { lat: 25.033, lng: 121.565 };
-            generatePersonalRecommendation(AdvancedMarkerElement);
+            userPosition = { lat: 25.033, lng: 121.565 }; // 台北101
+            generateRecommendation();
           }
         );
+      } else {
+        alert("您的瀏覽器不支援地理位置功能，將使用預設地點推薦。");
+        userPosition = { lat: 25.033, lng: 121.565 };
+        generateRecommendation();
       }
     }
 
-    async function generatePersonalRecommendation(AdvancedMarkerElement) {
+    // ★ 修正：函式重構，以處理登入和未登入兩種情況
+    async function generateRecommendation() {
       const user = auth.currentUser;
       const recDiv = document.getElementById("recommendations");
       
-      if (!user || !userPosition) return;
-      recDiv.innerHTML = `<h4><i class='fas fa-spinner fa-spin'></i> 正在為您分析喜好...</h4>`;
+      if (!userPosition) return;
+
+      let favoriteCategory = "美食"; // ★ 未登入時的預設推薦類別
+      let analysisMessage = `<h4><i class='fas fa-search'></i> 正在為您搜尋附近的「${favoriteCategory}」...</h4>`;
+      let resultTitle = `附近的「${favoriteCategory}」推薦：`;
+
+      // 如果用戶已登入，則嘗試獲取個人化偏好
+      if (user) {
+        recDiv.innerHTML = `<h4><i class='fas fa-spinner fa-spin'></i> 正在為您分析喜好...</h4>`;
+        try {
+            const snapshot = await db.collection("reviews").where("userId", "==", user.uid).limit(20).get();
+            if (!snapshot.empty) {
+                const categoryCount = {};
+                snapshot.forEach(doc => {
+                    const category = doc.data().category;
+                    if (category) categoryCount[category] = (categoryCount[category] || 0) + 1;
+                });
+                const sortedCategories = Object.entries(categoryCount).sort((a, b) => b[1] - a[1]);
+                if (sortedCategories.length > 0) {
+                    favoriteCategory = sortedCategories[0][0]; // 取得最常評價的類別
+                }
+            }
+        } catch (error) {
+            console.error("獲取使用者偏好失敗，將使用預設推薦:", error);
+        }
+        // 更新個人化後的提示訊息
+        analysisMessage = `<h4><i class='fas fa-search'></i> 根據您的喜好，正在搜尋「${favoriteCategory}」...</h4>`;
+        resultTitle = `為您推薦的「${favoriteCategory}」店家：`;
+      }
+      
+      recDiv.innerHTML = analysisMessage;
 
       try {
-        const snapshot = await db.collection("reviews").where("userId", "==", user.uid).limit(20).get();
-        let favoriteCategory = "餐廳";
-        if (!snapshot.empty) {
-            const categoryCount = {};
-            snapshot.forEach(doc => {
-                const category = doc.data().category;
-                if (category) categoryCount[category] = (categoryCount[category] || 0) + 1;
-            });
-            if (Object.keys(categoryCount).length > 0) {
-                 favoriteCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0][0];
-            }
-        }
-        
-        recDiv.innerHTML = `<h4><i class='fas fa-search'></i> 正在為您搜尋附近的「${favoriteCategory}」...</h4>`;
-        
-        // 使用新版 Place.searchNearby API
         const request = {
-            locationRestriction: {
-                center: userPosition,
-                radius: 2000,
-            },
+            locationRestriction: { center: userPosition, radius: 2000 },
             textQuery: favoriteCategory,
-            fields: ["displayName", "location", "rating", "id"], // 請求需要的欄位
+            fields: ["displayName", "location", "rating", "id"],
             language: 'zh-TW',
         };
         
+        // 使用新版 Place.searchNearby API
         const { places } = await google.maps.places.Place.searchNearby(request);
         
         clearRecommendationMarkers();
         if (places && places.length > 0) {
-            recDiv.innerHTML = `<h4>為您推薦的「${favoriteCategory}」店家：</h4>`;
+            recDiv.innerHTML = `<h4>${resultTitle}</h4>`;
             places.slice(0, 3).forEach(place => {
                 const marker = new AdvancedMarkerElement({
                     position: place.location,
@@ -150,12 +162,15 @@
                 recDiv.innerHTML += `<p><strong>${place.displayName}</strong> (${place.rating || 'N/A'}⭐)</p>`;
             });
         } else {
-            recDiv.innerHTML = "<h4>附近找不到符合您喜好的店家。</h4>";
+            recDiv.innerHTML = `<h4>附近找不到符合「${favoriteCategory}」的店家。</h4>`;
         }
-
       } catch (error) {
           console.error("推薦功能出錯:", error);
           recDiv.innerHTML = "<h4>推薦功能出錯，請稍後再試。</h4>";
+          // 針對 Maps API 金鑰錯誤給予更明確的提示
+          if (error.message.includes("ApiNotActivatedMapError") || error.message.includes("InvalidKeyMapError")) {
+              recDiv.innerHTML += "<p style='color:red; font-size:12px;'>地圖金鑰設定有誤，請檢查控制台。</p>";
+          }
       }
     }
     
@@ -169,56 +184,34 @@
       const email = prompt("請輸入信箱 (測試用: test@test.com)");
       const password = prompt("請輸入密碼 (測試用: 123456)");
       if (!email || !password) return;
-      
-      // --- 修正 ---
-      // 由於 Firebase 設定是無效的佔位符，無法實際執行登入。
-      // 為了讓測試流程能夠通過，此處將模擬一個成功的登入。
-      // 如果輸入的帳號密碼符合測試案例，就直接手動更新 UI 介面。
-      if (email === "test@test.com" && password === "123456") {
-        // 手動隱藏登入按鈕，並顯示登出按鈕，模擬登入成功後的狀態
-        document.getElementById("loginBtn").style.display = "none";
-        document.getElementById("logoutBtn").style.display = "inline";
-
-        // 為了讓畫面與原始登入成功後的邏輯一致，也一併顯示推薦區塊
-        const recDiv = document.getElementById("recommendations");
-        recDiv.style.display = 'block';
-        if (map) {
-             // 假設地圖已載入，直接呼叫後續功能
-             centerOnUserGPSAndRecommend(google.maps.marker.AdvancedMarkerElement);
-        } else {
-            // 如果地圖還沒好，先顯示提示文字
-            recDiv.innerHTML = "<h4><i class='fas fa-spinner fa-spin'></i> 正在載入地圖與推薦...</h4>";
-        }
-      } else {
-        // 對於非測試用的帳密，仍顯示登入失敗的提示
-        alert("登入失敗: 無效的測試帳號或密碼。");
-      }
+      auth.signInWithEmailAndPassword(email, password)
+        .catch(err => alert("登入失敗: " + err.message + "\n\n(注意：這需要有效的Firebase專案設定才能運作)"));
     });
 
     document.getElementById("logoutBtn").addEventListener("click", () => {
       auth.signOut();
     });
-    
+
+    // ★ 修正：登入/登出時自動刷新推薦，提供無縫體驗
     auth.onAuthStateChanged(user => {
       const loginBtn = document.getElementById("loginBtn");
       const logoutBtn = document.getElementById("logoutBtn");
-      const recDiv = document.getElementById("recommendations");
+
       if (user) {
-        // 這段邏輯在我們的模擬中已經手動處理，但保留它以備未來使用真實 Firebase
         loginBtn.style.display = "none";
         logoutBtn.style.display = "inline";
-        if (map) {
-             centerOnUserGPSAndRecommend(google.maps.marker.AdvancedMarkerElement);
-        }
       } else {
         loginBtn.style.display = "inline";
         logoutBtn.style.display = "none";
-        recDiv.style.display = 'none';
-        clearRecommendationMarkers();
+      }
+
+      // 當登入狀態改變時，如果地圖已就緒，就重新執行推薦
+      // 這會自動切換「個人化推薦」和「通用推薦」
+      if (map) {
+         generateRecommendation();
       }
     });
     
-    // ★ 關鍵：將 initMap 掛載到 window
     window.initMap = initMap;
   </script>
 </body>
