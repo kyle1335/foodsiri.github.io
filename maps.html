@@ -257,7 +257,6 @@
 
         // ======================= ★★★ 修改重點區域 START ★★★ =======================
         function showPlaceDetailsInWindow(place, marker, routeInfo = null) {
-            // 只請求穩定版 API 支援的欄位
             const request = {
                 placeId: place.place_id,
                 fields: [ 'name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address' ]
@@ -273,36 +272,53 @@
                     if (details.rating) content += `<p><i class="fas fa-star"></i>${details.rating}</p>`;
                     if (details.formatted_phone_number) content += `<p><i class="fas fa-phone"></i>${details.formatted_phone_number}</p>`;
                     
-                    // --- 營業時間處理邏輯 ---
                     if (details.business_status === "CLOSED_PERMANENTLY") {
                         content += `<p><i class="fas fa-store-slash"></i><span style="color: #dc3545; font-weight: bold;">永久停業</span></p>`;
                     } else if (details.opening_hours) {
-                        const isOpen = details.opening_hours.isOpen();
-                        let statusText = isOpen ? "營業中" : "休息中";
-                        const color = isOpen ? "#28a745" : "#dc3545";
+                        let statusText;
+                        let color;
 
-                        // 如果營業中，嘗試解析關店時間
-                        if (isOpen && details.opening_hours.weekday_text) {
+                        // 新的、更聰明的營業時間判斷邏輯
+                        if (details.opening_hours.isOpen()) {
+                            statusText = "營業中";
+                            color = "#28a745";
+                            // 嘗試解析關店時間
                             try {
-                                const jsDay = new Date().getDay(); // 0 for Sunday, 1 for Monday...
-                                // Google's weekday_text is ordered Monday...Sunday. We need to map jsDay to this order.
-                                const weekdayTextIndex = (jsDay + 6) % 7; 
-                                const today_schedule_string = details.opening_hours.weekday_text[weekdayTextIndex];
-
-                                if (today_schedule_string && today_schedule_string.includes('–')) {
-                                    const closingTime = today_schedule_string.split('–')[1].trim();
-                                    // 確保不是 "24 小時營業" 或其他特殊格式
+                                const jsDay = new Date().getDay(); // 0=Sun, 1=Mon...
+                                const weekdayTextIndex = (jsDay + 6) % 7;
+                                const todaySchedule = details.opening_hours.weekday_text[weekdayTextIndex];
+                                if (todaySchedule.includes('–')) {
+                                    const closingTime = todaySchedule.split('–')[1].trim();
                                     if (closingTime.includes(':')) {
                                         statusText += `・${closingTime} 關店`;
                                     }
                                 }
-                            } catch (e) {
-                                console.error("Error parsing closing time:", e);
-                                // 如果解析出錯，就只顯示 "營業中"
+                            } catch (e) { /* 解析失敗就算了，不影響顯示 "營業中" */ }
+                        } else {
+                            statusText = "休息中";
+                            color = "#dc3545";
+                            // 如果現在休息，檢查今天稍晚是否會開
+                            let nextOpeningTime = null;
+                            if(details.opening_hours.periods) {
+                                const now = new Date();
+                                const currentDay = now.getDay();
+                                const currentTime = ('0' + now.getHours()).slice(-2) + ('0' + now.getMinutes()).slice(-2);
+                                
+                                for(const period of details.opening_hours.periods) {
+                                    if(period.open.day === currentDay && period.open.time > currentTime) {
+                                        nextOpeningTime = period.open.time;
+                                        break; // 找到最近的一個就停止
+                                    }
+                                }
+                            }
+                            if (nextOpeningTime) {
+                                const openHour = nextOpeningTime.substring(0, 2);
+                                const openMinute = nextOpeningTime.substring(2, 4);
+                                statusText += `・${openHour}:${openMinute} 開始營業`;
                             }
                         }
 
-                        // 顯示主要狀態，並加上點擊事件來切換詳細資訊的顯示/隱藏
+                        // 建立可展開的 HTML
                         const detailsId = `hours-details-${place.place_id.replace(/\W/g, '')}`;
                         content += `<p style="cursor: pointer; display: flex; align-items: center;" onclick="var el = document.getElementById('${detailsId}'); el.style.display = el.style.display === 'block' ? 'none' : 'block';">
                                         <i class="fas fa-clock"></i>
@@ -310,18 +326,15 @@
                                         <i class="fas fa-chevron-down" style="font-size: 12px; margin-left: auto; color: #888; padding-left: 8px;"></i>
                                     </p>`;
                         
-                        // 建立預設隱藏的詳細營業時間列表，並突顯當天
                         if (details.opening_hours.weekday_text) {
                             const jsDay = new Date().getDay();
                             const weekdayTextIndex = (jsDay + 6) % 7;
-                            
                             const hoursList = details.opening_hours.weekday_text.map((day, index) => {
                                 if (index === weekdayTextIndex) {
                                     return `<li style="font-weight: bold; color: #1a73e8;">${day}</li>`;
                                 }
                                 return `<li>${day}</li>`;
                             }).join('');
-
                             content += `<div id="${detailsId}" style="display: none; padding-left: 28px; font-size: 13px; color: #555; margin-top: -5px; margin-bottom: 5px;">
                                             <ul style="list-style-type: none; padding: 0; margin: 0;">${hoursList}</ul>
                                         </div>`;
