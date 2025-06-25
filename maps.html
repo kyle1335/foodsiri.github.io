@@ -97,14 +97,14 @@
 <div class="toast-container"></div>
 
 <script>
-    // === 全域變數 ===
+    // === 全域變數和函式 ===
     let currentUser = null; 
     let pageHistory = [];
     let selectedPlace = null;
     let map, userGpsPosition, userMarker, restaurantMarkers = [], debounceTimer, autocomplete, placesService, directionsService, directionsRenderer;
     let isMapReady = false;
 
-    // === `initMap` 作為全域回呼函式，確保 google 物件存在 ===
+    // 修正: `initMap` 作為全域回呼函式，確保 google 物件存在
     function initMap() {
         isMapReady = true; 
         userGpsPosition = { lat: 25.0479, lng: 121.5171 };
@@ -121,10 +121,9 @@
         }
     }
     
-    // === 所有程式碼邏輯的啟動點 ===
+    // 將所有 JS 邏輯的啟動點放在這裡
     function initializeApp() {
-
-        // --- Utils & DataManager ---
+        // --- Utils & DataManager (保持不變) ---
         const Utils = { showToast(message, type = 'success') { const container = document.querySelector('.toast-container'); const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.textContent = message; container.appendChild(toast); setTimeout(() => { if (toast.parentNode) { toast.parentNode.removeChild(toast); }}, 3000); }, formatDate(dateString) { return new Date(dateString).toLocaleDateString('zh-TW'); }, formatDateTime(dateString) { return new Date(dateString).toLocaleString('zh-TW'); }, generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }, sanitizeHTML(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }, validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }, debounce(func, wait) { let timeout; return function executedFunction(...args) { const later = () => { clearTimeout(timeout); func(...args); }; clearTimeout(timeout); timeout = setTimeout(later, wait); }; } };
         const DataManager = { _get(key, defaultValue) { if (!currentUser) return defaultValue; const storageKey = `${key}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(storageKey)) || defaultValue; }, _set(key, value) { if (!currentUser) return; const storageKey = `${key}_${currentUser.uid}`; localStorage.setItem(storageKey, JSON.stringify(value)); }, getPosts() { return this._get('posts', []); }, savePosts(posts) { this._set('posts', posts); }, getUserChallenges() { return this._get('userChallenges', {}); }, saveUserChallenges(challenges) { this._set('userChallenges', challenges); } };
         const PhotoManager = class { constructor() { this.selectedPhotos = []; this.maxPhotos = 5; this.maxFileSize = 5 * 1024 * 1024; } handlePhotoSelection(type) { const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.multiple = true; if (type === 'camera') { input.capture = 'environment'; input.multiple = false; } input.onchange = (e) => this.processFiles(Array.from(e.target.files)); input.click(); } async processFiles(files) { if (this.selectedPhotos.length + files.length > this.maxPhotos) { Utils.showToast(`最多只能選擇${this.maxPhotos}張照片！`, 'warning'); return; } for (const file of files) { if (file.size > this.maxFileSize) { Utils.showToast(`檔案 ${file.name} 超過5MB限制！`, 'warning'); continue; } try { await this.processFile(file); } catch (error) { console.error('處理照片失敗:', error); Utils.showToast(`處理 ${file.name} 時發生錯誤`, 'error'); } } this.updatePhotoPreview(); } async processFile(file) { this.showProgress(true); try { const compressedFile = await this.compressImage(file); const preview = await this.convertToBase64(compressedFile); this.selectedPhotos.push({ id: Utils.generateId(), file: compressedFile, preview, name: file.name, uploaded: false, url: null }); } finally { this.showProgress(false); } } compressImage(file, maxWidth = 800, quality = 0.8) { return new Promise((resolve, reject) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); let { width, height } = img; if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; } canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height); canvas.toBlob(blob => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', quality); }; img.onerror = reject; img.src = URL.createObjectURL(file); }); } convertToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); });} showProgress(show) { const p = document.getElementById('upload-progress'); if (p) { p.style.display = show ? 'block' : 'none'; if(show){ const b = p.querySelector('.upload-progress-bar'); b.style.width = '0%'; setTimeout(() => b.style.width = '100%', 100);}}} updatePhotoPreview() { const c = document.getElementById('photo-preview-container'); if (!c) return; c.innerHTML = this.selectedPhotos.map(p => `<div class="photo-preview"><img src="${p.preview}" alt="預覽"><button class="remove-btn" onclick="photoManager.removePhoto('${p.id}')">×</button></div>`).join(''); } removePhoto(photoId) { this.selectedPhotos = this.selectedPhotos.filter(p => p.id !== photoId); this.updatePhotoPreview(); } async uploadAllPhotos() { return this.selectedPhotos.map(p => p.preview); } clearPhotos() { this.selectedPhotos = []; this.updatePhotoPreview(); } getPhotoCount() { return this.selectedPhotos.length; } };
@@ -246,8 +245,30 @@
         function setupDraftSaving() { const reviewForm = document.querySelector('#add-review-page'); if (!reviewForm) return; const inputs = reviewForm.querySelectorAll('input[type=text], input[type=number], textarea'); const saveDraft = Utils.debounce(() => { if (currentUser) { const draftData = {}; inputs.forEach(inp => { if (inp.value.trim()) { draftData[inp.id] = inp.value; }}); if (Object.keys(draftData).length > 0) { localStorage.setItem(`reviewDraft_${currentUser.uid}`, JSON.stringify(draftData)); } else { localStorage.removeItem(`reviewDraft_${currentUser.uid}`); } } }, 1000); inputs.forEach(input => { input.addEventListener('input', saveDraft); }); };
         
         // --- 啟動點 ---
-        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initializeApp); } 
-        else { initializeApp(); }
+        document.querySelectorAll('.rating-hearts .fa-heart').forEach(h => { h.addEventListener('click', handleRatingClick); h.addEventListener('mouseover', handleRatingHover); h.addEventListener('mouseout', handleRatingMouseout); });
+        auth.onAuthStateChanged(user => { 
+            const oldUser = currentUser; 
+            currentUser = user; 
+            if (user) { 
+                setupLoggedInUI(user); 
+                if (!oldUser) { 
+                    const draftData = localStorage.getItem(`reviewDraft_${currentUser.uid}`); 
+                    if (draftData) { 
+                        if (confirm('偵測到未完成的評論草稿，是否要繼續編輯？')) { 
+                            const draft = JSON.parse(draftData); 
+                            showPage('add-review-page'); 
+                            setTimeout(() => { Object.keys(draft).forEach(key => { const element = document.getElementById(key); if (element) element.value = draft[key]; }); }, 100); 
+                        } else { 
+                            localStorage.removeItem(`reviewDraft_${currentUser.uid}`); 
+                        } 
+                    } 
+                } 
+            } else { 
+                setupLoggedOutUI(); 
+            } 
+        });
+        setupDraftSaving(); 
+        showPage('map-page', document.querySelector('.nav-item'));
     }
 </script>
 </body>
