@@ -104,7 +104,7 @@
     let map, userGpsPosition, userMarker, restaurantMarkers = [], debounceTimer, autocomplete, placesService, directionsService, directionsRenderer;
     let isMapReady = false;
 
-    // 修正: `initMap` 作為全域回呼函式，確保 google 物件存在
+    // `initMap` 作為全域回呼函式，確保 google 物件存在
     function initMap() {
         isMapReady = true; 
         userGpsPosition = { lat: 25.0479, lng: 121.5171 };
