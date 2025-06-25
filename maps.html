@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>FoodieApp</title>
+  <title>FoodieApp - 愛食記風格版</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   
   <script
@@ -16,7 +16,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   
   <style>
-    /* 全局樣式 */
+    /* CSS 樣式完全不變 */
     :root { --primary-color: #ff5a5f; --secondary-color: #00a699; --text-color: #484848; --text-light: #767676; --background-color: #f7f7f7; --border-color: #ebebeb; --nav-height: 60px; }
     html, body { height: 100%; margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--background-color); color: var(--text-color); }
     .app-container { width: 100%; height: 100vh; display: flex; flex-direction: column; }
@@ -27,20 +27,14 @@
     .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-light); font-size: 12px; cursor: pointer; transition: color 0.2s; width: 100%; }
     .nav-item i { font-size: 22px; margin-bottom: 4px; }
     .nav-item.active { color: var(--primary-color); }
-
-    /* 地圖頁面樣式 */
     #map-page { flex-direction: column; }
     #map-container { flex-grow: 1; position: relative; }
     #map { width: 100%; height: 100%; }
     .location-btn { position: absolute; bottom: 150px; right: 20px; background: #fff; color: #555; border: none; width: 50px; height: 50px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; z-index: 10; font-size: 22px; display: flex; justify-content: center; align-items: center; }
-    
-    /* 分類篩選條 */
     .category-filters { position: absolute; top: 15px; left: 0; width: 100%; z-index: 10; overflow-x: auto; white-space: nowrap; padding: 0 15px; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
     .category-filters::-webkit-scrollbar { display: none; }
     .filter-btn { display: inline-block; background: #fff; border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 15px; border-radius: 20px; font-size: 14px; cursor: pointer; margin-right: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); transition: all 0.2s; }
     .filter-btn.active, .filter-btn:hover { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
-
-    /* 餐廳資訊卡 */
     .restaurant-card-container { position: absolute; bottom: calc(-100% + var(--nav-height)); left: 0; width: 100%; background-color: #fff; border-top-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); z-index: 1001; transition: bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); max-height: calc(100vh - 100px); display: flex; flex-direction: column; }
     .restaurant-card-container.active { bottom: var(--nav-height); }
     .card-handle { width: 50px; height: 6px; background-color: #ccc; border-radius: 3px; margin: 8px auto; cursor: grab; }
@@ -56,9 +50,7 @@
     .card-actions { display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px; }
     .action-btn { background: none; border: none; font-size: 14px; color: #333; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
     .action-btn i { font-size: 20px; color: var(--primary-color); }
-    #card-favorite-btn.favorited i { font-family: "Font Awesome 6 Free"; font-weight: 900; color: var(--primary-color); } /* Solid heart */
-
-    /* 評論系統 */
+    #card-favorite-btn.favorited i { font-family: "Font Awesome 6 Free"; font-weight: 900; color: var(--primary-color); }
     .reviews-section { margin-top: 20px; }
     .review-card { background: #fff; border: 1px solid var(--border-color); padding: 15px; border-radius: 12px; margin-bottom: 15px; }
     .review-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -69,8 +61,6 @@
     .review-comment { line-height: 1.6; margin: 10px 0; }
     .review-images { display: flex; gap: 10px; margin-top: 10px; overflow-x: auto; }
     .review-images img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; }
-
-    /* 個人頁面樣式 */
     .page-header { padding: 15px 20px; background-color: #fff; border-bottom: 1px solid var(--border-color); text-align: center; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
     .page-header h2 { margin: 0; font-size: 18px; color: var(--text-color); }
     .header-action { font-size: 16px; color: var(--primary-color); text-decoration: none; cursor: pointer; }
@@ -89,7 +79,6 @@
 <body>
   <div class="app-container">
     <main>
-      <!-- 地圖頁 -->
       <div id="map-page" class="page active">
         <div id="map-container">
           <div id="map"></div>
@@ -106,10 +95,7 @@
             <div id="card-photo" class="card-photo"></div>
             <div class="card-content">
               <h3 id="card-name" class="card-title"></h3>
-              <div class="card-meta">
-                <span id="card-rating"></span>
-                <span id="card-category"></span>
-              </div>
+              <div class="card-meta"> <span id="card-rating"></span> <span id="card-category"></span> </div>
               <p id="card-status" class="card-status"></p>
               <p id="card-address" class="card-address"></p>
               <p id="card-price" class="card-price"></p>
@@ -126,8 +112,6 @@
           </div>
         </div>
       </div>
-      
-      <!-- 個人頁 -->
       <div id="profile-page" class="page">
         <div class="page-header">
           <h2>個人檔案</h2>
@@ -157,23 +141,18 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- 1. Firebase 初始化 (請填入您自己的設定) ---
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-    };
+    const firebaseConfig = { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
     // firebase.initializeApp(firebaseConfig);
     // const auth = firebase.auth();
-    console.log("Firebase an-dèanadach. A 'cleachdadh dàta magaidh."); // Firebase not initialized. Using mock data.
+    console.log("Firebase an-dèanadach. A 'cleachdadh dàta magaidh.");
 
     // --- 2. 全域變數與模擬資料 ---
-    let map, placesService, infoWindow, userMarker;
+    let map, placesService, userMarker;
     let restaurantMarkers = [];
-    let currentUser = null; // 模擬使用者狀態
+    let currentUser = null;
     const restaurantCard = document.getElementById('restaurant-card');
     let selectedCardPlaceId = null;
 
-    // 模擬後端資料
     const mockRestaurants = [
         { place_id: 'place_1', name: '蔦 TSUTA Japan Soba Noodles', lat: 25.047, lng: 121.517, rating: 4.8, category: '拉麵', price: '$350 - $500', photo: 'https://lh3.googleusercontent.com/p/AF1QipM-2XN-gKTy2gQlsk_1sZ9EbYpW1W7Q8g3d_g=s1360-w1360-h1020' },
         { place_id: 'place_2', name: 'Fika Fika Cafe', lat: 25.053, lng: 121.522, rating: 4.5, category: '咖啡', price: '$200 - $400', photo: 'https://lh3.googleusercontent.com/p/AF1QipPz9T3f_k_L-Yj_X-f_c_y_Z_z_x-g_c_h_g=s1360-w1360-h1020' },
@@ -186,43 +165,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const mockFavorites = ['place_1', 'place_4'];
 
     // --- 3. 地圖初始化與核心功能 ---
-    window.initMap = function() {
+    function initMap() {
         const initialPosition = { lat: 25.0479, lng: 121.5171 };
-        
-        // 自訂地圖樣式 (仿愛食記/清新風格)
         const mapStyle = [{"elementType":"geometry","stylers":[{"color":"#f5f5f5"}]},{"elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#616161"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#f5f5f5"}]},{"featureType":"administrative.land_parcel","elementType":"labels.text.fill","stylers":[{"color":"#bdbdbd"}]},{"featureType":"poi","elementType":"geometry","stylers":[{"color":"#eeeeee"}]},{"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#e5e5e5"}]},{"featureType":"poi.park","elementType":"labels.text.fill","stylers":[{"color":"#9e9e9e"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#ffffff"}]},{"featureType":"road.arterial","elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#dadada"}]},{"featureType":"road.highway","elementType":"labels.text.fill","stylers":[{"color":"#616161"}]},{"featureType":"road.local","elementType":"labels.text.fill","stylers":[{"color":"#9e9e9e"}]},{"featureType":"transit.line","elementType":"geometry","stylers":[{"color":"#e5e5e5"}]},{"featureType":"transit.station","elementType":"geometry","stylers":[{"color":"#eeeeee"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#c9c9c9"}]},{"featureType":"water","elementType":"labels.text.fill","stylers":[{"color":"#9e9e9e"}]}];
-
-        map = new google.maps.Map(document.getElementById("map"), {
-            center: initialPosition,
-            zoom: 15,
-            styles: mapStyle,
-            disableDefaultUI: true
-        });
-
-        // placesService = new google.maps.places.PlacesService(map); // 真實 API
-        
+        map = new google.maps.Map(document.getElementById("map"), { center: initialPosition, zoom: 15, styles: mapStyle, disableDefaultUI: true });
         setupMapListeners();
         updateUserGPS(initialPosition);
-        displayRestaurants(mockRestaurants); // 用模擬資料顯示餐廳
-    };
+        displayRestaurants(mockRestaurants);
+    }
     
     // --- 4. UI 互動與頁面切換 ---
-    window.showPage = function(pageId, navElement) {
+    function showPage(pageId, navElement) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
         navElement.classList.add('active');
-
-        if(pageId === 'profile-page') renderProfilePage();
-    };
-
-    window.showProfileTab = function(tabId, tabElement) {
+        if (pageId === 'profile-page') renderProfilePage();
+    }
+    function showProfileTab(tabId, tabElement) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         tabElement.classList.add('active');
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
         document.getElementById(`${tabId}-content`).classList.add('active');
         renderProfileTabContent(tabId);
-    };
+    }
 
     // --- 5. 地圖互動邏輯 ---
     function setupMapListeners() {
@@ -233,86 +199,59 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
     function updateUserGPS(position) {
         if (userMarker) {
             userMarker.setPosition(position);
         } else {
-            userMarker = new google.maps.Marker({
-                position,
-                map,
-                title: "Your Location",
-                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: '#4285F4', fillOpacity: 1, strokeColor: 'white', strokeWeight: 2 },
-                zIndex: 100
-            });
+            userMarker = new google.maps.Marker({ position, map, title: "Your Location", icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: '#4285F4', fillOpacity: 1, strokeColor: 'white', strokeWeight: 2 }, zIndex: 100 });
         }
         map.panTo(position);
     }
-    window.centerOnUserGPS = () => { if(userMarker) map.panTo(userMarker.getPosition()); };
+    function centerOnUserGPS() { if(userMarker) map.panTo(userMarker.getPosition()); }
 
     // --- 6. 餐廳資料處理與顯示 ---
     function displayRestaurants(restaurants) {
         clearRestaurantMarkers();
         restaurants.forEach(place => addRestaurantMarker(place));
     }
-
     function addRestaurantMarker(place) {
         const isHot = place.rating > 4.6;
         const marker = new google.maps.Marker({
-            position: { lat: place.lat, lng: place.lng },
-            map,
-            title: place.name,
+            position: { lat: place.lat, lng: place.lng }, map, title: place.name,
             icon: {
-                url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-                    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${isHot ? '#ff385c' : '#00a699'}" width="36px" height="36px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>`
-                )}`,
-                scaledSize: new google.maps.Size(36, 36),
-                anchor: new google.maps.Point(18, 36)
+                url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${isHot ? '#ff385c' : '#00a699'}" width="36px" height="36px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>`)}`,
+                scaledSize: new google.maps.Size(36, 36), anchor: new google.maps.Point(18, 36)
             },
             zIndex: isHot ? 10 : 1
         });
-
         marker.addListener('click', () => handlePlaceSelection(place));
         marker.addListener('mouseover', () => marker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1));
         marker.addListener('mouseout', () => marker.setZIndex(isHot ? 10 : 1));
         restaurantMarkers.push(marker);
     }
-
     function clearRestaurantMarkers() {
         restaurantMarkers.forEach(marker => marker.setMap(null));
         restaurantMarkers = [];
     }
-
     function handlePlaceSelection(place) {
         selectedCardPlaceId = place.place_id;
-        // 填充卡片資料
         document.getElementById('card-photo').style.backgroundImage = `url('${place.photo}')`;
         document.getElementById('card-name').textContent = place.name;
         document.getElementById('card-rating').innerHTML = `<i class="fas fa-star"></i> ${place.rating}`;
         document.getElementById('card-category').textContent = place.category;
-        document.getElementById('card-address').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${place.name} 附近的地址`; // 模擬地址
+        document.getElementById('card-address').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${place.name} 附近的地址`;
         document.getElementById('card-price').innerHTML = `<i class="fas fa-dollar-sign"></i> ${place.price}`;
-        document.getElementById('card-status').textContent = '營業中・22:00 關店'; // 模擬狀態
+        document.getElementById('card-status').textContent = '營業中・22:00 關店';
         document.getElementById('card-status').className = 'card-status open';
-        
-        // 檢查收藏狀態
         checkIfFavorite(place.place_id);
-
-        // 顯示評論
         renderReviewsForCard(place.place_id);
-        
-        // 顯示卡片
         restaurantCard.classList.add('active');
         map.panTo({ lat: place.lat, lng: place.lng });
     }
-    
-    window.searchByCategory = function(category, element) {
+    function searchByCategory(category, element) {
         document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
         element.classList.add('active');
-        
-        const filteredRestaurants = category === 'all' 
-            ? mockRestaurants 
-            : mockRestaurants.filter(r => r.category === category);
+        const filteredRestaurants = category === 'all' ? mockRestaurants : mockRestaurants.filter(r => r.category === category);
         displayRestaurants(filteredRestaurants);
         restaurantCard.classList.remove('active');
     }
@@ -323,13 +262,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const isFavorite = currentUser && mockFavorites.includes(placeId);
         favBtn.classList.toggle('favorited', isFavorite);
     }
-    window.toggleFavorite = function() {
+    function toggleFavorite() {
         if (!currentUser) { alert('請先登入才能收藏！'); return; }
         if (!selectedCardPlaceId) return;
-
         const favBtn = document.getElementById('card-favorite-btn');
         const isFavorited = favBtn.classList.toggle('favorited');
-        
         const index = mockFavorites.indexOf(selectedCardPlaceId);
         if (isFavorited && index === -1) {
             mockFavorites.push(selectedCardPlaceId);
@@ -338,7 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         console.log("Current Favorites:", mockFavorites);
     }
-
     function renderReviewsForCard(placeId) {
         const container = document.getElementById('card-reviews-list');
         const reviews = mockReviews[placeId] || [];
@@ -348,34 +284,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         container.innerHTML = reviews.map(review => `
             <div class="review-card">
-                <div class="review-header">
-                    <img src="${review.avatar}" class="reviewer-avatar">
-                    <div>
-                        <div class="reviewer-name">${review.user}</div>
-                        <div class="review-timestamp">1天前</div>
-                    </div>
-                </div>
-                <div class="review-ratings">
-                    <span>口味 ${'★'.repeat(review.ratings.taste)}${'☆'.repeat(5-review.ratings.taste)}</span>
-                    <span>環境 ${'★'.repeat(review.ratings.ambiance)}${'☆'.repeat(5-review.ratings.ambiance)}</span>
-                </div>
+                <div class="review-header"><img src="${review.avatar}" class="reviewer-avatar"><div><div class="reviewer-name">${review.user}</div><div class="review-timestamp">1天前</div></div></div>
+                <div class="review-ratings"><span>口味 ${'★'.repeat(review.ratings.taste)}${'☆'.repeat(5-review.ratings.taste)}</span><span>環境 ${'★'.repeat(review.ratings.ambiance)}${'☆'.repeat(5-review.ratings.ambiance)}</span></div>
                 <p class="review-comment">${review.comment}</p>
-                <div class="review-images">
-                    ${review.images.map(img => `<img src="${img}">`).join('')}
-                </div>
-            </div>
-        `).join('');
+                <div class="review-images">${review.images.map(img => `<img src="${img}">`).join('')}</div>
+            </div>`).join('');
     }
 
     // --- 8. 個人頁面邏輯 ---
     function renderProfilePage() {
         const loggedOutPlaceholder = document.getElementById('logged-out-placeholder');
         const profileTabs = document.querySelector('.profile-tabs');
-        if(currentUser) {
+        if (currentUser) {
             loggedOutPlaceholder.style.display = 'none';
             profileTabs.style.display = 'flex';
             document.getElementById('auth-action-btn').textContent = '登出';
-            // 預設顯示第一個 tab
             showProfileTab('favorites', document.querySelector('.tab-btn'));
         } else {
             loggedOutPlaceholder.style.display = 'block';
@@ -385,46 +308,42 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('reviews-content').innerHTML = '';
         }
     }
-
     function renderProfileTabContent(tabId) {
         if (!currentUser) return;
         if (tabId === 'favorites') {
             const container = document.getElementById('favorites-content');
             const favoriteRestaurants = mockRestaurants.filter(r => mockFavorites.includes(r.place_id));
-            if(favoriteRestaurants.length === 0) {
-                 container.innerHTML = '<p class="placeholder-text">還沒有收藏任何餐廳喔！</p>';
-                 return;
+            if (favoriteRestaurants.length === 0) {
+                container.innerHTML = '<p class="placeholder-text">還沒有收藏任何餐廳喔！</p>';
+                return;
             }
             container.innerHTML = favoriteRestaurants.map(r => `
-                <div class="favorite-card">
-                    <img src="${r.photo}">
-                    <div class="favorite-info">
-                        <div class="name">${r.name}</div>
-                        <div class="details">${r.category}・<i class="fas fa-star" style="color:#f5c518;"></i> ${r.rating}</div>
-                    </div>
-                </div>
-            `).join('');
+                <div class="favorite-card"><img src="${r.photo}"><div class="favorite-info"><div class="name">${r.name}</div><div class="details">${r.category}・<i class="fas fa-star" style="color:#f5c518;"></i> ${r.rating}</div></div></div>`).join('');
         } else if (tabId === 'reviews') {
             document.getElementById('reviews-content').innerHTML = '<p class="placeholder-text">我的評論功能開發中。</p>';
         }
     }
 
     // --- 9. 使用者認證 (模擬) ---
-    window.handleAuthAction = function() {
-        if(currentUser) {
-            // 登出
+    function handleAuthAction() {
+        if (currentUser) {
             currentUser = null;
             alert('您已登出。');
         } else {
-            // 登入
-            currentUser = {
-                uid: 'mock_user_123',
-                displayName: '美食探險家'
-            };
+            currentUser = { uid: 'mock_user_123', displayName: '美食探險家' };
             alert('登入成功！');
         }
-        renderProfilePage(); // 重新渲染個人頁
+        renderProfilePage();
     }
+
+    // ================== 全域接口掛載 ==================
+    window.initMap = initMap;
+    window.showPage = showPage;
+    window.showProfileTab = showProfileTab;
+    window.searchByCategory = searchByCategory;
+    window.centerOnUserGPS = centerOnUserGPS;
+    window.toggleFavorite = toggleFavorite;
+    window.handleAuthAction = handleAuthAction;
 });
 </script>
 </body>
