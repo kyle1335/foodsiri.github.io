@@ -6,6 +6,13 @@
   <title>FoodieApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   
+  <!-- 修正: 將 Google Maps API 腳本移回 head，使用傳統 callback 方式 -->
+  <script 
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,routes&callback=initMap"
+    async
+    defer>
+  </script>
+
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -73,50 +80,6 @@
     .form-group {margin-bottom: 20px;}
     .form-group-label, .form-group label {display: block;margin-bottom: 8px;font-weight: 500;color: var(--text-color);}
     .form-group input,.form-group textarea {width: 100%;padding: 12px;border: 1px solid #ccc;border-radius: 8px;box-sizing: border-box;font-size: 16px;transition: all 0.2s;}.form-group input:focus,.form-group textarea:focus {border-color: var(--primary-color);box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);outline: none;}.form-group textarea {min-height: 120px;resize: vertical;}.btn {display: flex;align-items: center;justify-content: center;gap: 8px;width: 100%;padding: 15px;background-color: var(--success-color);color: white;border: none;border-radius: 8px;font-size: 16px;font-weight: bold;cursor: pointer;text-align: center;transition: all 0.2s;}.btn:hover:not(:disabled) {background-color: #218838;transform: translateY(-2px);box-shadow: 0 4px 8px rgba(0,0,0,0.1);}.btn:disabled {background-color: #ccc;cursor: not-allowed;transform: none;box-shadow: none;}.rating-hearts {display: flex;gap: 10px;font-size: 30px;color: #ddd;cursor: pointer;}.rating-hearts .fa-heart {transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);}.rating-hearts .fa-heart:hover {transform: scale(1.2);}.rating-hearts .fa-heart.active {color: #ff4d6d;}.photo-upload-area {background: #f0f0f0;border: 2px dashed #ccc;border-radius: 8px;padding: 20px;display: flex;justify-content: center;gap: 20px;flex-wrap: wrap;}.photo-upload-area .btn-upload {background: #fff;color: var(--text-color);padding: 10px 20px;border-radius: 8px;cursor: pointer;border: 1px solid #ddd;transition: all 0.2s;}.photo-upload-area .btn-upload:hover {background-color: var(--primary-color);color: white;transform: translateY(-2px);}.photo-upload-area .btn-upload i {margin-right: 8px;}.photo-preview-container {display: flex;gap: 10px;flex-wrap: wrap;margin-top: 15px;}.photo-preview {position: relative;width: 80px;height: 80px;border-radius: 8px;overflow: hidden;box-shadow: 0 2px 8px rgba(0,0,0,0.1);}.photo-preview img {width: 100%;height: 100%;object-fit: cover;}.photo-preview .remove-btn {position: absolute;top: 4px;right: 4px;background: rgba(220, 53, 69, 0.8);color: white;border: none;border-radius: 50%;width: 20px;height: 20px;font-size: 12px;cursor: pointer;display: flex;align-items: center;justify-content: center;transition: all 0.2s;opacity: 0;}.photo-preview:hover .remove-btn {opacity: 1;}.photo-preview .remove-btn:hover {transform: scale(1.2);background: var(--danger-color);}.upload-progress {width: 100%;height: 4px;background: #f0f0f0;border-radius: 2px;margin-top: 10px;overflow: hidden;}.upload-progress-bar {height: 100%;background: var(--success-color);width: 0%;transition: width 0.3s ease;}#random-picker-container {display: flex;flex-direction: column;align-items: center;justify-content: center;height: 100%;padding: 20px;box-sizing: border-box;}#picker-wheel {width: 280px;height: 280px;border: 10px solid #ddd;border-radius: 50%;position: relative;display: flex;align-items: center;justify-content: center;margin-bottom: 30px;transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1);background: linear-gradient(45deg, #667eea, #764ba2);box-shadow: 0 10px 20px rgba(0,0,0,0.2), inset 0 0 10px rgba(0,0,0,0.3);}#picker-arrow {width: 0;height: 0;border-left: 15px solid transparent;border-right: 15px solid transparent;border-top: 25px solid var(--danger-color);position: absolute;top: -35px;left: 50%;transform: translateX(-50%);z-index: 2;}#picker-result {font-size: 20px;font-weight: bold;color: white;text-align: center;height: 60px;padding: 0 10px;display: flex;align-items: center;justify-content: center;}.challenge-card {background: #fff;border-radius: 12px;margin-bottom: 20px;padding: 20px;box-shadow: 0 4px 15px rgba(0,0,0,0.08);transition: transform 0.2s, box-shadow 0.2s;}.challenge-card:hover {transform: translateY(-3px);box-shadow: 0 6px 20px rgba(0,0,0,0.1);}.challenge-header {display: flex;justify-content: space-between;align-items: center;margin-bottom: 15px;}.challenge-title {font-size: 18px;font-weight: 600;}.challenge-btn-join {background-color: var(--success-color);color: #fff;padding: 8px 15px;border-radius: 20px;font-size: 14px;border: none;cursor: pointer;transition: all 0.2s;}.challenge-btn-join:hover {transform: scale(1.05);}.challenge-btn-join.joined {background-color: var(--text-light);}.challenge-desc {font-size: 14px;color: var(--text-light);margin-bottom: 15px;}.challenge-ranking-title,.challenge-participants-title {font-size: 14px;font-weight: 500;margin-bottom: 8px;}.challenge-ranking-list,.challenge-participants-list {font-size: 14px;color: #555;list-style: none;padding-left: 0;margin: 0;}.challenge-ranking-list li {padding: 4px 0;}.challenge-ranking-list li i {color: #ffd700;margin-right: 4px;}.profile-tabs {display: flex;gap: 10px;padding: 10px 20px;background: #fff;border-bottom: 1px solid #eee;overflow-x: auto;flex-shrink: 0;}.tab-btn {background: #f0f0f0;border: none;border-radius: 20px;padding: 8px 15px;font-size: 14px;cursor: pointer;white-space: nowrap;transition: all 0.2s;}.tab-btn.active {background: var(--primary-color);color: #fff;box-shadow: 0 2px 5px rgba(102, 126, 234, 0.4);}.tab-content {display: none;}.tab-content.active {display: block;}.record-card,.post-card {background: #fff;padding: 15px;border-radius: 8px;margin-bottom: 10px;box-shadow: 0 2px 4px rgba(0,0,0,0.05);transition: transform 0.2s, box-shadow 0.2s;}.record-card:hover,.post-card:hover {transform: translateY(-2px);box-shadow: 0 4px 8px rgba(0,0,0,0.08);}.record-card .title,.post-card .title {font-weight: 600;margin-bottom: 5px;}.record-card .details,.post-card .details {font-size: 14px;color: var(--text-light);}.record-card .cost {font-weight: bold;color: var(--success-color);float: right;}.post-card .content {margin-top: 10px;font-size: 15px;line-height: 1.6;}.post-card .post-rating {margin-top: 10px;color: #ff4d6d;}.post-card .post-photos {display: flex;gap: 8px;margin-top: 10px;flex-wrap: wrap;}.post-photo {width: 60px;height: 60px;border-radius: 6px;object-fit: cover;cursor: pointer;transition: transform 0.2s, box-shadow 0.2s;}.post-photo:hover {transform: scale(1.05);box-shadow: 0 2px 5px rgba(0,0,0,0.2);}.auth-form-container {width: 100%;max-width: 400px;margin: 0 auto;padding: 20px;}.auth-form-container h3 {text-align: center;margin-bottom: 20px;font-size: 20px;}.auth-form-container input {width: 100%;padding: 12px;border: 1px solid #ccc;border-radius: 8px;box-sizing: border-box;margin-bottom: 15px;font-size: 16px;}.btn-auth {width: 100%;padding: 12px;font-size: 16px;border-radius: 8px;border: none;cursor: pointer;margin-bottom: 10px;color: #fff;font-weight: bold;transition: all 0.2s;}.btn-auth.primary {background-color: var(--primary-color);}.btn-auth.primary:hover {background-color: #5a6fd8;transform: translateY(-2px);}.btn-auth.secondary {background-color: #fff;color: #4285F4;border: 1px solid #ddd;display:flex;align-items:center;justify-content:center;gap: 10px;}.btn-auth.secondary:hover {background-color: #f8f9fa;}.auth-separator {display: flex;align-items: center;text-align: center;color: #aaa;margin: 20px 0;}.auth-separator::before,.auth-separator::after {content: '';flex: 1;border-bottom: 1px solid #ddd;}.auth-separator:not(:empty)::before {margin-right: .25em;}.auth-separator:not(:empty)::after {margin-left: .25em;}.auth-switch-link {text-align: center;margin-top: 15px;font-size: 14px;color: var(--primary-color);cursor: pointer;}.auth-error-message {color: var(--danger-color);margin-bottom: 15px;min-height: 20px;font-weight: 500;text-align: center;}.toast-container {position: fixed;top: 20px;right: 20px;z-index: 10000;display: flex;flex-direction: column;gap: 10px;}.toast {background: #333;color: white;padding: 15px 20px;border-radius: 8px;box-shadow: 0 4px 10px rgba(0,0,0,0.2);animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;}.toast.success {background: var(--success-color);}.toast.error {background: var(--danger-color);}.toast.warning {background: var(--warning-color);color: #333;}@keyframes slideInRight {from {transform: translateX(120%);}to {transform: translateX(0);}}@keyframes fadeOut {from {opacity: 1;}to {opacity: 0;}}.loading-spinner {display: inline-block;width: 18px;height: 18px;border: 3px solid rgba(255,255,255,0.3);border-top-color: #fff;border-radius: 50%;animation: spin 1s linear infinite;}@keyframes spin {0% {transform: rotate(0deg);}100% {transform: rotate(360deg);}}
-
-    /* 修正: 新增自訂地圖標記的樣式 */
-    .custom-marker {
-        position: relative;
-        width: 32px;
-        height: 32px;
-        background-color: #f39c12; /* 橘色背景 */
-        border: 2px solid white;
-        border-radius: 50%;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: transform 0.2s;
-    }
-    .custom-marker:hover {
-        transform: scale(1.1);
-    }
-    .custom-marker::after {
-        content: '\f2e7'; /* Font Awesome 餐具圖示 */
-        font-family: 'Font Awesome 6 Free';
-        font-weight: 900;
-        color: white;
-        font-size: 16px;
-    }
-    .custom-marker::before {
-        content: '';
-        position: absolute;
-        bottom: -8px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 0;
-        height: 0;
-        border-left: 8px solid transparent;
-        border-right: 8px solid transparent;
-        border-top: 8px solid #f39c12; /* 與背景色相同 */
-    }
-    .custom-marker.selected {
-      background-color: var(--danger-color);
-    }
-    .custom-marker.selected::before {
-      border-top-color: var(--danger-color);
-    }
   </style>
 </head>
 <body>
@@ -139,40 +102,40 @@
     let currentUser = null; 
     let pageHistory = [];
     let selectedPlace = null;
-    let map, userGpsPosition, userMarker, restaurantMarkers = [], debounceTimer, autocomplete, directionsService, directionsRenderer;
+    let map, userGpsPosition, userMarker, restaurantMarkers = [], debounceTimer, autocomplete, placesService, directionsService, directionsRenderer;
     let isMapReady = false;
 
-    window.initMap = async () => {
-        try {
-            const { Map } = await google.maps.importLibrary("maps");
-            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
-            const { Place, Autocomplete } = await google.maps.importLibrary("places");
-            const { DirectionsService, DirectionsRenderer } = await google.maps.importLibrary("routes");
+    // 修正: 使用傳統 callback 方式，確保 initMap 是全域函式
+    function initMap() {
+        isMapReady = true; 
+        userGpsPosition = { lat: 25.0479, lng: 121.5171 };
+        
+        map = new google.maps.Map(document.getElementById("map"), { 
+            center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true,
+        });
 
-            isMapReady = true; 
-            userGpsPosition = { lat: 25.0479, lng: 121.5171 };
-            
-            map = new Map(document.getElementById("map"), { 
-                center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true, mapId: 'FOODIE_APP_MAP_ID' 
-            });
-            directionsService = new DirectionsService(); 
-            directionsRenderer = new DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } });
-            
-            initializeMapComponents(AdvancedMarkerElement, Place, Autocomplete); 
-        } catch (error) { console.error("地圖初始化失敗:", error); }
-    };
-    
-    function initializeMapComponents(AdvancedMarkerElement, Place, Autocomplete) {
-        window.AdvancedMarkerElement = AdvancedMarkerElement; // 將其存為全域變數以便後續使用
-        window.Place = Place;
-        createUserMarker(); 
-        setupMapListeners(); 
-        setupAutocomplete(Autocomplete);
-        updateUserGPS(); 
-        resetDetailsPanel();
+        placesService = new google.maps.places.PlacesService(map);
+        directionsService = new google.maps.DirectionsService(); 
+        directionsRenderer = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } });
+        
+        // 確保 DOM 元素已載入
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
     }
     
-    document.addEventListener('DOMContentLoaded', () => {
+    // 將所有 JS 邏輯的啟動點放在這裡
+    function initializeApp() {
+        // 地圖相關初始化
+        createUserMarker(); 
+        setupMapListeners(); 
+        setupAutocomplete();
+        updateUserGPS(); 
+        resetDetailsPanel();
+
+        // 其他 App 功能初始化
         const Utils = { showToast(message, type = 'success') { const container = document.querySelector('.toast-container'); const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.textContent = message; container.appendChild(toast); setTimeout(() => { if (toast.parentNode) { toast.parentNode.removeChild(toast); }}, 3000); }, formatDate(dateString) { return new Date(dateString).toLocaleDateString('zh-TW'); }, formatDateTime(dateString) { return new Date(dateString).toLocaleString('zh-TW'); }, generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }, sanitizeHTML(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }, validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }, debounce(func, wait) { let timeout; return function executedFunction(...args) { const later = () => { clearTimeout(timeout); func(...args); }; clearTimeout(timeout); timeout = setTimeout(later, wait); }; } };
         const DataManager = { _get(key, defaultValue) { if (!currentUser) return defaultValue; const storageKey = `${key}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(storageKey)) || defaultValue; }, _set(key, value) { if (!currentUser) return; const storageKey = `${key}_${currentUser.uid}`; localStorage.setItem(storageKey, JSON.stringify(value)); }, getPosts() { return this._get('posts', []); }, savePosts(posts) { this._set('posts', posts); }, getUserChallenges() { return this._get('userChallenges', {}); }, saveUserChallenges(challenges) { this._set('userChallenges', challenges); } };
         const PhotoManager = class { constructor() { this.selectedPhotos = []; this.maxPhotos = 5; this.maxFileSize = 5 * 1024 * 1024; } handlePhotoSelection(type) { const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.multiple = true; if (type === 'camera') { input.capture = 'environment'; input.multiple = false; } input.onchange = (e) => this.processFiles(Array.from(e.target.files)); input.click(); } async processFiles(files) { if (this.selectedPhotos.length + files.length > this.maxPhotos) { Utils.showToast(`最多只能選擇${this.maxPhotos}張照片！`, 'warning'); return; } for (const file of files) { if (file.size > this.maxFileSize) { Utils.showToast(`檔案 ${file.name} 超過5MB限制！`, 'warning'); continue; } try { await this.processFile(file); } catch (error) { console.error('處理照片失敗:', error); Utils.showToast(`處理 ${file.name} 時發生錯誤`, 'error'); } } this.updatePhotoPreview(); } async processFile(file) { this.showProgress(true); try { const compressedFile = await this.compressImage(file); const preview = await this.convertToBase64(compressedFile); this.selectedPhotos.push({ id: Utils.generateId(), file: compressedFile, preview, name: file.name, uploaded: false, url: null }); } finally { this.showProgress(false); } } compressImage(file, maxWidth = 800, quality = 0.8) { return new Promise((resolve, reject) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); let { width, height } = img; if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; } canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height); canvas.toBlob(blob => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', quality); }; img.onerror = reject; img.src = URL.createObjectURL(file); }); } convertToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); });} showProgress(show) { const p = document.getElementById('upload-progress'); if (p) { p.style.display = show ? 'block' : 'none'; if(show){ const b = p.querySelector('.upload-progress-bar'); b.style.width = '0%'; setTimeout(() => b.style.width = '100%', 100);}}} updatePhotoPreview() { const c = document.getElementById('photo-preview-container'); if (!c) return; c.innerHTML = this.selectedPhotos.map(p => `<div class="photo-preview"><img src="${p.preview}" alt="預覽"><button class="remove-btn" onclick="photoManager.removePhoto('${p.id}')">×</button></div>`).join(''); } removePhoto(photoId) { this.selectedPhotos = this.selectedPhotos.filter(p => p.id !== photoId); this.updatePhotoPreview(); } async uploadAllPhotos() { return this.selectedPhotos.map(p => p.preview); } clearPhotos() { this.selectedPhotos = []; this.updatePhotoPreview(); } getPhotoCount() { return this.selectedPhotos.length; } };
@@ -189,30 +152,46 @@
         window.setupLoggedInUI = (user) => { document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${Utils.sanitizeHTML(user.displayName || user.email)}`; renderProfilePage(); };
         window.setupLoggedOutUI = () => { document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; renderProfilePage(); document.getElementById('challenge-list-container').innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; if(document.getElementById('picker-result')) { document.getElementById('picker-result').textContent = '?'; } };
         
-        window.createUserMarker = () => { const userIcon = document.createElement('div'); userIcon.innerHTML = `<i class="fa-solid fa-circle" style="color: #4285F4; font-size: 18px; border: 2.5px solid white; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.4);"></i>`; if (userMarker) { userMarker.position = userGpsPosition; } else { userMarker = new window.AdvancedMarkerElement({ position: userGpsPosition, map, title: "您的位置", content: userIcon, zIndex: 1000 }); } };
+        // --- 地圖相關函式 ---
+        
+        // 修正: 自訂橘色圖釘的 SVG
+        const orangePin = {
+            path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z',
+            fillColor: '#f39c12',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+            scale: 1.8,
+            anchor: new google.maps.Point(12, 24),
+            labelOrigin: new google.maps.Point(12, 9)
+        };
+
+        const redPin = { ...orangePin, fillColor: '#e74c3c' }; // 被選中時的紅色版本
+
+        window.createUserMarker = () => { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.3, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(userGpsPosition); } else { userMarker = new google.maps.Marker({ position: userGpsPosition, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } };
         window.setupMapListeners = () => { if(!map) return; map.addListener("idle", () => { if (!selectedPlace) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener('click', () => { clearSearch(); }); };
         
-        window.setupAutocomplete = (Autocomplete) => {
+        window.setupAutocomplete = () => {
             const input = document.getElementById('search-input');
             const clearBtn = document.getElementById('clear-search');
-            autocomplete = new Autocomplete(input, { fields: ["place_id", "name", "geometry"] });
+            autocomplete = new google.maps.places.Autocomplete(input, { types: ['establishment', 'geocode'], componentRestrictions: { country: 'tw' } });
             input.addEventListener('input', () => { clearBtn.style.display = input.value ? 'flex' : 'none'; });
             autocomplete.addListener('place_changed', () => {
-                const gmapPlace = autocomplete.getPlace();
-                if (!gmapPlace.place_id) return;
-                handlePlaceSelection(new window.Place({id: gmapPlace.place_id}));
+                const place = autocomplete.getPlace();
+                if (place.place_id) {
+                    handlePlaceSelection(place);
+                }
             });
         };
 
-        window.updateUserGPS = () => { if (!isMapReady) return; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; if(userMarker) userMarker.position = userGpsPosition; map.setCenter(userGpsPosition); }, () => searchNearbyRestaurants(map.getCenter()) ); } else { searchNearbyRestaurants(map.getCenter()); } };
+        window.updateUserGPS = () => { if (!isMapReady) return; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; if(userMarker) userMarker.setPosition(userGpsPosition); map.setCenter(userGpsPosition); }, () => searchNearbyRestaurants(map.getCenter()) ); } else { searchNearbyRestaurants(map.getCenter()); } };
         window.centerOnUserGPS = () => { if (map && userGpsPosition) map.panTo(userGpsPosition); };
         
         window.searchNearbyRestaurants = (location) => {
-            if (!isMapReady) return;
+            if (!isMapReady || !placesService) return;
             resetDetailsPanel("正在搜尋附近餐廳...");
             clearRestaurantMarkers();
-            const service = new google.maps.places.PlacesService(map);
-            service.nearbySearch({ location, radius: 1500, type: 'restaurant' }, (results, status) => {
+            placesService.nearbySearch({ location, radius: 1500, type: 'restaurant' }, (results, status) => {
                  if (status === google.maps.places.PlacesServiceStatus.OK && results) {
                     processAndDisplayResults(results);
                 } else { resetDetailsPanel("此區域找不到餐廳"); }
@@ -221,56 +200,59 @@
 
         const processAndDisplayResults = (places) => { const contentArea = document.getElementById('details-content-area'); document.getElementById('panel-header').textContent = '附近餐廳'; contentArea.innerHTML = ''; places.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place); }); };
         
-        // 修正: 使用 CSS class 來創建自訂圖釘
         window.addRestaurantMarker = (place) => {
-            const markerDiv = document.createElement('div');
-            markerDiv.className = 'custom-marker';
-            
-            const marker = new window.AdvancedMarkerElement({ 
-                position: place.geometry.location, map, title: place.name, content: markerDiv
+            const marker = new google.maps.Marker({ 
+                position: place.geometry.location, map, title: place.name, 
+                icon: { ...orangePin, label: { text: '\uf2e7', fontFamily: 'Font Awesome 6 Free', fontWeight: '900', color: 'white', fontSize: '14px' } },
+                animation: google.maps.Animation.DROP 
             });
-            marker.addListener('click', () => {
-                handlePlaceSelection(new window.Place({id: place.place_id})); 
-            });
+            marker.addListener('click', () => { handlePlaceSelection(place); });
+            marker.place_id = place.place_id;
             restaurantMarkers.push(marker);
         };
 
-        const addRestaurantToList = (place) => { const container = document.getElementById('details-content-area'); const item = document.createElement("div"); item.className = "list-item"; const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`; item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div><div class="item-details">${place.vicinity || ''}<br>${ratingHtml}</div></div>`; item.onclick = () => { handlePlaceSelection(new window.Place({id: place.place_id})); }; container.appendChild(item); };
+        const addRestaurantToList = (place) => { const container = document.getElementById('details-content-area'); const item = document.createElement("div"); item.className = "list-item"; const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`; item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div><div class="item-details">${place.vicinity || ''}<br>${ratingHtml}</div></div>`; item.onclick = () => { handlePlaceSelection(place); }; container.appendChild(item); };
         
-        window.handlePlaceSelection = async (place) => {
-            selectedPlace = place; clearRestaurantMarkers(); directionsRenderer.setDirections({routes: []});
+        window.handlePlaceSelection = (place) => {
+            selectedPlace = place; 
+            clearRestaurantMarkers(); 
+            directionsRenderer.setDirections({routes: []});
             
-            await place.fetchFields({ fields: ['location', 'displayName', 'id'] });
-            if (!place.location) return;
-
-            const selectedMarkerDiv = document.createElement('div');
-            selectedMarkerDiv.className = 'custom-marker selected'; // 加入 selected class 以改變顏色
-            const selectedMarker = new window.AdvancedMarkerElement({ position: place.location, map, title: place.displayName, content: selectedMarkerDiv, zIndex: 1001 });
+            const selectedMarker = new google.maps.Marker({ 
+                position: place.geometry.location, map, title: place.name, 
+                icon: { ...redPin, label: { text: '\uf2e7', fontFamily: 'Font Awesome 6 Free', fontWeight: '900', color: 'white', fontSize: '14px' } },
+                zIndex: 1001 
+            });
             restaurantMarkers.push(selectedMarker);
             
-            map.panTo(place.location);
+            map.panTo(place.geometry.location);
             calculateAndDisplayRoute(place);
             renderDetailsPanel(place, null);
         };
 
-        const calculateAndDisplayRoute = (place) => { if (!userGpsPosition || !place.location) return; const destination = place.location; const requests = [{ travelMode: 'DRIVING' }, { travelMode: 'WALKING' }]; const promises = requests.map(req => new Promise(resolve => { directionsService.route({ origin: userGpsPosition, destination, travelMode: google.maps.TravelMode[req.travelMode] }, (result, status) => { resolve({ ...req, result, status }); }); })); Promise.all(promises).then(results => { const drivingResult = results.find(r => r.travelMode === 'DRIVING'); if (drivingResult && drivingResult.status === 'OK') { directionsRenderer.setDirections(drivingResult.result); map.fitBounds(drivingResult.result.routes[0].bounds); } const routeInfo = { driving: (drivingResult && drivingResult.status === 'OK') ? drivingResult.result.routes[0].legs[0] : null, walking: results.find(r => r.travelMode === 'WALKING' && r.status === 'OK')?.result.routes[0].legs[0] || null }; renderDetailsPanel(place, routeInfo); }); };
+        const calculateAndDisplayRoute = (place) => { if (!userGpsPosition || !place.geometry.location) return; const destination = place.geometry.location; const requests = [{ travelMode: 'DRIVING' }, { travelMode: 'WALKING' }]; const promises = requests.map(req => new Promise(resolve => { directionsService.route({ origin: userGpsPosition, destination, travelMode: google.maps.TravelMode[req.travelMode] }, (result, status) => { resolve({ ...req, result, status }); }); })); Promise.all(promises).then(results => { const drivingResult = results.find(r => r.travelMode === 'DRIVING'); if (drivingResult && drivingResult.status === 'OK') { directionsRenderer.setDirections(drivingResult.result); map.fitBounds(drivingResult.result.routes[0].bounds); } const routeInfo = { driving: (drivingResult && drivingResult.status === 'OK') ? drivingResult.result.routes[0].legs[0] : null, walking: results.find(r => r.travelMode === 'WALKING' && r.status === 'OK')?.result.routes[0].legs[0] || null }; renderDetailsPanel(place, routeInfo); }); };
         
-        const renderDetailsPanel = async (place, routeInfo) => {
+        const renderDetailsPanel = (place, routeInfo) => {
             const contentArea = document.getElementById('details-content-area');
             const panelHeader = document.getElementById('panel-header');
-            await place.fetchFields({fields: ['displayName', 'rating', 'userRatingCount', 'formattedPhoneNumber', 'currentOpeningHours', 'formattedAddress']});
-            panelHeader.textContent = place.displayName || '餐廳詳情';
-            const drivingTime = routeInfo?.driving?.duration?.text || 'N/A';
-            const walkingTime = routeInfo?.walking?.duration?.text || 'N/A';
-            let hoursHtml = '<ul><li>未提供營業時間資訊</li></ul>';
-            if (place.currentOpeningHours) { hoursHtml = `<ul class="hours-list">${place.currentOpeningHours.weekdayDescriptions.map(day => `<li>${day.replace(/: /g, '： ')}</li>`).join('')}</ul>`; }
-            const myReviews = DataManager.getPosts().filter(p => p.name === place.displayName);
-            const reviewsHtml = myReviews.length > 0 ? myReviews.map(review => `<div class="review-card"><div class="review-card-header"><div class="review-avatar">${currentUser?.displayName?.charAt(0) || '我'}</div><div class="review-author">${currentUser?.displayName || '我'}</div><div class="review-rating">${'★'.repeat(review.rating)}</div></div><div class="details-section-content">${Utils.sanitizeHTML(review.content) || '(無評論內容)'}</div></div>`).join('') : '<p>尚無相關評論。</p>';
-            contentArea.innerHTML = `<div class="details-header"><div class="details-header-info"><h3>${place.displayName}</h3><p>${place.rating || 'N/A'} ★ (${place.userRatingCount || 0} 則 Google 評論)</p></div></div> <div class="route-info"><div class="route-option"><i class="fas fa-car"></i><span class="time">${drivingTime}</span><span class="mode">開車</span></div><div class="route-option"><i class="fas fa-walking"></i><span class="time">${walkingTime}</span><span class="mode">步行</span></div></div> <div class="details-section"><div class="details-section-content"><p><i class="fas fa-map-marker-alt"></i> ${place.formattedAddress || '無地址資訊'}</p><p><i class="fas fa-phone"></i> ${place.formattedPhoneNumber || '未提供'}</p></div></div> <div class="details-section"><div class="details-section-title" onclick="this.nextElementSibling.classList.toggle('expanded')"><span>營業時間</span><i class="fas fa-chevron-down"></i></div><div class="details-section-content collapsible expanded">${hoursHtml}</div></div> <div class="details-section"><div class="details-section-title">我的評論</div><div class="details-section-content">${reviewsHtml}</div></div>`;
+            contentArea.innerHTML = `<div class="details-placeholder"><p>正在載入餐廳詳情...</p></div>`;
+
+            placesService.getDetails({ placeId: place.place_id, fields: ['name', 'rating', 'user_ratings_total', 'formatted_phone_number', 'opening_hours', 'vicinity', 'formatted_address'] }, (details, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && details) {
+                    panelHeader.textContent = details.name;
+                    const drivingTime = routeInfo?.driving?.duration?.text || 'N/A';
+                    const walkingTime = routeInfo?.walking?.duration?.text || 'N/A';
+                    let hoursHtml = '<ul><li>未提供營業時間資訊</li></ul>';
+                    if (details.opening_hours) { hoursHtml = `<ul class="hours-list">${details.opening_hours.weekday_text.map(day => `<li>${day.replace(/：/g, ': ')}</li>`).join('')}</ul>`; }
+                    const myReviews = DataManager.getPosts().filter(p => p.name === details.name);
+                    const reviewsHtml = myReviews.length > 0 ? myReviews.map(review => `<div class="review-card"><div class="review-card-header"><div class="review-avatar">${currentUser?.displayName?.charAt(0) || '我'}</div><div class="review-author">${currentUser?.displayName || '我'}</div><div class="review-rating">${'★'.repeat(review.rating)}</div></div><div class="details-section-content">${Utils.sanitizeHTML(review.content) || '(無評論內容)'}</div></div>`).join('') : '<p>尚無相關評論。</p>';
+                    contentArea.innerHTML = `<div class="details-header"><div class="details-header-info"><h3>${details.name}</h3><p>${details.rating || 'N/A'} ★ (${details.user_ratings_total || 0} 則 Google 評論)</p></div></div> <div class="route-info"><div class="route-option"><i class="fas fa-car"></i><span class="time">${drivingTime}</span><span class="mode">開車</span></div><div class="route-option"><i class="fas fa-walking"></i><span class="time">${walkingTime}</span><span class="mode">步行</span></div></div> <div class="details-section"><div class="details-section-content"><p><i class="fas fa-map-marker-alt"></i> ${details.formatted_address || details.vicinity}</p><p><i class="fas fa-phone"></i> ${details.formatted_phone_number || '未提供'}</p></div></div> <div class="details-section"><div class="details-section-title" onclick="this.nextElementSibling.classList.toggle('expanded')"><span>營業時間</span><i class="fas fa-chevron-down"></i></div><div class="details-section-content collapsible expanded">${hoursHtml}</div></div> <div class="details-section"><div class="details-section-title">我的評論</div><div class="details-section-content">${reviewsHtml}</div></div>`;
+                } else { contentArea.innerHTML = '<div class="details-placeholder"><p>無法載入餐廳詳情</p></div>'; }
+            });
         };
         
         window.resetDetailsPanel = (message = '點擊地圖上的餐廳圖釘<br>或使用上方搜尋功能') => { const contentArea = document.getElementById('details-content-area'); document.getElementById('panel-header').textContent = '附近餐廳'; contentArea.innerHTML = `<div class="details-placeholder"><i class="fas fa-utensils"></i><p>${message}</p></div>`; };
-        const clearRestaurantMarkers = () => { restaurantMarkers.forEach(marker => marker.map = null); restaurantMarkers = []; };
+        const clearRestaurantMarkers = () => { restaurantMarkers.forEach(marker => marker.setMap(null)); restaurantMarkers = []; };
         window.clearSearch = (suppressSearch = false) => { selectedPlace = null; directionsRenderer.setDirections({routes: []}); document.getElementById('search-input').value = ''; document.getElementById('clear-search').style.display = 'none'; if (!suppressSearch) { map.setOptions({ zoom: 15 }); centerOnUserGPS(); searchNearbyRestaurants(map.getCenter()); } };
         
         const updateRandomPageStatus = () => { if (!currentUser) { document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; document.getElementById('picker-result').textContent = '?'; return; } const restaurants = [...new Set(DataManager.getPosts().map(p => p.name))]; const statusText = document.getElementById('random-status-text'); document.getElementById('picker-result').textContent = "?"; statusText.textContent = restaurants.length === 0 ? "您還沒有新增任何餐廳喔！請到「新增」頁面加入吧！" : `目前有 ${restaurants.length} 家獨特的餐廳在您的口袋名單中。`; };
@@ -296,15 +278,11 @@
         const networkMonitor = new (class { constructor() { this.isOnline = navigator.onLine; this.setupListeners(); } setupListeners() { window.addEventListener('online', () => { this.isOnline = true; Utils.showToast('網路連線已恢復', 'success'); }); window.addEventListener('offline', () => { this.isOnline = false; Utils.showToast('網路連線中斷，部分功能可能受限', 'warning'); }); } })();
         const setupDraftSaving = () => { const reviewForm = document.querySelector('#add-review-page'); if (!reviewForm) return; const inputs = reviewForm.querySelectorAll('input[type=text], input[type=number], textarea'); const saveDraft = Utils.debounce(() => { if (currentUser) { const draftData = {}; inputs.forEach(inp => { if (inp.value.trim()) { draftData[inp.id] = inp.value; }}); if (Object.keys(draftData).length > 0) { localStorage.setItem(`reviewDraft_${currentUser.uid}`, JSON.stringify(draftData)); } else { localStorage.removeItem(`reviewDraft_${currentUser.uid}`); } } }, 1000); inputs.forEach(input => { input.addEventListener('input', saveDraft); }); };
 
+        // === 啟動點 ===
         auth.onAuthStateChanged(user => { const oldUser = currentUser; currentUser = user; if (user) { setupLoggedInUI(user); if (!oldUser) { const draftData = localStorage.getItem(`reviewDraft_${currentUser.uid}`); if (draftData) { if (confirm('偵測到未完成的評論草稿，是否要繼續編輯？')) { const draft = JSON.parse(draftData); showPage('add-review-page'); setTimeout(() => { Object.keys(draft).forEach(key => { const element = document.getElementById(key); if (element) element.value = draft[key]; }); }, 100); } else { localStorage.removeItem(`reviewDraft_${currentUser.uid}`); } } } } else { setupLoggedOutUI(); } });
         setupDraftSaving(); 
         showPage('map-page', document.querySelector('.nav-item'));
-
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=marker,places,routes&callback=initMap&v=weekly`;
-        script.async = true;
-        document.head.appendChild(script);
-    });
+    }
 </script>
 </body>
 </html>
