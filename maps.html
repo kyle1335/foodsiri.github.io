@@ -6,12 +6,9 @@
   <title>FoodieApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   
-  <!-- FIX 1: Updated the API script tag -->
-  <!-- - Added the 'marker' library for AdvancedMarkerElement -->
-  <!-- - Added 'loading="async"' attribute as recommended -->
+  <!-- Reverted to the legacy-compatible script tag -->
   <script 
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry,marker&callback=initMap"
-    loading="async"
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
     async
     defer>
   </script>
@@ -37,28 +34,14 @@
   </script>
 
   <style>
-    /* CSS 保持不變 */
+    /* CSS is unchanged */
     :root {--primary-color: #667eea;--secondary-color: #764ba2;--success-color: #28a745;--danger-color: #dc3545;--warning-color: #ffc107;--background-color: #f8f9fa;--text-color: #333;--text-light: #6c757d;--nav-height: 60px;}html,body {height: 100%;margin: 0;overflow: hidden;font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;background-color: var(--background-color);}.app-container {width: 100%;height: 100vh;display: flex;flex-direction: column;}main {flex-grow: 1;overflow: hidden;position: relative;}.page {width: 100%;height: 100%;display: none;flex-direction: column;overflow: hidden;animation: fadeIn 0.3s ease-in-out;}@keyframes fadeIn {from {opacity: 0;}to {opacity: 1;}}.page.active {display: flex;}
     #map-page { display: flex; flex-direction: column; height: 100%; }
     .map-container { height: 61.8%; position: relative; flex-shrink: 0; background-color: #e5e3df; }
     #map { width: 100%; height: 100%; }
-    .search-area { position: absolute; top: 15px; left: 15px; right: 15px; z-index: 1000; display: flex; }
-    
-    /* FIX 2: Added styles for the new PlaceAutocompleteElement to match the old input */
-    gmp-place-autocomplete {
-      width: 100%;
-    }
-    gmp-place-autocomplete > input {
-      width: 100%;
-      padding: 14px 50px 14px 20px;
-      font-size: 16px;
-      border-radius: 30px;
-      border: none;
-      box-sizing: border-box;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-
-    .clear-search-btn { position: absolute; top: 50%; right: 15px; transform: translateY(-50%); background: #ccc; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px; color: white; display: none; justify-content: center; align-items: center; z-index: 2; /* Ensure it's on top of the autocomplete input */ }
+    .search-area { position: absolute; top: 15px; left: 15px; right: 15px; z-index: 1000; }
+    .search-input { width: 100%; padding: 14px 50px 14px 20px; font-size: 16px; border-radius: 30px; border: none; box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .clear-search-btn { position: absolute; top: 50%; right: 15px; transform: translateY(-50%); background: #ccc; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px; color: white; display: none; justify-content: center; align-items: center; }
     .location-btn { position: absolute; bottom: 20px; right: 20px; background: #fff; color: var(--primary-color); border: none; width: 50px; height: 50px; border-radius: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; z-index: 10; font-size: 22px; display: flex; justify-content: center; align-items: center; transition: transform 0.2s; }
     #details-panel { height: 38.2%; background: white; border-top: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
     .panel-header { padding: 15px 20px; font-weight: bold; border-bottom: 1px solid #eee; flex-shrink: 0; }
@@ -88,7 +71,7 @@
     .review-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--secondary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
     .review-author { font-weight: 600; }
     .review-rating { color: var(--warning-color); margin-left: auto; }
-    .list-item { display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; } .list-item:last-child { border-bottom: none; } .list-item .item-icon { font-size: 18px; color: var(--primary-color); flex-shrink: 0; } .list-item .item-info { flex-grow: 1; } .list-item .item-name { font-weight: 600; } .list-item .item-details { font-size: 13px; color: var(--text-light); margin-top: 4px; }
+    .list-item { display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; } .list-item:last-child { border-bottom: none; } .list-item .item-icon { flex-shrink: 0; width: 18px; height: 18px; } .list-item .item-info { flex-grow: 1; } .list-item .item-name { font-weight: 600; } .list-item .item-details { font-size: 13px; color: var(--text-light); margin-top: 4px; }
     .app-nav {height: var(--nav-height);width: 100%;background: #fff;border-top: 1px solid #e0e0e0;display: flex;justify-content: space-around;align-items: center;flex-shrink: 0;box-shadow: 0 -2px 10px rgba(0,0,0,0.05);}
     .nav-item {display: flex;flex-direction: column;align-items: center;justify-content: center;color: var(--text-light);font-size: 12px;cursor: pointer;transition: all 0.2s;width: 100%;height: 100%;}
     .nav-item i {font-size: 20px; margin-bottom: 5px;}
@@ -102,19 +85,19 @@
 <body>
   <div class="app-container">
     <main>
+      <!-- Reverted to the original input-based search area -->
       <div id="map-page" class="page active">
         <div class="map-container">
           <div id="map"></div>
-          <!-- FIX 3: Replaced the <input> with a container for the new web component -->
           <div class="search-area">
-             <!-- The new PlaceAutocompleteElement will be inserted here by JS -->
-             <button class="clear-search-btn" id="clear-search" onclick="clearSearch()">×</button>
+            <input type="text" id="search-input" class="search-input" placeholder="搜尋餐廳或地點...">
+            <button class="clear-search-btn" id="clear-search" onclick="clearSearch()">×</button>
           </div>
           <button class="location-btn" onclick="centerOnUserGPS()"><i class="fas fa-location-arrow"></i></button>
         </div>
         <div id="details-panel" class="details-panel"><div class="panel-header" id="panel-header">附近餐廳</div><div class="details-content" id="details-content-area"></div></div>
       </div>
-      <!-- Other pages' HTML remains unchanged -->
+      <!-- Other pages are unchanged -->
       <div id="random-page" class="page"><div class="page-header"><div class="placeholder"></div><h2><i class="fa-solid fa-dice"></i>美食隨機選</h2><div class="placeholder"></div></div><div id="random-picker-container"><div id="picker-arrow"></div><div id="picker-wheel"><div id="picker-result">?</div></div><button class="btn" id="random-pick-btn" onclick="startRandomPick()">開始抽籤！</button><p id="random-status-text" class="placeholder-text"></p></div></div>
       <div id="add-review-page" class="page">
         <div class="page-header"><div class="placeholder"></div><h2><i class="fa-solid fa-pencil"></i>新增美食評論</h2><div class="placeholder"></div></div>
@@ -140,32 +123,30 @@
 <div class="toast-container"></div>
 
 <script>
-    // === 全域變數 ===
-    // FIX 4: Removed obsolete variables `placesService` and `autocomplete`.
-    let map, userGpsPosition, userMarker, restaurantMarkers = [], debounceTimer, infoWindow, directionsService, directionsRenderer;
+    // === Global Variables ===
+    // Reverted to legacy API variables
+    let map, userGpsPosition, userMarker, restaurantMarkers = [], debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer, restaurantIcon;
     let isMapReady = false;
 
-    // The initMap function is the entry point after the Google Maps script loads.
-    async function initMap() {
-        // We need to wait for these libraries to be available.
-        const { Map } = await google.maps.importLibrary("maps");
-        const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
-        const { Place } = await google.maps.importLibrary("places");
-        
+    // initMap is the entry point, called by the Google script
+    function initMap() {
         isMapReady = true; 
         userGpsPosition = { lat: 25.0479, lng: 121.5171 };
-        map = new Map(document.getElementById("map"), {
-            center: userGpsPosition,
-            zoom: 15,
-            disableDefaultUI: true,
-            zoomControl: true,
-            mapId: 'FOODIE_APP_MAP_ID' // A Map ID is required for Advanced Markers
-        });
+        map = new google.maps.Map(document.getElementById("map"), { center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true });
         
+        // Re-initialize legacy services
+        placesService = new google.maps.places.PlacesService(map); 
         infoWindow = new google.maps.InfoWindow(); 
         directionsService = new google.maps.DirectionsService(); 
         directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } });
         
+        // **FIX**: Define the custom icon object here, after 'google' is available
+        const customIconUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIQSURBVHhe7dixSgNBFADQqV5CL4JreAPdhxTq9QztqYVaxZ0X8AYCg51YWFhpiqZDCgkhsV+i9nFD95/lB4c/LN/s7nZkAAAAAAAAAACAeVpaWurx8fFhNpv9sVwuh3g8/qBcLk8nk8kM5ubmvpRSN5vNfucDUspJkicxxgBCSBmGIZ7nbXKe51xKKTnnHEopIcbYtG2/zzRNz/O8N5lM/lgqlW6n0+kXhmH4P+I4/jebzU/VavXbcrn8kGEYv4QQc57nP4QQpWmatkpKKeccGIZh2u/3T7VazWEY5qWU1ul0rtfrXceyrOd5t4QQIYS43W5/jDFt27Ysy/m2bV+VUvoYY/i+v1ar9VvX9e/SNG0syzIkSSJCiOM4qSiKsq7rXwBCiGEYsizLHMdZURRtnudtIYSY53nZNE0sy/KmadqaprWmacsyLJfLfRjjP8dxtiRJnOd5G6WU4zi+jDFSSgkhTdP0NE1ryzJMKaWmaaqiKMs4jr8gSRIhhOd5s67rP6WU3W53HMdZURRtnudtIYSY53nZNE0sy/KmadqaprWmaaqiKMs4jn/ANE2UUkopKaX0PG89z/tNKaVpmsY4jl+VUnu93m+n0/k/SRL/NE1zKeWkKApCCNM0zQBC6PfnAAAAAACAD/gCvTcr7vj8mXMAAAAASUVORK5CYII=';
+        restaurantIcon = {
+            url: customIconUrl,
+            scaledSize: new google.maps.Size(28, 28) // Adjust size as needed
+        };
+
         initializeMapComponents();
     }
 
@@ -182,8 +163,9 @@
     let currentUser = null; 
     let pageHistory = [];
     let selectedPlace = null;
+    const customIconDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIQSURBVHhe7dixSgNBFADQqV5CL4JreAPdhxTq9QztqYVaxZ0X8AYCg51YWFhpiqZDCgkhsV+i9nFD95/lB4c/LN/s7nZkAAAAAAAAAACAeVpaWurx8fFhNpv9sVwuh3g8/qBcLk8nk8kM5ubmvpRSN5vNfucDUspJkicxxgBCSBmGIZ7nbXKe51xKKTnnHEopIcbYtG2/zzRNz/O8N5lM/lgqlW6n0+kXhmH4P+I4/jebzU/VavXbcrn8kGEYv4QQc57nP4QQpWmatkpKKeccGIZh2u/3T7VazWEY5qWU1ul0rtfrXceyrOd5t4QQIYS43W5/jDFt27Ysy/m2bV+VUvoYY/i+v1ar9VvX9e/SNG0syzIkSSJCiOM4qSiKsq7rXwBCiGEYsizLHMdZURRtnudtIYSY53nZNE0sy/KmadqaprWmaaqiKMs4jn/ANE2UUkopKaX0PG89z/tNKaVpmsY4jl+VUnu93m+n0/k/SRL/NE1zKeWkKApCCNM0zQBC6PfnAAAAAACAD/gCvTcr7vj8mXMAAAAASUVORK5CYII=';
 
-    // --- All other classes and functions (Utils, DataManager, etc.) remain unchanged ---
+    // --- All other classes and non-map functions (Utils, DataManager, etc.) remain unchanged ---
     class Utils { static showToast(message, type = 'success') { const container = document.querySelector('.toast-container'); const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.textContent = message; container.appendChild(toast); setTimeout(() => { if (toast.parentNode) { toast.parentNode.removeChild(toast); }}, 3000); } static formatDate(dateString) { return new Date(dateString).toLocaleDateString('zh-TW'); } static formatDateTime(dateString) { return new Date(dateString).toLocaleString('zh-TW'); } static generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); } static sanitizeHTML(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; } static validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); } static debounce(func, wait) { let timeout; return function executedFunction(...args) { const later = () => { clearTimeout(timeout); func(...args); }; clearTimeout(timeout); timeout = setTimeout(later, wait); }; } }
     class DataManager { static _get(key, defaultValue) { if (!currentUser) return defaultValue; const storageKey = `${key}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(storageKey)) || defaultValue; } static _set(key, value) { if (!currentUser) return; const storageKey = `${key}_${currentUser.uid}`; localStorage.setItem(storageKey, JSON.stringify(value)); } static getPosts() { return this._get('posts', []); } static savePosts(posts) { this._set('posts', posts); } static getUserChallenges() { return this._get('userChallenges', {}); } static saveUserChallenges(challenges) { this._set('userChallenges', challenges); } }
     class PhotoManager { constructor() { this.selectedPhotos = []; this.maxPhotos = 5; this.maxFileSize = 5 * 1024 * 1024; } handlePhotoSelection(type) { const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.multiple = true; if (type === 'camera') { input.capture = 'environment'; input.multiple = false; } input.onchange = (e) => this.processFiles(Array.from(e.target.files)); input.click(); } async processFiles(files) { if (this.selectedPhotos.length + files.length > this.maxPhotos) { Utils.showToast(`最多只能選擇${this.maxPhotos}張照片！`, 'warning'); return; } for (const file of files) { if (file.size > this.maxFileSize) { Utils.showToast(`檔案 ${file.name} 超過5MB限制！`, 'warning'); continue; } try { await this.processFile(file); } catch (error) { console.error('處理照片失敗:', error); Utils.showToast(`處理 ${file.name} 時發生錯誤`, 'error'); } } this.updatePhotoPreview(); } async processFile(file) { this.showProgress(true); try { const compressedFile = await this.compressImage(file); const preview = await this.convertToBase64(compressedFile); this.selectedPhotos.push({ id: Utils.generateId(), file: compressedFile, preview, name: file.name, uploaded: false, url: null }); } finally { this.showProgress(false); } } compressImage(file, maxWidth = 800, quality = 0.8) { return new Promise((resolve, reject) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); let { width, height } = img; if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; } canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height); canvas.toBlob(blob => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', quality); }; img.onerror = reject; img.src = URL.createObjectURL(file); }); } convertToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); });} showProgress(show) { const p = document.getElementById('upload-progress'); if (p) { p.style.display = show ? 'block' : 'none'; if(show){ const b = p.querySelector('.upload-progress-bar'); b.style.width = '0%'; setTimeout(() => b.style.width = '100%', 100);}}} updatePhotoPreview() { const c = document.getElementById('photo-preview-container'); if (!c) return; c.innerHTML = this.selectedPhotos.map(p => `<div class="photo-preview"><img src="${p.preview}" alt="預覽"><button class="remove-btn" onclick="photoManager.removePhoto('${p.id}')">×</button></div>`).join(''); } removePhoto(photoId) { this.selectedPhotos = this.selectedPhotos.filter(p => p.id !== photoId); this.updatePhotoPreview(); } async uploadAllPhotos() { return this.selectedPhotos.map(p => p.preview); } clearPhotos() { this.selectedPhotos = []; this.updatePhotoPreview(); } getPhotoCount() { return this.selectedPhotos.length; } }
@@ -193,18 +175,24 @@
     function setupLoggedInUI(user) { document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${Utils.sanitizeHTML(user.displayName || user.email)}`; renderProfilePage(); } 
     function setupLoggedOutUI() { document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; renderProfilePage(); document.getElementById('challenge-list-container').innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; if(document.getElementById('picker-result')) { document.getElementById('picker-result').textContent = '?'; } }
 
-    // FIX 5: Migrated from `google.maps.Marker` to `AdvancedMarkerElement`.
-    function createUserMarker (position) {
+    // Using legacy `google.maps.Marker`
+    window.createUserMarker = function (position) {
+        const userIcon = {
+            path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+            fillColor: '#4285F4',
+            fillOpacity: 1,
+            strokeWeight: 0,
+            scale: 1.3,
+            anchor: new google.maps.Point(12, 24)
+        };
         if (userMarker) {
-            userMarker.position = position;
+            userMarker.setPosition(position);
         } else {
-            const userIcon = document.createElement('div');
-            userIcon.innerHTML = `<i class="fas fa-street-view" style="font-size: 28px; color: #4285F4; transform: translateY(14px);"></i>`;
-            userMarker = new google.maps.marker.AdvancedMarkerElement({
+            userMarker = new google.maps.Marker({
                 position,
                 map,
-                content: userIcon,
                 title: "您的位置",
+                icon: userIcon,
                 zIndex: 1000
             });
         }
@@ -212,63 +200,48 @@
 
     window.setupMapListeners = function() { if(!map) return; map.addListener("idle", () => { if (!selectedPlace) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener('click', () => { clearSearch(); }); }
     
-    // FIX 6: Migrated from `google.maps.places.Autocomplete` to `PlaceAutocompleteElement`.
-    function setupAutocomplete() {
-        const searchArea = document.querySelector('.search-area');
+    // Using legacy `google.maps.places.Autocomplete`
+    window.setupAutocomplete = function() {
+        const input = document.getElementById('search-input');
         const clearBtn = document.getElementById('clear-search');
-        
-        const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement({
+        autocomplete = new google.maps.places.Autocomplete(input, {
+            componentRestrictions: { country: 'tw' },
             types: ['establishment', 'geocode'],
-            componentRestrictions: { country: 'tw' }
+            fields: ['place_id', 'geometry', 'name', 'vicinity']
         });
-        placeAutocomplete.id = 'place-autocomplete-input';
-        
-        // The web component's internal input element
-        const inputElement = placeAutocomplete.inputElement;
-        inputElement.placeholder = "搜尋餐廳或地點...";
-
-        searchArea.insertBefore(placeAutocomplete, clearBtn);
-        
-        inputElement.addEventListener('input', () => {
-            clearBtn.style.display = inputElement.value ? 'flex' : 'none';
+        input.addEventListener('input', () => {
+            clearBtn.style.display = input.value ? 'flex' : 'none';
         });
-        
-        placeAutocomplete.addEventListener('gmp-placeselect', async ({place}) => {
-            await place.fetchFields({ fields: ['id', 'displayName', 'location', 'formattedAddress', 'vicinity'] });
-            handlePlaceSelection(place);
+        autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {
+                handlePlaceSelection(place);
+            }
         });
     }
 
     window.updateUserGPS = function() { if (!isMapReady) return; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; createUserMarker(userGpsPosition); centerOnUserGPS(); }, () => searchNearbyRestaurants(map.getCenter()) ); } else { searchNearbyRestaurants(map.getCenter()); } };
     window.centerOnUserGPS = function() { if (map && userGpsPosition) map.panTo(userGpsPosition); };
     
-    // FIX 7: Migrated from `PlacesService.nearbySearch` to `Place.searchNearby`.
-    async function searchNearbyRestaurants(location) {
-        if (!isMapReady) return;
+    // Using legacy `placesService.nearbySearch`
+    function searchNearbyRestaurants(location) {
+        if (!isMapReady || !placesService) return;
         resetDetailsPanel("正在搜尋附近餐廳...");
         clearRestaurantMarkers();
-
         const request = {
-            fields: ['id', 'displayName', 'location', 'rating', 'userRatingCount', 'vicinity'],
-            locationRestriction: { center: location, radius: 1500 },
-            includedTypes: ['restaurant'],
-            maxResultCount: 20
+            location: location,
+            radius: 1500,
+            type: 'restaurant'
         };
-
-        try {
-            const { places } = await google.maps.places.Place.searchNearby(request);
-            if (places && places.length > 0) {
-                processAndDisplayResults(places);
+        placesService.nearbySearch(request, (results, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                processAndDisplayResults(results);
             } else {
                 resetDetailsPanel("此區域找不到餐廳");
             }
-        } catch (error) {
-            console.error("Nearby search failed", error);
-            resetDetailsPanel("搜尋時發生錯誤");
-        }
+        });
     }
-    
-    // FIX 8: Updated to handle new place object properties from `Place.searchNearby`.
+
     function processAndDisplayResults(places) {
         const contentArea = document.getElementById('details-content-area');
         document.getElementById('panel-header').textContent = '附近餐廳';
@@ -278,122 +251,118 @@
             addRestaurantToList(place, contentArea);
         });
     }
-    
-    // FIX 9: Migrated to `AdvancedMarkerElement` for restaurant markers.
-    function addRestaurantMarker(place) {
-        const restaurantIcon = document.createElement('div');
-        restaurantIcon.innerHTML = `<i class="fas fa-utensils" style="color: var(--primary-color); font-size: 20px; transform: translateY(10px);"></i>`;
 
-        const marker = new google.maps.marker.AdvancedMarkerElement({ 
-            position: place.location, 
+    // Using legacy `google.maps.Marker` with custom icon
+    function addRestaurantMarker(place) {
+        const marker = new google.maps.Marker({ 
+            position: place.geometry.location, 
             map: map, 
-            title: place.displayName,
-            content: restaurantIcon
+            title: place.name, 
+            icon: restaurantIcon, // Use the custom icon defined in initMap
+            animation: google.maps.Animation.DROP 
         });
         marker.addListener('click', (e) => {
             e.domEvent?.stopPropagation();
             handlePlaceSelection(place);
         });
-        marker.placeId = place.id;
+        marker.place_id = place.place_id;
         restaurantMarkers.push(marker);
     }
-    
-    // FIX 10: Updated to handle new place object properties.
+
+    // Using custom icon in the list view as well
     function addRestaurantToList(place, container) {
         const item = document.createElement("div");
         item.className = "list-item";
         const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`;
-        item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.displayName}</div><div class="item-details">${place.vicinity || ''}<br>${ratingHtml}</div></div>`;
+        item.innerHTML = `<div class="item-icon"><img src="${customIconDataUrl}" alt="restaurant icon" style="width:100%; height:100%;"></div><div class="item-info"><div class="item-name">${place.name}</div><div class="item-details">${place.vicinity || ''}<br>${ratingHtml}</div></div>`;
         item.onclick = () => handlePlaceSelection(place);
         container.appendChild(item);
     }
 
-    async function handlePlaceSelection(place) {
+    window.handlePlaceSelection = function(place) {
         selectedPlace = place;
         clearRestaurantMarkers();
         directionsRenderer.setDirections({routes: []});
-
-        const selectedIcon = document.createElement('div');
-        selectedIcon.innerHTML = `<i class="fas fa-map-pin" style="color: var(--danger-color); font-size: 30px; transform: translateY(15px);"></i>`;
         
-        const selectedMarker = new google.maps.marker.AdvancedMarkerElement({
-             position: place.location,
-             map: map,
-             title: place.displayName,
-             content: selectedIcon,
-             zIndex: 1001
+        // Use default marker for selected place
+        const selectedMarker = new google.maps.Marker({
+            position: place.geometry.location,
+            map: map,
+            title: place.name,
+            zIndex: 1001
         });
-
         restaurantMarkers.push(selectedMarker);
-        if (place.location) { map.panTo(place.location); }
-        await calculateAndDisplayRoute(place);
+        
+        if (place.geometry && place.geometry.location) {
+            map.panTo(place.geometry.location);
+        }
+        calculateAndDisplayRoute(place);
     }
 
-    async function calculateAndDisplayRoute(place) {
+    function calculateAndDisplayRoute(place) {
         if (!userGpsPosition) {
-            await renderDetailsPanel(place, null);
+            renderDetailsPanel(place, null);
             return;
         }
-        const destination = place.location;
+        const destination = place.geometry.location;
         const requests = [{ travelMode: 'DRIVING' }, { travelMode: 'WALKING' }];
         const promises = requests.map(req => new Promise(resolve => {
             directionsService.route({ origin: userGpsPosition, destination, travelMode: req.travelMode }, (result, status) => {
                 resolve({ ...req, result, status });
             });
         }));
-        
-        const results = await Promise.all(promises);
-        const drivingResult = results.find(r => r.travelMode === 'DRIVING');
-        if (drivingResult && drivingResult.status === 'OK') {
-            directionsRenderer.setDirections(drivingResult.result);
-            map.fitBounds(drivingResult.result.routes[0].bounds);
-        }
-        const routeInfo = {
-            driving: (drivingResult && drivingResult.status === 'OK') ? drivingResult.result.routes[0].legs[0] : null,
-            walking: results.find(r => r.travelMode === 'WALKING' && r.status === 'OK')?.result.routes[0].legs[0] || null
-        };
-        await renderDetailsPanel(place, routeInfo);
+        Promise.all(promises).then(results => {
+            const drivingResult = results.find(r => r.travelMode === 'DRIVING');
+            if (drivingResult && drivingResult.status === 'OK') {
+                directionsRenderer.setDirections(drivingResult.result);
+                map.fitBounds(drivingResult.result.routes[0].bounds);
+            }
+            const routeInfo = {
+                driving: (drivingResult && drivingResult.status === 'OK') ? drivingResult.result.routes[0].legs[0] : null,
+                walking: results.find(r => r.travelMode === 'WALKING' && r.status === 'OK')?.result.routes[0].legs[0] || null
+            };
+            renderDetailsPanel(place, routeInfo);
+        });
     }
-    
-    // FIX 11: Migrated from `PlacesService.getDetails` to `place.fetchFields`.
-    async function renderDetailsPanel(place, routeInfo) {
+
+    // Using legacy `placesService.getDetails`
+    function renderDetailsPanel(place, routeInfo) {
         const contentArea = document.getElementById('details-content-area');
         const panelHeader = document.getElementById('panel-header');
         contentArea.innerHTML = `<div class="details-placeholder"><p>正在載入餐廳詳情...</p></div>`;
-
-        try {
-            const fieldsToFetch = ['displayName', 'rating', 'userRatingCount', 'formattedPhoneNumber', 'regularOpeningHours', 'vicinity', 'formattedAddress'];
-            await place.fetchFields({ fields: fieldsToFetch });
-            
-            const details = place; // Use the fetched place object
-            panelHeader.textContent = details.displayName;
-
-            const drivingTime = routeInfo?.driving?.duration.text || 'N/A';
-            const walkingTime = routeInfo?.walking?.duration.text || 'N/A';
-            let hoursHtml = '<ul><li>未提供營業時間資訊</li></ul>';
-            if (details.regularOpeningHours) {
-                hoursHtml = `<ul class="hours-list">${details.regularOpeningHours.weekdayDescriptions.map(day => `<li>${day.replace(/：/g, ': ')}</li>`).join('')}</ul>`;
+        
+        const request = {
+            placeId: place.place_id,
+            fields: ['name', 'rating', 'user_ratings_total', 'formatted_phone_number', 'opening_hours', 'vicinity', 'formatted_address']
+        };
+        
+        placesService.getDetails(request, (details, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && details) {
+                panelHeader.textContent = details.name;
+                const drivingTime = routeInfo?.driving?.duration.text || 'N/A';
+                const walkingTime = routeInfo?.walking?.duration.text || 'N/A';
+                let hoursHtml = '<ul><li>未提供營業時間資訊</li></ul>';
+                if (details.opening_hours) {
+                    hoursHtml = `<ul class="hours-list">${details.opening_hours.weekday_text.map(day => `<li>${day.replace(/：/g, ': ')}</li>`).join('')}</ul>`;
+                }
+                const myReviews = DataManager.getPosts().filter(p => p.name === details.name);
+                const reviewsHtml = myReviews.length > 0 ? myReviews.map(review => `<div class="review-card"><div class="review-card-header"><div class="review-avatar">${currentUser?.displayName?.charAt(0) || '我'}</div><div class="review-author">${currentUser?.displayName || '我'}</div><div class="review-rating">${'★'.repeat(review.rating)}</div></div><div class="details-section-content">${Utils.sanitizeHTML(review.content) || '(無評論內容)'}</div></div>`).join('') : '<p>尚無相關評論。</p>';
+                
+                contentArea.innerHTML = `
+                    <div class="details-header"><div class="details-header-info"><h3>${details.name}</h3><p>${details.rating || 'N/A'} ★ (${details.user_ratings_total || 0} 則 Google 評論)</p></div></div>
+                    <div class="route-info"><div class="route-option"><i class="fas fa-car"></i><span class="time">${drivingTime}</span><span class="mode">開車</span></div><div class="route-option"><i class="fas fa-walking"></i><span class="time">${walkingTime}</span><span class="mode">步行</span></div></div>
+                    <div class="details-section"><div class="details-section-content"><p><i class="fas fa-map-marker-alt"></i> ${details.formatted_address || details.vicinity}</p><p><i class="fas fa-phone"></i> ${details.formatted_phone_number || '未提供'}</p></div></div>
+                    <div class="details-section"><div class="details-section-title" onclick="this.nextElementSibling.classList.toggle('expanded')"><span>營業時間</span><i class="fas fa-chevron-down"></i></div><div class="details-section-content collapsible">${hoursHtml}</div></div>
+                    <div class="details-section"><div class="details-section-title">我的評論</div><div class="details-section-content">${reviewsHtml}</div></div>`;
+            } else {
+                contentArea.innerHTML = '<div class="details-placeholder"><p>無法載入餐廳詳情</p></div>';
             }
-
-            const myReviews = DataManager.getPosts().filter(p => p.name === details.displayName);
-            const reviewsHtml = myReviews.length > 0 ? myReviews.map(review => `<div class="review-card"><div class="review-card-header"><div class="review-avatar">${currentUser?.displayName?.charAt(0) || '我'}</div><div class="review-author">${currentUser?.displayName || '我'}</div><div class="review-rating">${'★'.repeat(review.rating)}</div></div><div class="details-section-content">${Utils.sanitizeHTML(review.content) || '(無評論內容)'}</div></div>`).join('') : '<p>尚無相關評論。</p>';
-            
-            contentArea.innerHTML = `
-                <div class="details-header"><div class="details-header-info"><h3>${details.displayName}</h3><p>${details.rating || 'N/A'} ★ (${details.userRatingCount || 0} 則 Google 評論)</p></div></div>
-                <div class="route-info"><div class="route-option"><i class="fas fa-car"></i><span class="time">${drivingTime}</span><span class="mode">開車</span></div><div class="route-option"><i class="fas fa-walking"></i><span class="time">${walkingTime}</span><span class="mode">步行</span></div></div>
-                <div class="details-section"><div class="details-section-content"><p><i class="fas fa-map-marker-alt"></i> ${details.formattedAddress || details.vicinity}</p><p><i class="fas fa-phone"></i> ${details.formattedPhoneNumber || '未提供'}</p></div></div>
-                <div class="details-section"><div class="details-section-title" onclick="this.nextElementSibling.classList.toggle('expanded')"><span>營業時間</span><i class="fas fa-chevron-down"></i></div><div class="details-section-content collapsible">${hoursHtml}</div></div>
-                <div class="details-section"><div class="details-section-title">我的評論</div><div class="details-section-content">${reviewsHtml}</div></div>`;
-
-        } catch (error) {
-            console.error("Fetch details failed", error);
-            contentArea.innerHTML = '<div class="details-placeholder"><p>無法載入餐廳詳情</p></div>';
-        }
+        });
     }
 
     window.resetDetailsPanel = function(message = '點擊地圖上的餐廳圖釘<br>或使用上方搜尋功能') { const contentArea = document.getElementById('details-content-area'); document.getElementById('panel-header').textContent = '附近餐廳'; contentArea.innerHTML = `<div class="details-placeholder"><i class="fas fa-utensils"></i><p>${message}</p></div>`; }
-    function clearRestaurantMarkers() { restaurantMarkers.forEach(marker => { marker.map = null; }); restaurantMarkers = []; }
-    window.clearSearch = function(suppressSearch = false) { selectedPlace = null; directionsRenderer.setDirections({routes: []}); const autocompleteInput = document.getElementById('place-autocomplete-input')?.inputElement; if(autocompleteInput) autocompleteInput.value = ''; document.getElementById('clear-search').style.display = 'none'; if (!suppressSearch) { map.setZoom(15); centerOnUserGPS(); searchNearbyRestaurants(map.getCenter()); } }
+    function clearRestaurantMarkers() { restaurantMarkers.forEach(marker => marker.setMap(null)); restaurantMarkers = []; }
+    window.clearSearch = function(suppressSearch = false) { selectedPlace = null; directionsRenderer.setDirections({routes: []}); document.getElementById('search-input').value = ''; document.getElementById('clear-search').style.display = 'none'; if (!suppressSearch) { map.setOptions({ zoom: 15 }); centerOnUserGPS(); searchNearbyRestaurants(map.getCenter()); } }
     
     // --- Other function JS remains the same ---
     function updateRandomPageStatus() { if (!currentUser) { document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; document.getElementById('picker-result').textContent = '?'; return; } const restaurants = [...new Set(DataManager.getPosts().map(p => p.name))]; const statusText = document.getElementById('random-status-text'); document.getElementById('picker-result').textContent = "?"; statusText.textContent = restaurants.length === 0 ? "您還沒有新增任何餐廳喔！請到「新增」頁面加入吧！" : `目前有 ${restaurants.length} 家獨特的餐廳在您的口袋名單中。`; }
