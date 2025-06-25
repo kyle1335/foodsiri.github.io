@@ -13,6 +13,7 @@
   </script>
   
   <style>
+    /* CSS樣式保持不變，此處省略以節省篇幅 */
     :root {--primary-color: #667eea;--secondary-color: #764ba2;--success-color: #28a745;--danger-color: #dc3545;--warning-color: #ffc107;--background-color: #f8f9fa;--text-color: #333;--text-light: #6c757d;--nav-height: 60px;}html,body {height: 100%;margin: 0;overflow: hidden;font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;background-color: var(--background-color);}.app-container {width: 100%;height: 100vh;display: flex;flex-direction: column;}main {flex-grow: 1;overflow: hidden;position: relative;}.page {width: 100%;height: 100%;display: none;flex-direction: column;overflow: hidden;animation: fadeIn 0.3s ease-in-out;}@keyframes fadeIn {from {opacity: 0;}to {opacity: 1;}}.page.active {display: flex;}
     
     /* 地圖頁面黃金比例佈局 */
@@ -31,7 +32,6 @@
     .details-placeholder { text-align: center; color: #aaa; padding: 40px 20px; }
     .details-placeholder i { font-size: 40px; margin-bottom: 15px; }
     .details-header { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px; padding-top: 15px; }
-    .details-header-info { flex-grow: 1; }
     .details-header-info h3 { margin: 0 0 5px; font-size: 22px; }
     .details-header-info p { margin: 0; font-size: 14px; color: var(--text-light); }
     .route-info { display: flex; gap: 15px; margin: 20px 0; padding: 15px; background: var(--background-color); border-radius: 12px; }
@@ -80,31 +80,23 @@
         </div>
       </div>
       
-      <!-- 隨機選擇頁面 -->
+      <!-- 其他頁面 -->
       <div id="random-page" class="page">
         <div class="page-header"><div class="placeholder"></div><h2><i class="fa-solid fa-dice"></i>美食隨機選</h2><div class="placeholder"></div></div>
         <div id="random-picker-container"><div id="picker-arrow"></div><div id="picker-wheel"><div id="picker-result">?</div></div><button class="btn" id="random-pick-btn" onclick="startRandomPick()">開始抽籤！</button><p id="random-status-text" class="placeholder-text"></p></div>
       </div>
-
-      <!-- 新增評論頁面 -->
       <div id="add-review-page" class="page">
         <div class="page-header"><div class="placeholder"></div><h2><i class="fa-solid fa-pencil"></i>新增美食評論</h2><div class="placeholder"></div></div>
         <div class="page-content"><div class="form-group"><label for="review-restaurant-name">餐廳名稱</label><input type="text" id="review-restaurant-name" placeholder="輸入吃過的餐廳" required></div><div class="form-group"><label for="review-meal-items">餐點項目</label><textarea id="review-meal-items" placeholder="吃了什麼好料？ (例如：小籠包、牛肉麵)"></textarea></div><div class="form-group"><label for="review-cost">花費金額 (NT$)</label><input type="number" id="review-cost" placeholder="大約花了多少錢？" min="0"></div><div class="form-group"><label>喜愛程度</label><div class="rating-hearts" id="review-rating" data-rating="0"><i class="fa-solid fa-heart" data-value="1"></i><i class="fa-solid fa-heart" data-value="2"></i><i class="fa-solid fa-heart" data-value="3"></i><i class="fa-solid fa-heart" data-value="4"></i><i class="fa-solid fa-heart" data-value="5"></i></div></div><div class="form-group"><label for="review-content">評論內容 (會成為貼文)</label><textarea id="review-content" placeholder="分享你的心得、推薦或建議..."></textarea></div><div class="form-group"><label>新增照片</label><div class="photo-upload-area"><div class="btn-upload" onclick="photoManager.handlePhotoSelection('gallery')"><i class="fa-solid fa-images"></i> 從相簿選擇</div><div class="btn-upload" onclick="photoManager.handlePhotoSelection('camera')"><i class="fa-solid fa-camera"></i> 開啟相機</div></div><div id="photo-preview-container" class="photo-preview-container"></div><div id="upload-progress" class="upload-progress" style="display: none;"><div class="upload-progress-bar"></div></div></div><button class="btn" onclick="saveReviewWithPhotos(event)">儲存評論與貼文</button></div>
       </div>
-
-      <!-- 挑戰榜頁面 -->
       <div id="challenge-page" class="page">
         <div class="page-header"><div class="placeholder"></div><h2><i class="fa-solid fa-trophy"></i>美食挑戰榜</h2><div class="placeholder"></div></div><div class="page-content" id="challenge-list-container"></div>
       </div>
-
-      <!-- 個人頁面 -->
       <div id="profile-page" class="page">
         <div class="page-header"><div class="placeholder"></div><h2 id="profile-header"><i class="fa-solid fa-user"></i>個人檔案</h2><a id="profile-login-btn" class="header-action" style="display: none;" onclick="showPage('login-page')">登入/註冊</a><a id="profile-logout-btn" class="header-action" style="display: none;" onclick="handleSignOut()">登出</a></div>
         <div class="profile-tabs"><button class="tab-btn active" onclick="showProfileTab('accounting', this)">記帳顯示</button><button class="tab-btn" onclick="showProfileTab('posts', this)">我的貼文</button><button class="tab-btn" onclick="showProfileTab('favorites', this)">最愛餐廳</button><button class="tab-btn" onclick="showProfileTab('friends', this)">好友名單</button><button class="tab-btn" onclick="showProfileTab('analytics', this)">數據分析</button></div>
         <div class="page-content" style="padding-top:0;"><div id="accounting-content" class="tab-content active"></div><div id="posts-content" class="tab-content"></div><div id="favorites-content" class="tab-content"></div><div id="friends-content" class="tab-content"></div><div id="analytics-content" class="tab-content"></div></div>
       </div>
-
-      <!-- 登入/註冊頁面 -->
       <div id="login-page" class="page"><div class="page-header"><i class="fa-solid fa-chevron-left header-back-btn" onclick="goBack()"></i><h2>會員登入</h2><div class="placeholder"></div></div><div class="page-content"><div class="auth-form-container"><input type="email" id="login-email-input" placeholder="電子郵件" required><input type="password" id="login-password-input" placeholder="密碼" required><div id="login-error" class="auth-error-message"></div><button class="btn-auth primary" onclick="handleSignIn()">登入</button><div class="auth-separator">或</div><button class="btn-auth secondary" onclick="handleGoogleSignIn()"><i class="fab fa-google"></i> 使用 Google 登入</button><div class="auth-switch-link" onclick="showPage('register-page')">還沒有帳號？點此註冊</div></div></div></div>
       <div id="register-page" class="page"><div class="page-header"><i class="fa-solid fa-chevron-left header-back-btn" onclick="goBack()"></i><h2>註冊新帳號</h2><div class="placeholder"></div></div><div class="page-content"><div class="auth-form-container"><input type="text" id="register-name-input" placeholder="姓名或暱稱" required><input type="email" id="register-email-input" placeholder="電子郵件" required><input type="password" id="register-password-input" placeholder="設定密碼 (至少6位數)" required><div id="register-error" class="auth-error-message"></div><button class="btn-auth primary" onclick="handleRegister()">註冊送出</button><div class="auth-switch-link" onclick="showPage('login-page')">已經有帳號了？點此登入</div></div></div></div>
     </main>
@@ -196,12 +188,14 @@
         }
 
         function addRestaurantMarker(place) {
-            const utensilIcon = {
-                path: 'M8.5,1.5C9.3,1.5,10,2.2,10,3V14.5C10,15.3,9.3,16,8.5,16H7.5C6.7,16,6,15.3,6,14.5V3C6,2.2,6.7,1.5,7.5,1.5H8.5M8.5,0H7.5C5.9,0,4.5,1.3,4.5,3V14.5C4.5,16.1,5.9,17.5,7.5,17.5H8.5C10.1,17.5,11.5,16.1,11.5,14.5V3C11.5,1.3,10.1,0,8.5,0ZM2.5,0C2.5,0,2.2,1.5,2.5,3S4,3.3,4,4.5S2.5,5.5,2.5,5.5V14.5C2.5,15.3,1.8,16,1,16S-0.5,15.3,-0.5,14.5V5.5C-0.5,5.5,1,4.8,1,4.5S2.5,3,2.5,3C2.8,1.5,2.5,0,2.5,0Z',
-                fillColor: '#EA4335', fillOpacity: 1, strokeWeight: 0, rotation: 0, scale: 1.2, anchor: new google.maps.Point(4, 16),
-            };
-            const marker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name, icon: utensilIcon, animation: google.maps.Animation.DROP });
-            marker.addListener('click', (e) => { e.domEvent.stopPropagation(); handlePlaceSelection(place, marker); });
+            const marker = new google.maps.Marker({
+                position: place.geometry.location,
+                map: map,
+                title: place.name,
+                icon: place.icon, // ** 使用 Google 官方圖示 **
+                animation: google.maps.Animation.DROP,
+            });
+            marker.addListener('click', (e) => { e.domEvent.stopPropagation(); handlePlaceSelection(place); });
             marker.place_id = place.place_id;
             restaurantMarkers.push(marker);
         }
@@ -210,7 +204,7 @@
             const item = document.createElement("div");
             item.className = "list-item";
             const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`;
-            item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div><div class="item-details">${place.vicinity || ''}<br>${ratingHtml}</div></div>`;
+            item.innerHTML = `<div class="item-icon"><img src="${place.icon}" style="width:24px; height:24px;"></div><div class="item-info"><div class="item-name">${place.name}</div><div class="item-details">${place.vicinity || ''}<br>${ratingHtml}</div></div>`;
             item.onclick = () => handlePlaceSelection(place);
             container.appendChild(item);
         }
@@ -249,18 +243,17 @@
         function renderDetailsPanel(place, routeInfo) {
             const contentArea = document.getElementById('details-content-area');
             const panelHeader = document.getElementById('panel-header');
-            panelHeader.textContent = ''; // 清空標題
             contentArea.innerHTML = `<div class="details-placeholder"><p>正在載入餐廳詳情...</p></div>`;
             const request = { placeId: place.place_id, fields: ['name', 'rating', 'user_ratings_total', 'formatted_phone_number', 'opening_hours', 'vicinity', 'formatted_address'] };
             placesService.getDetails(request, (details, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && details) {
+                    panelHeader.textContent = details.name; // 更新標題為餐廳名
                     const drivingTime = routeInfo?.driving?.duration.text || 'N/A';
                     const walkingTime = routeInfo?.walking?.duration.text || 'N/A';
                     let hoursHtml = '<ul><li>未提供營業時間資訊</li></ul>';
                     if (details.opening_hours) { hoursHtml = `<ul class="hours-list">${details.opening_hours.weekday_text.map(day => `<li>${day.replace(/：/g, ': ')}</li>`).join('')}</ul>`; }
                     const myReviews = DataManager.getPosts().filter(p => p.name === details.name);
                     const reviewsHtml = myReviews.length > 0 ? myReviews.map(review => `<div class="review-card"><div class="review-card-header"><div class="review-avatar">${currentUser?.displayName?.charAt(0) || '我'}</div><div class="review-author">${currentUser?.displayName || '我'}</div><div class="review-rating">${'★'.repeat(review.rating)}</div></div><div class="details-section-content">${Utils.sanitizeHTML(review.content) || '(無評論內容)'}</div></div>`).join('') : '<p>尚無相關評論。</p>';
-                    panelHeader.textContent = details.name; // 更新標題為餐廳名
                     contentArea.innerHTML = `
                         <div class="details-header"><div class="details-header-info"><h3>${details.name}</h3><p>${details.rating || 'N/A'} ★ (${details.user_ratings_total || 0} 則 Google 評論)</p></div></div>
                         <div class="route-info"><div class="route-option"><i class="fas fa-car"></i><span class="time">${drivingTime}</span><span class="mode">開車</span></div><div class="route-option"><i class="fas fa-walking"></i><span class="time">${walkingTime}</span><span class="mode">步行</span></div></div>
