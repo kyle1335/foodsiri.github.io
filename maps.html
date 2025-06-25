@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Google Maps - 自訂資訊卡片示範 (已修正)</title>
+  <title>Google Maps - 完整互動地圖示範</title>
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
 
@@ -18,7 +18,7 @@
     .info-card-content { padding: 16px; }
     .info-card-header .restaurant-name { font-size: 20px; font-weight: 600; margin: 0; }
     .info-card-header .restaurant-subname { font-size: 14px; color: #5f6368; margin: 2px 0 0 0; }
-    .info-card-details { display: flex; align-items: center; font-size: 14px; color: #5f6368; margin-top: 8px; }
+    .info-card-details { display: flex; align-items: center; font-size: 14px; color: #5f6368; margin-top: 8px; flex-wrap: wrap; }
     .info-card-details .rating-score { font-weight: 500; color: #3C4043; }
     .info-card-details .rating-stars { color: #FDBF42; margin: 0 4px; }
     .info-card-details .meta-dot { margin: 0 6px; }
@@ -26,6 +26,8 @@
     .info-card-status .status.open { color: #34A853; font-weight: 500; }
     .info-card-status .status.closed { color: #EA4335; font-weight: 500; }
     .info-card-status .hours { color: #5f6368; }
+    .info-card-route { border-top: 1px solid #eee; margin-top: 12px; padding-top: 12px; font-size: 14px; color: #3C4043; font-weight: 500; }
+    .info-card-route i { color: #1a73e8; }
     .info-card-actions { display: flex; justify-content: space-around; padding: 8px; border-top: 1px solid #e0e0e0; }
     .info-card-actions .action-btn { background: none; border: none; border-radius: 8px; padding: 8px 12px; font-size: 14px; color: #1a73e8; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background-color 0.2s; }
     .info-card-actions .action-btn:hover { background-color: #e8f0fe; }
@@ -39,15 +41,7 @@
   
   <div id="map"></div>
 
-  <!-- 
-    【核心修改】
-    在這裡引入 InfoBox.js 的腳本。
-    它必須在載入 Google Maps API 的 <script> 標籤之前被引入。
-    這樣可以確保當 Google Maps API 呼叫 initMap 時，InfoBox 已經被定義。
-  -->
   <script src="https://cdn.jsdelivr.net/gh/googlemaps/v3-utility-library@master/infobox/src/infobox.min.js"></script>
-  
-  <!-- 引入 Google Maps API -->
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places&callback=initMap"
     async
@@ -58,133 +52,232 @@
     let map;
     let infoBox;
     let placesService;
+    let directionsService;
+    let directionsRenderer;
+    let userPosition = null; // 用來儲存用戶的即時位置
+    let userMarker = null;   // 用來顯示用戶位置的藍色標記
+    let restaurantMarkers = []; // 儲存餐廳標記
     let infoCardTemplate = '';
-
-    // 模擬餐廳資料
-    const mockRestaurantData = {
-      placeId: "ChIJN1t_tDeuEmsRUsoyG83frY4", // Google 官方範例 Place ID (雪梨)
-      name: "Google Sydney",
-      position: { lat: -33.8665433, lng: 151.1956316 }
-    };
 
     // 1. Google Maps 初始化函式
     async function initMap() {
+      // 預設中心點 (如果無法取得用戶位置)
+      const defaultCenter = { lat: 25.0479, lng: 121.5171 };
+
       map = new google.maps.Map(document.getElementById("map"), {
-        center: mockRestaurantData.position,
-        zoom: 16,
+        center: defaultCenter,
+        zoom: 15,
         clickableIcons: false,
       });
 
+      // 初始化所需服務
       placesService = new google.maps.places.PlacesService(map);
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true, // 我們自己處理起點和終點標記
+        polylineOptions: {
+            strokeColor: '#4285F4',
+            strokeWeight: 6,
+            strokeOpacity: 0.8
+        }
+      });
       
+      // 預先準備好 HTML 模板
       infoCardTemplate = `
         <div class="info-card">
           <div class="info-card-image"><img src="{PHOTO_URL}" alt="{RESTAURANT_NAME}"></div>
           <div class="info-card-content">
-            <div class="info-card-header">
-              <h3 class="restaurant-name">{RESTAURANT_NAME}</h3><p class="restaurant-subname">{RESTAURANT_SUB_NAME}</p>
-            </div>
+            <div class="info-card-header"><h3 class="restaurant-name">{RESTAURANT_NAME}</h3></div>
             <div class="info-card-details">
               <span class="rating"><span class="rating-score">{RATING_SCORE}</span><span class="rating-stars">{RATING_STARS}</span><span class="rating-count">({RATING_COUNT})</span></span>
-              <span class="meta-dot">·</span><span class="category">{CATEGORY}</span><span class="meta-dot">·</span><span class="price-range">{PRICE_RANGE}</span>
+              <span class="meta-dot">·</span><span class="category">{CATEGORY}</span>
             </div>
             <div class="info-card-status"><span class="status {OPEN_STATUS_CLASS}">{OPEN_STATUS_TEXT}</span><span class="hours"> · {HOURS_TEXT}</span></div>
+            <div class="info-card-route">{ROUTE_INFO}</div>
           </div>
           <div class="info-card-actions">
             <button class="action-btn primary"><i class="fas fa-directions"></i> 導航</button><button class="action-btn"><i class="far fa-bookmark"></i> 儲存</button><button class="action-btn"><i class="fas fa-share-square"></i> 分享</button>
           </div>
         </div>`;
 
-      // 2. 初始化 InfoBox
-      // 現在 InfoBox 是已定義的，這行程式碼將會成功執行
+      // 初始化 InfoBox
       infoBox = new InfoBox({
         content: "",
-        disableAutoPan: false,
-        maxWidth: 0,
         pixelOffset: new google.maps.Size(-160, -320),
-        zIndex: null,
         boxClass: "info-box-container",
-        closeBoxURL: "", // 我們用自己的 CSS 關閉按鈕，這裡留空
-        infoBoxClearance: new google.maps.Size(1, 1),
-        isHidden: false,
-        pane: "floatPane",
-        enableEventPropagation: false,
+        closeBoxURL: "",
+        // ... 其他 InfoBox 設定
       });
 
-      // 3. 建立 Marker
-      const marker = new google.maps.Marker({
-        position: mockRestaurantData.position,
-        map: map,
-        title: mockRestaurantData.name,
-        icon: {
-            url: "https://maps.google.com/mapfiles/ms/icons/restaurant.png",
-            scaledSize: new google.maps.Size(32, 32)
+      // 設定事件監聽
+      map.addListener("click", () => resetMapView());
+      infoBox.addListener('closeclick', () => resetMapView());
+      map.addListener("idle", () => {
+        if(!directionsRenderer.getDirections()){ // 只有在沒有路徑時才搜尋
+            searchNearbyRestaurants();
         }
       });
-
-      // 4. 為 Marker 設定點擊事件
-      marker.addListener("click", () => {
-        showInfoCard(mockRestaurantData.placeId, marker);
-      });
       
-      // 5. 點擊地圖空白處關閉 InfoBox
-      map.addListener("click", () => {
-        infoBox.close();
-      });
+      // 啟動用戶即時定位
+      startUserLocationTracking();
     }
 
-    // 函式：顯示資訊卡片
-    function showInfoCard(placeId, marker) {
-      infoBox.close();
+    // 2. 用戶定位與標記
+    function startUserLocationTracking() {
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+          (position) => {
+            userPosition = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            // 第一次獲取位置時，將地圖移至該處
+            if (!userMarker) {
+              map.setCenter(userPosition);
+            }
+            // 更新藍色標記位置
+            if (userMarker) {
+              userMarker.setPosition(userPosition);
+            } else {
+              userMarker = new google.maps.Marker({
+                position: userPosition,
+                map,
+                icon: {
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 8,
+                  fillColor: '#4285F4',
+                  fillOpacity: 1,
+                  strokeColor: 'white',
+                  strokeWeight: 2,
+                },
+                zIndex: 100 // 確保在最上層
+              });
+            }
+          },
+          () => {
+            alert("無法獲取您的地理位置。");
+          },
+          { enableHighAccuracy: true }
+        );
+      } else {
+        alert("您的瀏覽器不支援地理位置功能。");
+      }
+    }
 
+    // 3. 搜尋與顯示餐廳
+    function searchNearbyRestaurants() {
+      const location = map.getCenter();
       const request = {
-        placeId: placeId,
-        fields: ['name', 'formatted_address', 'photos', 'opening_hours', 'rating', 'user_ratings_total', 'types', 'price_level']
+        location: location,
+        radius: '1500',
+        type: ['restaurant']
       };
+      placesService.nearbySearch(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+            clearMarkers();
+            results.forEach(place => createRestaurantMarker(place));
+        }
+      });
+    }
+    
+    function createRestaurantMarker(place) {
+        const marker = new google.maps.Marker({
+            map,
+            position: place.geometry.location,
+            title: place.name,
+            icon: {
+                url: "https://maps.google.com/mapfiles/ms/icons/restaurant.png",
+                scaledSize: new google.maps.Size(32, 32)
+            }
+        });
+        marker.addListener("click", () => {
+            handleMarkerClick(place, marker);
+        });
+        restaurantMarkers.push(marker);
+    }
+    
+    function clearMarkers() {
+        restaurantMarkers.forEach(m => m.setMap(null));
+        restaurantMarkers = [];
+    }
+    
+    // 4. 處理互動：點擊、路徑規劃、顯示資訊
+    function handleMarkerClick(place, marker) {
+        // 隱藏其他標記，只顯示選中的
+        restaurantMarkers.forEach(m => {
+            if (m !== marker) m.setVisible(false);
+        });
 
-      placesService.getDetails(request, (place, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+        // 規劃路徑
+        calculateAndDisplayRoute(place.geometry.location);
+
+        // 顯示資訊卡片
+        showInfoCard(place.place_id, marker);
+    }
+
+    function calculateAndDisplayRoute(destination) {
+        if (!userPosition) {
+            alert("正在獲取您的位置，請稍後再試。");
+            return;
+        }
+        directionsService.route({
+            origin: userPosition,
+            destination: destination,
+            travelMode: 'DRIVING' // 預設為開車
+        }, (result, status) => {
+            if (status === 'OK') {
+                directionsRenderer.setDirections(result);
+                // 將路徑資訊傳遞給 InfoCard
+                const routeLeg = result.routes[0].legs[0];
+                showInfoCard(null, null, routeLeg); // 傳入路徑資訊來更新卡片
+            } else {
+                console.error('路徑規劃失敗: ' + status);
+            }
+        });
+    }
+
+    function showInfoCard(placeId, marker, routeLeg = null) {
+      if(routeLeg && infoBox.getContent()) {
+        // 如果只是更新路徑資訊，則直接修改現有卡片的內容
+        const currentContent = infoBox.getContent();
+        const routeInfoHtml = `<div class="info-card-route"><i class="fas fa-route"></i> 距離 ${routeLeg.distance.text}，約需 ${routeLeg.duration.text}</div>`;
+        currentContent.querySelector('.info-card-route').innerHTML = routeInfoHtml;
+        return;
+      }
+      
+      infoBox.close(); // 先關閉
+
+      placesService.getDetails({ placeId, fields: ['name', 'formatted_address', 'photos', 'opening_hours', 'rating', 'user_ratings_total', 'types'] }, (place, status) => {
+        if (status === 'OK' && place) {
           const content = createInfoCardContent(place);
           infoBox.setContent(content);
           infoBox.open(map, marker);
-        } else {
-          console.error("無法獲取地點詳細資訊：" + status);
         }
       });
     }
 
-    // 函式：根據 API 回傳的資料產生 HTML 內容
     function createInfoCardContent(place) {
-      let photoUrl = "https://via.placeholder.com/320x140.png?text=No+Image";
-      if (place.photos && place.photos.length > 0) {
-        photoUrl = place.photos[0].getUrl({ maxWidth: 400 });
-      }
+      // 處理圖片
+      const photoUrl = place.photos?.[0]?.getUrl({ maxWidth: 400 }) || "https://via.placeholder.com/320x140.png?text=No+Image";
       
+      // 處理評分星星
       let starsHtml = '無評分';
       if (place.rating) {
         const roundedRating = Math.round(place.rating);
-        starsHtml = '';
-        for (let i = 0; i < 5; i++) {
-          starsHtml += `<i class="fa-solid fa-star" ${i < roundedRating ? '' : 'style="opacity:0.3"'}></i>`;
-        }
+        starsHtml = Array(5).fill(0).map((_, i) => `<i class="fa-solid fa-star" ${i < roundedRating ? '' : 'style="opacity:0.3"'}></i>`).join('');
       }
 
-      const priceRange = place.price_level ? '$'.repeat(place.price_level) : '';
-      let openStatusText = '暫無營業時間資訊';
-      let openStatusClass = '';
-      let hoursText = '';
+      // 處理營業狀態
+      let openStatusText = '暫無營業時間資訊', openStatusClass = '', hoursText = '';
       if (place.opening_hours) {
         if (place.opening_hours.isOpen()) {
-          openStatusText = '營業中';
-          openStatusClass = 'open';
+          openStatusText = '營業中'; openStatusClass = 'open';
           const today = new Date().getDay();
           const period = place.opening_hours.periods.find(p => p.open.day === today);
-          if (period && period.close) {
-             hoursText = `營業至 ${period.close.hours}:${String(period.close.minutes).padStart(2, '0')}`;
-          }
+          if (period?.close) hoursText = `營業至 ${period.close.hours}:${String(period.close.minutes).padStart(2, '0')}`;
         } else {
-          openStatusText = '休息中';
-          openStatusClass = 'closed';
+          openStatusText = '休息中'; openStatusClass = 'closed';
         }
       }
       
@@ -195,22 +288,30 @@
         .replace(/{RATING_SCORE}/g, place.rating?.toFixed(1) || '')
         .replace(/{RATING_STARS}/g, starsHtml)
         .replace(/{RATING_COUNT}/g, place.user_ratings_total?.toLocaleString() || '0')
-        .replace(/{CATEGORY}/g, place.types ? place.types[0] : '餐廳')
-        .replace(/{PRICE_RANGE}/g, priceRange)
+        .replace(/{CATEGORY}/g, place.types?.[0] || '餐廳')
+        .replace(/{PRICE_RANGE}/g, '') // 價格資訊需要另外請求，此處留空
         .replace(/{OPEN_STATUS_CLASS}/g, openStatusClass)
         .replace(/{OPEN_STATUS_TEXT}/g, openStatusText)
-        .replace(/{HOURS_TEXT}/g, hoursText);
+        .replace(/{HOURS_TEXT}/g, hoursText)
+        .replace(/{ROUTE_INFO}/g, '<div class="info-card-route"></div>'); // 預留路徑資訊位置
 
       const container = document.createElement('div');
       container.innerHTML = content;
-      
       const closeButton = document.createElement('button');
       closeButton.className = 'info-box-close';
       closeButton.innerHTML = '×';
-      closeButton.onclick = () => infoBox.close();
+      closeButton.onclick = () => resetMapView();
       container.querySelector('.info-card').prepend(closeButton);
       
       return container;
+    }
+    
+    // 5. 重置地圖視圖
+    function resetMapView() {
+        infoBox.close();
+        directionsRenderer.setDirections({ routes: [] }); // 清除路徑
+        restaurantMarkers.forEach(m => m.setVisible(true)); // 恢復所有標記的顯示
+        searchNearbyRestaurants(); // 重新搜尋附近的餐廳
     }
   </script>
 </body>
