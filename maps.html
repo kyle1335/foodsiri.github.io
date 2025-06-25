@@ -6,7 +6,7 @@
   <title>FoodieApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   
-  <!-- 使用穩定版 API -->
+  <!-- 使用穩定版 API，確保功能可靠 -->
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
     async
@@ -18,7 +18,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   
   <style>
-    /* CSS 樣式完全不變 */
+    /* CSS 樣式 */
     :root { --primary-color: #667eea; --secondary-color: #764ba2; --success-color: #28a745; --background-color: #f8f9fa; --text-color: #333; --text-light: #6c757d; --nav-height: 60px; }
     html, body { height: 100%; margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--background-color); }
     .app-container { width: 100%; height: 100vh; display: flex; flex-direction: column; }
@@ -59,7 +59,7 @@
     .page-header h2 i { margin-right: 10px; color: var(--primary-color); }
     .header-action { font-size: 16px; color: var(--primary-color); text-decoration: none; cursor: pointer; }
     .header-back-btn { font-size: 20px; color: var(--text-color); cursor: pointer; }
-    .page-header .placeholder { width: 24px; } /* 用於對齊的佔位符 */
+    .page-header .placeholder { width: 24px; }
     .page-content { flex-grow: 1; overflow-y: auto; padding: 20px; }
     .placeholder-text { text-align: center; color: var(--text-light); margin-top: 50px; padding: 20px; }
     .btn { display: block; width: 100%; padding: 15px; background-color: var(--success-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; }
@@ -214,7 +214,7 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // --- 2. 應用程式變數 (無變更) ---
+        // --- 2. 應用程式變數 ---
         let currentUser = null;
         let map, userGpsPosition, userMarker, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
         let restaurantMarkers = [];
@@ -251,7 +251,6 @@
         function processAndDisplayResults(places, center) { const listContainer = document.getElementById("list-content-area"); const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) })); placesWithDistance.sort((a, b) => a.distance - b.distance); listContainer.innerHTML = ""; placesWithDistance.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place); }); }
         function addRestaurantMarker(place) { const marker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name }); marker.addListener('click', () => handlePlaceSelection(place)); marker.place_id = place.place_id; restaurantMarkers.push(marker); }
         
-        // ======================= ★★★ 修改重點区域 START ★★★ =======================
         function addRestaurantToList(place, routeInfo = null) {
             const listContainer = document.getElementById("list-content-area");
             const item = document.createElement("div");
@@ -262,7 +261,7 @@
             if (place.business_status === "CLOSED_PERMANENTLY") {
                 openStatusHtml = `<span class="open-status closed">永久停業</span>`;
             } else if (place.opening_hours) {
-                // 對於列表，我們現在統一使用推薦的 isOpen() 方法來消除警告
+                // 修正：統一使用 isOpen() 方法，消除棄用警告
                 const isOpen = place.opening_hours.isOpen();
                 openStatusHtml = isOpen ? `<span class="open-status open">營業中</span>` : `<span class="open-status closed">休息中</span>`;
             }
@@ -275,7 +274,6 @@
             item.onclick = () => handlePlaceSelection(place);
             listContainer.appendChild(item);
         }
-        // ======================= ★★★ 修改重點区域 END ★★★ =======================
 
         function handlePlaceSelection(place) { const marker = restaurantMarkers.find((m) => m.place_id === place.place_id); if (marker) { map.panTo(marker.getPosition()); } else { map.panTo(place.geometry.location); } highlightListItem(place.place_id, true); calculateAndDisplayRoute(place); }
         function calculateAndDisplayRoute(place) { if (!userGpsPosition || !place.geometry || !place.geometry.location) { return; } document.getElementById('clear-search').style.display = 'flex'; clearRestaurantMarkers(); const request = { origin: userGpsPosition, destination: place.geometry.location, travelMode: google.maps.TravelMode.DRIVING }; directionsService.route(request, (res, stat) => { if (stat !== 'OK') { directionsRenderer.setDirections({ routes: [] }); addRestaurantMarker(place); showSinglePlaceResult(place); return; } directionsRenderer.setDirections(res); const leg = res.routes[0].legs[0]; const routeInfo = { driving: { distance: leg.distance.text, duration: leg.duration.text } }; const destinationMarker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name }); restaurantMarkers.push(destinationMarker); map.fitBounds(res.routes[0].bounds); showPlaceDetailsInWindow(place, destinationMarker, routeInfo); showSinglePlaceResult(place, routeInfo); }); }
