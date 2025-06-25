@@ -173,7 +173,7 @@
   -->
   <script src="https://cdn.jsdelivr.net/gh/googlemaps/v3-utility-library@master/infobox/src/infobox.min.js"></script>
   <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&callback=initMap"
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places&callback=initMap"
     async
   ></script>
 
@@ -181,21 +181,14 @@
     // 全域變數
     let map;
     let infoBox;
+    let placesService;
     let infoCardTemplate = '';
 
-    // 模擬從 Places API 獲取的餐廳資料
+    // 模擬餐廳資料
     const mockRestaurantData = {
-      name: "Ichiran Ramen",
-      subName: "一蘭拉麵 台灣台北本店",
-      photoUrl: "https://images.unsplash.com/photo-1552634354-9a5160b83F43?q=80&w=1770&auto=format&fit=crop", // 使用 Unsplash 的範例圖片
-      rating: 4.2,
-      userRatingsTotal: 18500,
-      types: ["拉麵店"],
-      priceLevel: 3,
-      openingHours: {
-        isOpen: () => true // 模擬營業中
-      },
-      position: { lat: 25.0339, lng: 121.5645 } // 台北101 附近
+      placeId: "ChIJN1t_tDeuEmsRUsoyG83frY4", // Google 官方範例 Place ID (雪梨)
+      name: "Google Sydney",
+      position: { lat: -33.8665433, lng: 151.1956316 }
     };
 
     // 1. Google Maps 初始化函式
@@ -206,10 +199,12 @@
         clickableIcons: false,
       });
 
+      placesService = new google.maps.places.PlacesService(map);
+      
       // 預先準備好 HTML 模板
       infoCardTemplate = `
         <div class="info-card">
-          <div class="info-card-image"><img src="{PHOTO_URL}" alt="{RESTAURANT_NAME} 的照片"></div>
+          <div class="info-card-image"><img src="{PHOTO_URL}" alt="{RESTAURANT_NAME}"></div>
           <div class="info-card-content">
             <div class="info-card-header">
               <h3 class="restaurant-name">{RESTAURANT_NAME}</h3><p class="restaurant-subname">{RESTAURANT_SUB_NAME}</p>
@@ -230,32 +225,30 @@
         content: "",
         disableAutoPan: false,
         maxWidth: 0,
-        pixelOffset: new google.maps.Size(-160, -320), // 調整 Y 軸偏移，讓卡片底部更靠近 Marker
+        pixelOffset: new google.maps.Size(-160, -320),
         zIndex: null,
         boxClass: "info-box-container",
-        closeBoxMargin: "10px",
-        closeBoxURL: "", // 我們用自己的 CSS 關閉按鈕，這裡留空
+        closeBoxURL: "",
         infoBoxClearance: new google.maps.Size(1, 1),
         isHidden: false,
         pane: "floatPane",
         enableEventPropagation: false,
       });
-      // 監聽 InfoBox 自己的關閉按鈕事件
-      google.maps.event.addListener(infoBox, 'closeclick', function() {
-        // 在這裡可以加入關閉後的額外邏輯
-      });
-
 
       // 3. 建立 Marker
       const marker = new google.maps.Marker({
         position: mockRestaurantData.position,
         map: map,
         title: mockRestaurantData.name,
+        icon: {
+            url: "https://maps.google.com/mapfiles/ms/icons/restaurant.png",
+            scaledSize: new google.maps.Size(32, 32)
+        }
       });
 
       // 4. 為 Marker 設定點擊事件
       marker.addListener("click", () => {
-        showInfoCard(mockRestaurantData, marker);
+        showInfoCard(mockRestaurantData.placeId, marker);
       });
       
       // 5. 點擊地圖空白處關閉 InfoBox
@@ -265,42 +258,81 @@
     }
 
     // 函式：顯示資訊卡片
-    function showInfoCard(data, marker) {
-      infoBox.close(); // 先關閉可能已開啟的 InfoBox
+    function showInfoCard(placeId, marker) {
+      infoBox.close();
 
-      const content = createInfoCardContent(data);
-      infoBox.setContent(content);
-      
-      infoBox.open(map, marker);
+      const request = {
+        placeId: placeId,
+        fields: ['name', 'formatted_address', 'photos', 'opening_hours', 'rating', 'user_ratings_total', 'types', 'price_level']
+      };
+
+      placesService.getDetails(request, (place, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+          const content = createInfoCardContent(place);
+          infoBox.setContent(content);
+          infoBox.open(map, marker);
+        } else {
+          console.error("無法獲取地點詳細資訊：" + status);
+        }
+      });
     }
 
-    // 函式：根據資料產生 HTML 內容
-    function createInfoCardContent(data) {
+    // 函式：根據 API 回傳的資料產生 HTML 內容
+    function createInfoCardContent(place) {
+      // 處理圖片
+      let photoUrl = "https://via.placeholder.com/320x140.png?text=No+Image";
+      if (place.photos && place.photos.length > 0) {
+        photoUrl = place.photos[0].getUrl({ maxWidth: 400 });
+      }
+      
       // 處理評分星星
       let starsHtml = '';
-      const roundedRating = Math.round(data.rating);
-      for (let i = 0; i < 5; i++) {
-        starsHtml += `<i class="fa-solid fa-star" ${i < roundedRating ? '' : 'style="opacity:0.3"'}></i>`;
+      if (place.rating) {
+        const roundedRating = Math.round(place.rating);
+        for (let i = 0; i < 5; i++) {
+          starsHtml += `<i class="fa-solid fa-star" ${i < roundedRating ? '' : 'style="opacity:0.3"'}></i>`;
+        }
+      } else {
+        starsHtml = '無評分';
       }
 
-      const priceRange = '$'.repeat(data.priceLevel);
-      const isOpen = data.openingHours.isOpen();
+      // 處理價格範圍
+      const priceRange = place.price_level ? '$'.repeat(place.price_level) : '';
+
+      // 處理營業狀態
+      let openStatusText = '暫無營業時間資訊';
+      let openStatusClass = '';
+      let hoursText = '今日';
+      if (place.opening_hours) {
+        if (place.opening_hours.isOpen()) {
+          openStatusText = '營業中';
+          openStatusClass = 'open';
+          // 取得今日營業時間
+          const today = new Date().getDay();
+          const period = place.opening_hours.periods.find(p => p.open.day === today);
+          if (period && period.close) {
+             hoursText = `營業至 ${period.close.hours}:${String(period.close.minutes).padStart(2, '0')}`;
+          }
+        } else {
+          openStatusText = '休息中';
+          openStatusClass = 'closed';
+        }
+      }
       
       // 動態替換模板中的佔位符
       let content = infoCardTemplate
-        .replace(/{PHOTO_URL}/g, data.photoUrl)
-        .replace(/{RESTAURANT_NAME}/g, data.name)
-        .replace(/{RESTAURANT_SUB_NAME}/g, data.subName)
-        .replace(/{RATING_SCORE}/g, data.rating.toFixed(1))
+        .replace(/{PHOTO_URL}/g, photoUrl)
+        .replace(/{RESTAURANT_NAME}/g, place.name || '未知名稱')
+        .replace(/{RESTAURANT_SUB_NAME}/g, '') // 暫時留空
+        .replace(/{RATING_SCORE}/g, place.rating?.toFixed(1) || '')
         .replace(/{RATING_STARS}/g, starsHtml)
-        .replace(/{RATING_COUNT}/g, data.userRatingsTotal.toLocaleString())
-        .replace(/{CATEGORY}/g, data.types.join(', '))
+        .replace(/{RATING_COUNT}/g, place.user_ratings_total?.toLocaleString() || '')
+        .replace(/{CATEGORY}/g, place.types ? place.types[0] : '')
         .replace(/{PRICE_RANGE}/g, priceRange)
-        .replace(/{OPEN_STATUS_CLASS}/g, isOpen ? 'open' : 'closed')
-        .replace(/{OPEN_STATUS_TEXT}/g, isOpen ? '營業中' : '休息中')
-        .replace(/{HOURS_TEXT}/g, "營業至下午10:00"); // 模擬時間
+        .replace(/{OPEN_STATUS_CLASS}/g, openStatusClass)
+        .replace(/{OPEN_STATUS_TEXT}/g, openStatusText)
+        .replace(/{HOURS_TEXT}/g, hoursText);
 
-      // 建立一個 div 元素來包裹內容，並加上我們自訂的關閉按鈕
       const container = document.createElement('div');
       container.innerHTML = content;
       
@@ -308,8 +340,7 @@
       closeButton.className = 'info-box-close';
       closeButton.innerHTML = '×';
       closeButton.onclick = () => infoBox.close();
-      
-      container.prepend(closeButton);
+      container.querySelector('.info-card').prepend(closeButton);
       
       return container;
     }
