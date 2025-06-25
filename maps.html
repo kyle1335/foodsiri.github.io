@@ -3,9 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>FoodieApp</title>
+  <title>美食探險家 - FoodieApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap" async defer></script>
+  
+  <!-- Google Maps API Script - 恢復為適用舊版 API 的傳統載入方式 -->
+  <script 
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
+    async
+    defer>
+  </script>
   
   <style>
     /* CSS樣式保持不變，此處省略以節省篇幅 */
@@ -40,181 +46,30 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // === 1. 模擬 Firebase Auth ===
-      class MockAuth {
-        constructor() { this.currentUser = JSON.parse(localStorage.getItem('currentUser')) || null; this.callbacks = []; }
-        onAuthStateChanged(callback) { this.callbacks.push(callback); setTimeout(() => callback(this.currentUser), 100); }
-        async signInWithEmailAndPassword(email, password) {
-          const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-          const user = users.find(u => u.email === email && u.password === password);
-          if (user) {
-            this.currentUser = { uid: user.uid, email: user.email, displayName: user.displayName };
-            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
-            this.callbacks.forEach(cb => cb(this.currentUser));
-            return { user: this.currentUser };
-          } else { throw new Error('Invalid credentials'); }
-        }
-        async createUserWithEmailAndPassword(email, password) {
-          const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-          const uid = 'user_' + Date.now();
-          const newUser = { uid, email, password, displayName: '' };
-          users.push(newUser);
-          localStorage.setItem('registeredUsers', JSON.stringify(users));
-          this.currentUser = { uid, email, displayName: '' };
-          localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
-          return {
-            user: { ...this.currentUser, updateProfile: async (profile) => {
-                this.currentUser.displayName = profile.displayName;
-                localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
-                const updatedUsers = users.map(u => u.uid === uid ? { ...u, displayName: profile.displayName } : u);
-                localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
-                this.callbacks.forEach(cb => cb(this.currentUser));
-            }}};
-        }
-        async signOut() { this.currentUser = null; localStorage.removeItem('currentUser'); this.callbacks.forEach(cb => cb(null)); }
-        async signInWithPopup(provider) {
-          const email = 'user@google.com'; const uid = 'google_' + Date.now();
-          this.currentUser = { uid, email, displayName: 'Google 用戶' };
-          localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
-          this.callbacks.forEach(cb => cb(this.currentUser));
-          return { user: this.currentUser };
-        }
-      }
-      const auth = new MockAuth();
-      window.firebase = { auth: () => auth };
-
-      // === 2. 全域變數 ===
-      let currentUser = null;
-      let map, userGpsPosition, userMarker, restaurantMarkers = [], debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
-      let isMapReady = false; let pageHistory = [];
-      
-      // === 3. 工具函式 ===
-      class Utils {
-        static showToast(message, type = 'success') {
-          const container = document.querySelector('.toast-container');
-          const toast = document.createElement('div');
-          toast.className = `toast ${type}`;
-          toast.textContent = message;
-          container.appendChild(toast);
-          setTimeout(() => { if (toast.parentNode) { toast.parentNode.removeChild(toast); }}, 3000);
-        }
-        static formatDate(dateString) { return new Date(dateString).toLocaleDateString('zh-TW'); }
-        static formatDateTime(dateString) { return new Date(dateString).toLocaleString('zh-TW'); }
-        static generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
-        static sanitizeHTML(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
-        static validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
-        static debounce(func, wait) { let timeout; return function executedFunction(...args) { const later = () => { clearTimeout(timeout); func(...args); }; clearTimeout(timeout); timeout = setTimeout(later, wait); }; }
-      }
-
-      // === 4. 數據管理 ===
-      class DataManager {
-        static _get(key, defaultValue) { if (!currentUser) return defaultValue; const storageKey = `${key}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(storageKey)) || defaultValue; }
-        static _set(key, value) { if (!currentUser) return; const storageKey = `${key}_${currentUser.uid}`; localStorage.setItem(storageKey, JSON.stringify(value)); }
-        static getPosts() { return this._get('posts', []); }
-        static savePosts(posts) { this._set('posts', posts); }
-        static getUserChallenges() { return this._get('userChallenges', {}); }
-        static saveUserChallenges(challenges) { this._set('userChallenges', challenges); }
-      }
-
-      // === 5. 照片管理器 (程式碼不變，省略) ===
-      class PhotoManager {
-        constructor() { this.selectedPhotos = []; this.maxPhotos = 5; this.maxFileSize = 5 * 1024 * 1024; }
-        handlePhotoSelection(type) {
-            const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.multiple = true;
-            if (type === 'camera') { input.capture = 'environment'; input.multiple = false; }
-            input.onchange = (e) => this.processFiles(Array.from(e.target.files)); input.click();
-        }
-        async processFiles(files) {
-            if (this.selectedPhotos.length + files.length > this.maxPhotos) { Utils.showToast(`最多只能選擇${this.maxPhotos}張照片！`, 'warning'); return; }
-            for (const file of files) {
-                if (file.size > this.maxFileSize) { Utils.showToast(`檔案 ${file.name} 超過5MB限制！`, 'warning'); continue; }
-                try { await this.processFile(file); } catch (error) { console.error('處理照片失敗:', error); Utils.showToast(`處理 ${file.name} 時發生錯誤`, 'error'); }
-            }
-            this.updatePhotoPreview();
-        }
-        async processFile(file) {
-            this.showProgress(true);
-            try {
-                const compressedFile = await this.compressImage(file);
-                const preview = await this.convertToBase64(compressedFile);
-                this.selectedPhotos.push({ id: Utils.generateId(), file: compressedFile, preview, name: file.name, uploaded: false, url: null });
-            } finally { this.showProgress(false); }
-        }
-        compressImage(file, maxWidth = 800, quality = 0.8) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                    let { width, height } = img;
-                    if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
-                    canvas.width = width; canvas.height = height;
-                    ctx.drawImage(img, 0, 0, width, height);
-                    canvas.toBlob(blob => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', quality);
-                };
-                img.onerror = reject; img.src = URL.createObjectURL(file);
-            });
-        }
-        convertToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); });}
-        showProgress(show) { const p = document.getElementById('upload-progress'); if (p) { p.style.display = show ? 'block' : 'none'; if(show){ const b = p.querySelector('.upload-progress-bar'); b.style.width = '0%'; setTimeout(() => b.style.width = '100%', 100);}}}
-        updatePhotoPreview() { const c = document.getElementById('photo-preview-container'); if (!c) return; c.innerHTML = this.selectedPhotos.map(p => `<div class="photo-preview"><img src="${p.preview}" alt="預覽"><button class="remove-btn" onclick="photoManager.removePhoto('${p.id}')">×</button></div>`).join(''); }
-        removePhoto(photoId) { this.selectedPhotos = this.selectedPhotos.filter(p => p.id !== photoId); this.updatePhotoPreview(); }
-        async uploadAllPhotos() { return this.selectedPhotos.map(p => p.preview); }
-        clearPhotos() { this.selectedPhotos = []; this.updatePhotoPreview(); }
-        getPhotoCount() { return this.selectedPhotos.length; }
-      }
+      // 省略其他不變的 JS 區塊 (Auth, Utils, DataManager, etc.)
+      class MockAuth { constructor() { this.currentUser = JSON.parse(localStorage.getItem('currentUser')) || null; this.callbacks = []; } onAuthStateChanged(callback) { this.callbacks.push(callback); setTimeout(() => callback(this.currentUser), 100); } async signInWithEmailAndPassword(email, password) { const users = JSON.parse(localStorage.getItem('registeredUsers')) || []; const user = users.find(u => u.email === email && u.password === password); if (user) { this.currentUser = { uid: user.uid, email: user.email, displayName: user.displayName }; localStorage.setItem('currentUser', JSON.stringify(this.currentUser)); this.callbacks.forEach(cb => cb(this.currentUser)); return { user: this.currentUser }; } else { throw new Error('Invalid credentials'); } } async createUserWithEmailAndPassword(email, password) { const users = JSON.parse(localStorage.getItem('registeredUsers')) || []; const uid = 'user_' + Date.now(); const newUser = { uid, email, password, displayName: '' }; users.push(newUser); localStorage.setItem('registeredUsers', JSON.stringify(users)); this.currentUser = { uid, email, displayName: '' }; localStorage.setItem('currentUser', JSON.stringify(this.currentUser)); return { user: { ...this.currentUser, updateProfile: async (profile) => { this.currentUser.displayName = profile.displayName; localStorage.setItem('currentUser', JSON.stringify(this.currentUser)); const updatedUsers = users.map(u => u.uid === uid ? { ...u, displayName: profile.displayName } : u); localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers)); this.callbacks.forEach(cb => cb(this.currentUser)); }}}; } async signOut() { this.currentUser = null; localStorage.removeItem('currentUser'); this.callbacks.forEach(cb => cb(null)); } async signInWithPopup(provider) { const email = 'user@google.com'; const uid = 'google_' + Date.now(); this.currentUser = { uid, email, displayName: 'Google 用戶' }; localStorage.setItem('currentUser', JSON.stringify(this.currentUser)); this.callbacks.forEach(cb => cb(this.currentUser)); return { user: this.currentUser }; } }
+      const auth = new MockAuth(); window.firebase = { auth: () => auth };
+      let currentUser = null; let map, userGpsPosition, userMarker, restaurantMarkers = [], debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer; let isMapReady = false; let pageHistory = [];
+      class Utils { static showToast(message, type = 'success') { const container = document.querySelector('.toast-container'); const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.textContent = message; container.appendChild(toast); setTimeout(() => { if (toast.parentNode) { toast.parentNode.removeChild(toast); }}, 3000); } static formatDate(dateString) { return new Date(dateString).toLocaleDateString('zh-TW'); } static formatDateTime(dateString) { return new Date(dateString).toLocaleString('zh-TW'); } static generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); } static sanitizeHTML(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; } static validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); } static debounce(func, wait) { let timeout; return function executedFunction(...args) { const later = () => { clearTimeout(timeout); func(...args); }; clearTimeout(timeout); timeout = setTimeout(later, wait); }; } }
+      class DataManager { static _get(key, defaultValue) { if (!currentUser) return defaultValue; const storageKey = `${key}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(storageKey)) || defaultValue; } static _set(key, value) { if (!currentUser) return; const storageKey = `${key}_${currentUser.uid}`; localStorage.setItem(storageKey, JSON.stringify(value)); } static getPosts() { return this._get('posts', []); } static savePosts(posts) { this._set('posts', posts); } static getUserChallenges() { return this._get('userChallenges', {}); } static saveUserChallenges(challenges) { this._set('userChallenges', challenges); } }
+      class PhotoManager { constructor() { this.selectedPhotos = []; this.maxPhotos = 5; this.maxFileSize = 5 * 1024 * 1024; } handlePhotoSelection(type) { const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.multiple = true; if (type === 'camera') { input.capture = 'environment'; input.multiple = false; } input.onchange = (e) => this.processFiles(Array.from(e.target.files)); input.click(); } async processFiles(files) { if (this.selectedPhotos.length + files.length > this.maxPhotos) { Utils.showToast(`最多只能選擇${this.maxPhotos}張照片！`, 'warning'); return; } for (const file of files) { if (file.size > this.maxFileSize) { Utils.showToast(`檔案 ${file.name} 超過5MB限制！`, 'warning'); continue; } try { await this.processFile(file); } catch (error) { console.error('處理照片失敗:', error); Utils.showToast(`處理 ${file.name} 時發生錯誤`, 'error'); } } this.updatePhotoPreview(); } async processFile(file) { this.showProgress(true); try { const compressedFile = await this.compressImage(file); const preview = await this.convertToBase64(compressedFile); this.selectedPhotos.push({ id: Utils.generateId(), file: compressedFile, preview, name: file.name, uploaded: false, url: null }); } finally { this.showProgress(false); } } compressImage(file, maxWidth = 800, quality = 0.8) { return new Promise((resolve, reject) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); let { width, height } = img; if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; } canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height); canvas.toBlob(blob => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', quality); }; img.onerror = reject; img.src = URL.createObjectURL(file); }); } convertToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); });} showProgress(show) { const p = document.getElementById('upload-progress'); if (p) { p.style.display = show ? 'block' : 'none'; if(show){ const b = p.querySelector('.upload-progress-bar'); b.style.width = '0%'; setTimeout(() => b.style.width = '100%', 100);}}} updatePhotoPreview() { const c = document.getElementById('photo-preview-container'); if (!c) return; c.innerHTML = this.selectedPhotos.map(p => `<div class="photo-preview"><img src="${p.preview}" alt="預覽"><button class="remove-btn" onclick="photoManager.removePhoto('${p.id}')">×</button></div>`).join(''); } removePhoto(photoId) { this.selectedPhotos = this.selectedPhotos.filter(p => p.id !== photoId); this.updatePhotoPreview(); } async uploadAllPhotos() { return this.selectedPhotos.map(p => p.preview); } clearPhotos() { this.selectedPhotos = []; this.updatePhotoPreview(); } getPhotoCount() { return this.selectedPhotos.length; } }
       const photoManager = new PhotoManager(); window.photoManager = photoManager;
+      window.showPage = function(pageId, navElement = null) { const activePage = document.querySelector('.page.active'); if (activePage && (!['login-page', 'register-page'].includes(activePage.id) || !['login-page', 'register-page'].includes(pageId))) { pageHistory.push(activePage.id); } document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(pageId).classList.add('active'); if (navElement) { document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active')); navElement.classList.add('active'); pageHistory = []; } setTimeout(() => { if (pageId === 'random-page') updateRandomPageStatus(); if (pageId === 'challenge-page') renderChallenges(); if (pageId === 'profile-page') renderProfilePage(); }, 0); }; window.goBack = function() { if (pageHistory.length > 0) { const lastPageId = pageHistory.pop(); document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(lastPageId).classList.add('active'); } else { showPage('map-page', document.querySelector('.nav-item[onclick*="map-page"]')); } };
+      window.handleRegister = async function() { const name = document.getElementById('register-name-input').value.trim(), email = document.getElementById('register-email-input').value, password = document.getElementById('register-password-input').value, errorDiv = document.getElementById('register-error'); errorDiv.textContent = ''; if (!name || !email || !password) { errorDiv.textContent = '所有欄位都必須填寫！'; return; } if (!Utils.validateEmail(email)) { errorDiv.textContent = '電子郵件格式不正確！'; return; } if (password.length < 6) { errorDiv.textContent = '密碼至少需要6位數！'; return; } try { const userCredential = await auth.createUserWithEmailAndPassword(email, password); await userCredential.user.updateProfile({ displayName: name }); Utils.showToast('註冊成功！', 'success'); goBack(); } catch (error) { errorDiv.textContent = '註冊失敗，該信箱可能已被使用。'; } }; window.handleSignIn = async function() { const email = document.getElementById('login-email-input').value, password = document.getElementById('login-password-input').value, errorDiv = document.getElementById('login-error'); errorDiv.textContent = ''; if (!email || !password) { errorDiv.textContent = '請填寫電子郵件和密碼！'; return; } try { await auth.signInWithEmailAndPassword(email, password); Utils.showToast('登入成功！', 'success'); goBack(); } catch (error) { errorDiv.textContent = '登入失敗，請檢查信箱或密碼。'; } }; window.handleGoogleSignIn = async function() { try { await auth.signInWithPopup(); Utils.showToast('Google 登入成功！', 'success'); goBack(); } catch (error) { document.getElementById('login-error').textContent = 'Google 登入失敗，請稍後再試。'; }}; window.handleSignOut = async function() { try { await auth.signOut(); Utils.showToast('已登出'); } catch (error) { console.error("登出錯誤:", error); }};
+      function setupLoggedInUI(user) { document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${Utils.sanitizeHTML(user.displayName || user.email)}`; renderProfilePage(); } function setupLoggedOutUI() { document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; renderProfilePage(); document.getElementById('challenge-list-container').innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; if(document.getElementById('picker-result')) { document.getElementById('picker-result').textContent = '?'; } }
 
-      // === 6. 頁面導航 (程式碼不變，省略) ===
-      window.showPage = function(pageId, navElement = null) {
-        const activePage = document.querySelector('.page.active');
-        if (activePage && (!['login-page', 'register-page'].includes(activePage.id) || !['login-page', 'register-page'].includes(pageId))) { pageHistory.push(activePage.id); }
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(pageId).classList.add('active');
-        if (navElement) { document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active')); navElement.classList.add('active'); pageHistory = []; }
-        setTimeout(() => {
-          if (pageId === 'random-page') updateRandomPageStatus(); if (pageId === 'challenge-page') renderChallenges(); if (pageId === 'profile-page') renderProfilePage();
-        }, 0);
-      };
-      window.goBack = function() { if (pageHistory.length > 0) { const lastPageId = pageHistory.pop(); document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(lastPageId).classList.add('active'); } else { showPage('map-page', document.querySelector('.nav-item[onclick*="map-page"]')); } };
-
-      // === 7. 認證功能 (程式碼不變，省略) ===
-      window.handleRegister = async function() {
-        const name = document.getElementById('register-name-input').value.trim(), email = document.getElementById('register-email-input').value, password = document.getElementById('register-password-input').value, errorDiv = document.getElementById('register-error'); errorDiv.textContent = '';
-        if (!name || !email || !password) { errorDiv.textContent = '所有欄位都必須填寫！'; return; }
-        if (!Utils.validateEmail(email)) { errorDiv.textContent = '電子郵件格式不正確！'; return; } if (password.length < 6) { errorDiv.textContent = '密碼至少需要6位數！'; return; }
-        try { const userCredential = await auth.createUserWithEmailAndPassword(email, password); await userCredential.user.updateProfile({ displayName: name }); Utils.showToast('註冊成功！', 'success'); goBack(); } catch (error) { errorDiv.textContent = '註冊失敗，該信箱可能已被使用。'; }
-      };
-      window.handleSignIn = async function() {
-        const email = document.getElementById('login-email-input').value, password = document.getElementById('login-password-input').value, errorDiv = document.getElementById('login-error'); errorDiv.textContent = '';
-        if (!email || !password) { errorDiv.textContent = '請填寫電子郵件和密碼！'; return; }
-        try { await auth.signInWithEmailAndPassword(email, password); Utils.showToast('登入成功！', 'success'); goBack(); } catch (error) { errorDiv.textContent = '登入失敗，請檢查信箱或密碼。'; }
-      };
-      window.handleGoogleSignIn = async function() { try { await auth.signInWithPopup(); Utils.showToast('Google 登入成功！', 'success'); goBack(); } catch (error) { document.getElementById('login-error').textContent = 'Google 登入失敗，請稍後再試。'; }};
-      window.handleSignOut = async function() { try { await auth.signOut(); Utils.showToast('已登出'); } catch (error) { console.error("登出錯誤:", error); }};
-      
-      // === 8. UI 狀態管理 (程式碼不變，省略) ===
-      function setupLoggedInUI(user) {
-        document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block';
-        document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${Utils.sanitizeHTML(user.displayName || user.email)}`; renderProfilePage();
-      }
-      function setupLoggedOutUI() {
-        document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none';
-        document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`;
-        renderProfilePage(); document.getElementById('challenge-list-container').innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>';
-        document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！';
-        if(document.getElementById('picker-result')) { document.getElementById('picker-result').textContent = '?'; }
-      }
-
-      // ================== 修改重點區域 START ==================
       // === 9. 地圖功能 ===
       window.initMap = function() {
           isMapReady = true;
           userGpsPosition = { lat: 25.0479, lng: 121.5171 };
+          
           map = new google.maps.Map(document.getElementById("map"), {
               center: userGpsPosition,
               zoom: 15,
               disableDefaultUI: true,
-              zoomControl: true
+              zoomControl: true,
           });
+          
           placesService = new google.maps.places.PlacesService(map);
           infoWindow = new google.maps.InfoWindow();
           directionsService = new google.maps.DirectionsService();
@@ -223,13 +78,21 @@
               suppressMarkers: true,
               polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 }
           });
+          
           createUserMarker(userGpsPosition);
           setupMapListeners();
           setupAutocomplete();
           updateUserGPS();
       };
       
-      function createUserMarker(position) { /* ... 程式碼不變 ... */ }
+      function createUserMarker(position) {
+          const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) };
+          if (userMarker) {
+              userMarker.setPosition(position);
+          } else {
+              userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 });
+          }
+      }
 
       function setupMapListeners() {
           map.addListener("idle", () => {
@@ -238,31 +101,77 @@
                   debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500);
               }
           });
-          // 新增：監聽地圖點擊事件，用於取消選取
           map.addListener('click', () => {
               clearSearch();
           });
       }
 
-      function setupAutocomplete() { /* ... 程式碼不變 ... */ }
-      window.updateUserGPS = function() { /* ... 程式碼不變 ... */ }
-      window.centerOnUserGPS = function() { /* ... 程式碼不變 ... */ }
-      function searchNearbyRestaurants(location) { /* ... 程式碼不變 ... */ }
-      function processAndDisplayResults(places, center) { /* ... 程式碼不變 ... */ }
+      function setupAutocomplete() {
+          const input = document.getElementById('search-input');
+          const clearBtn = document.getElementById('clear-search');
+          autocomplete = new google.maps.places.Autocomplete(input, {
+              componentRestrictions: { country: 'tw' },
+              types: ['establishment', 'geocode'],
+              fields: ['place_id', 'geometry', 'name', 'formatted_address', 'vicinity']
+          });
+          input.addEventListener('input', () => { clearBtn.style.display = input.value ? 'flex' : 'none'; });
+          autocomplete.addListener('place_changed', () => {
+              const place = autocomplete.getPlace();
+              if (place.geometry && place.geometry.location) {
+                  clearSearch(true);
+                  handlePlaceSelection(place);
+              }
+          });
+      }
       
+      window.updateUserGPS = function() {
+          if (!isMapReady) return;
+          document.getElementById("list-content-area").innerHTML = `<p class="list-status-text">正在獲取您的位置...</p>`;
+          if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                      userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude };
+                      createUserMarker(userGpsPosition);
+                      centerOnUserGPS();
+                  },
+                  () => searchNearbyRestaurants(map.getCenter())
+              );
+          } else {
+              searchNearbyRestaurants(map.getCenter());
+          }
+      };
+      
+      window.centerOnUserGPS = function() { if (map && userGpsPosition) map.panTo(userGpsPosition); };
+      
+      function searchNearbyRestaurants(location) {
+          if (!isMapReady || !placesService) return;
+          const listContainer = document.getElementById("list-content-area");
+          listContainer.innerHTML = `<p class="list-status-text"><span class="loading-spinner" style="border-top-color: var(--primary-color);"></span> 正在搜尋附近餐廳...</p>`;
+          clearRestaurantMarkers();
+          const request = { location: location, radius: 1500, type: 'restaurant' };
+          placesService.nearbySearch(request, (results, status) => {
+              if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                  processAndDisplayResults(results, location);
+              } else {
+                  listContainer.innerHTML = `<p class="list-status-text">此區域找不到餐廳</p>`;
+              }
+          });
+      }
+      
+      function processAndDisplayResults(places, center) {
+          const listContainer = document.getElementById("list-content-area");
+          const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) }));
+          placesWithDistance.sort((a, b) => a.distance - b.distance);
+          listContainer.innerHTML = "";
+          placesWithDistance.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place); });
+      }
+
       function addRestaurantMarker(place) {
           const marker = new google.maps.Marker({
-              position: place.geometry.location,
-              map: map,
-              title: place.name,
-              animation: google.maps.Animation.DROP,
+              position: place.geometry.location, map: map, title: place.name, animation: google.maps.Animation.DROP,
               icon: { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", fillColor: '#EA4335', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }
           });
-          // 修改：marker 的點擊事件現在也呼叫 handlePlaceSelection
-          marker.addListener('click', (e) => {
-              e.domEvent.stopPropagation(); // 防止事件冒泡到 map
-              handlePlaceSelection(place, marker);
-          });
+          marker.addListener('click', (e) => { e.domEvent.stopPropagation(); handlePlaceSelection(place, marker); });
           marker.place_id = place.place_id;
           restaurantMarkers.push(marker);
       }
@@ -272,17 +181,10 @@
           const item = document.createElement("div");
           item.className = "list-item";
           item.dataset.placeId = place.place_id;
-
-          // 修改：移除對 open_now 的直接使用，以解決棄用警告
           const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`;
-          const detailsText = ratingHtml; // 簡化，詳細營業狀態在點擊後顯示
-          
           const addressHtml = `<div class="item-address">${place.vicinity || place.formatted_address || ''}</div>`;
           const distanceHtml = place.distance ? `<div class="item-distance">${Math.round(place.distance)}m</div>` : '';
-          
-          item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div>${addressHtml}<div class="item-details">${detailsText}</div></div>${distanceHtml}`;
-          
-          // 修改：列表的點擊事件現在也呼叫 handlePlaceSelection
+          item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div>${addressHtml}<div class="item-details">${ratingHtml}</div></div>${distanceHtml}`;
           item.onclick = () => {
               const marker = restaurantMarkers.find(m => m.place_id === place.place_id);
               handlePlaceSelection(place, marker);
@@ -291,23 +193,15 @@
       }
 
       window.handlePlaceSelection = function(place, marker) {
-          if (marker) {
-              map.panTo(marker.getPosition());
-          } else if (place.geometry && place.geometry.location) {
-              map.panTo(place.geometry.location);
-          }
+          if (marker) map.panTo(marker.getPosition());
+          else if (place.geometry && place.geometry.location) map.panTo(place.geometry.location);
           highlightListItem(place.place_id, true);
-          // 新增：呼叫函式以取得詳細資訊並顯示 InfoWindow
           showPlaceDetailsInWindow(place, marker);
       }
       
-      // 新增：專門用來獲取詳情並顯示 InfoWindow 的函式
       function showPlaceDetailsInWindow(place, marker) {
           if (!placesService || !infoWindow) return;
-          const request = {
-              placeId: place.place_id,
-              fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address']
-          };
+          const request = { placeId: place.place_id, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address'] };
           placesService.getDetails(request, (details, status) => {
               if (status === google.maps.places.PlacesServiceStatus.OK && details) {
                   let content = `<div class="info-window-content"><h4>${details.name}</h4>`;
@@ -315,8 +209,6 @@
                   if (address) content += `<p><i class="fas fa-map-marker-alt"></i>${address}</p>`;
                   if (details.rating) content += `<p><i class="fas fa-star"></i>${details.rating}</p>`;
                   if (details.formatted_phone_number) content += `<p><i class="fas fa-phone"></i>${details.formatted_phone_number}</p>`;
-                  
-                  // 使用 isOpen() 方法，這是正確的作法
                   if (details.business_status === "CLOSED_PERMANENTLY") {
                       content += `<p><i class="fas fa-store-slash"></i><span class="open-status closed">永久停業</span></p>`;
                   } else if (details.opening_hours) {
@@ -327,181 +219,51 @@
                   }
                   content += '</div>';
                   infoWindow.setContent(content);
-                  // 如果沒有傳入 marker，則自己創建一個臨時的
                   const anchor = marker || new google.maps.Marker({ map, position: place.geometry.location, clickable: false });
-                  infoWindow.open(map, anchor);
+                  infoWindow.open({ anchor, map });
               } else {
-                  console.error('getDetails failed status:', status);
+                  console.error('getDetails failed with status:', status);
               }
           });
       }
 
-      function highlightListItem(placeId, scroll) { /* ... 程式碼不變 ... */ }
-      function clearRestaurantMarkers() { /* ... 程式碼不變 ... */ }
-      window.clearSearch = function(suppressSearch) { /* ... 程式碼不變 ... */ }
-      // ================== 修改重點區域 END ==================
-
-
+      function highlightListItem(placeId, scroll) { document.querySelectorAll(".list-item.is-selected").forEach((el) => el.classList.remove("is-selected")); const listItem = document.querySelector(`.list-item[data-place-id="${placeId}"]`); if (listItem) { listItem.classList.add("is-selected"); if (scroll) { listItem.scrollIntoView({ behavior: "smooth", block: "center" }); } } }
+      function clearRestaurantMarkers() { restaurantMarkers.forEach((marker) => marker.setMap(null)); restaurantMarkers = []; }
+      window.clearSearch = function(suppressSearch) { directionsRenderer.setDirections({ routes: [] }); infoWindow.close(); const input = document.getElementById('search-input'); input.value = ''; document.getElementById('clear-search').style.display = 'none'; if (!suppressSearch) { searchNearbyRestaurants(map.getCenter()); } }
+      
       // === 10. 隨機選擇功能 (程式碼不變，省略) ===
-      function updateRandomPageStatus() {
-        if (!currentUser) { document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; document.getElementById('picker-result').textContent = '?'; return; }
-        const restaurants = [...new Set(DataManager.getPosts().map(p => p.name))];
-        const statusText = document.getElementById('random-status-text');
-        document.getElementById('picker-result').textContent = "?";
-        statusText.textContent = restaurants.length === 0 ? "您還沒有新增任何餐廳喔！請到「新增」頁面加入吧！" : `目前有 ${restaurants.length} 家獨特的餐廳在您的口袋名單中。`;
-      }
-      window.startRandomPick = function() {
-        if (!currentUser) { Utils.showToast('請先登入！', 'warning'); showPage('login-page'); return; }
-        const restaurants = [...new Set(DataManager.getPosts().map(p => p.name))];
-        if (restaurants.length === 0) { Utils.showToast("口袋名單是空的，無法抽籤！", 'warning'); return; }
-        const wheel = document.getElementById('picker-wheel'), resultDiv = document.getElementById('picker-result'), pickButton = document.getElementById('random-pick-btn');
-        pickButton.disabled = true; resultDiv.textContent = '...';
-        const randomSpins = Math.floor(Math.random() * 5) + 5, randomStopAngle = Math.floor(Math.random() * 360);
-        wheel.style.transform = `rotate(${randomSpins * 360 + randomStopAngle}deg)`;
-        setTimeout(() => { const winner = restaurants[Math.floor(Math.random() * restaurants.length)]; resultDiv.textContent = winner; Utils.showToast(`抽中了：${winner}！`, 'success'); pickButton.disabled = false; }, 4000);
-      };
-
+      function updateRandomPageStatus() { if (!currentUser) { document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; document.getElementById('picker-result').textContent = '?'; return; } const restaurants = [...new Set(DataManager.getPosts().map(p => p.name))]; const statusText = document.getElementById('random-status-text'); document.getElementById('picker-result').textContent = "?"; statusText.textContent = restaurants.length === 0 ? "您還沒有新增任何餐廳喔！請到「新增」頁面加入吧！" : `目前有 ${restaurants.length} 家獨特的餐廳在您的口袋名單中。`; }
+      window.startRandomPick = function() { if (!currentUser) { Utils.showToast('請先登入！', 'warning'); showPage('login-page'); return; } const restaurants = [...new Set(DataManager.getPosts().map(p => p.name))]; if (restaurants.length === 0) { Utils.showToast("口袋名單是空的，無法抽籤！", 'warning'); return; } const wheel = document.getElementById('picker-wheel'), resultDiv = document.getElementById('picker-result'), pickButton = document.getElementById('random-pick-btn'); pickButton.disabled = true; resultDiv.textContent = '...'; const randomSpins = Math.floor(Math.random() * 5) + 5, randomStopAngle = Math.floor(Math.random() * 360); wheel.style.transform = `rotate(${randomSpins * 360 + randomStopAngle}deg)`; setTimeout(() => { const winner = restaurants[Math.floor(Math.random() * restaurants.length)]; resultDiv.textContent = winner; Utils.showToast(`抽中了：${winner}！`, 'success'); pickButton.disabled = false; }, 4000); };
+      
       // === 11. 評論功能 (程式碼不變，省略) ===
-      function handleRatingClick(e) { const rating = e.target.dataset.value; document.getElementById('review-rating').dataset.rating = rating; updateHeartDisplay(rating); }
-      function handleRatingHover(e) { updateHeartDisplay(e.target.dataset.value); }
-      function handleRatingMouseout() { updateHeartDisplay(document.getElementById('review-rating').dataset.rating); }
-      function updateHeartDisplay(rating) { document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => heart.classList.toggle('active', heart.dataset.value <= rating)); }
-      window.saveReviewWithPhotos = async function(event) {
-        if (!currentUser) { Utils.showToast('請先登入才能儲存評論！', 'warning'); showPage('login-page'); return; }
-        const name = document.getElementById('review-restaurant-name').value.trim(), rating = document.getElementById('review-rating').dataset.rating;
-        if (!name || rating === "0") { Utils.showToast("請務必填寫「餐廳名稱」和「喜愛程度」！", 'warning'); return; }
-        const saveBtn = event.target;
-        try {
-            saveBtn.innerHTML = '<div class="loading-spinner"></div> 儲存中...'; saveBtn.disabled = true;
-            const photoUrls = await photoManager.uploadAllPhotos();
-            const newPost = { id: Utils.generateId(), name: Utils.sanitizeHTML(name), items: Utils.sanitizeHTML(document.getElementById('review-meal-items').value.trim()), cost: Number(document.getElementById('review-cost').value) || 0, rating: parseInt(rating), content: Utils.sanitizeHTML(document.getElementById('review-content').value.trim()), photos: photoUrls, timestamp: new Date().toISOString() };
-            const posts = DataManager.getPosts(); posts.unshift(newPost); DataManager.savePosts(posts);
-            Utils.showToast("評論已成功儲存！", 'success');
-            ['review-restaurant-name', 'review-meal-items', 'review-cost', 'review-content'].forEach(id => { document.getElementById(id).value = ''; });
-            document.getElementById('review-rating').dataset.rating = 0; updateHeartDisplay(0); photoManager.clearPhotos();
-            showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]'));
-        } catch (error) { console.error('儲存失敗:', error); Utils.showToast('儲存時發生錯誤！', 'error');
-        } finally { saveBtn.innerHTML = '儲存評論與貼文'; saveBtn.disabled = false; }
-      };
-
+      function handleRatingClick(e) { const rating = e.target.dataset.value; document.getElementById('review-rating').dataset.rating = rating; updateHeartDisplay(rating); } function handleRatingHover(e) { updateHeartDisplay(e.target.dataset.value); } function handleRatingMouseout() { updateHeartDisplay(document.getElementById('review-rating').dataset.rating); } function updateHeartDisplay(rating) { document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => heart.classList.toggle('active', heart.dataset.value <= rating)); }
+      window.saveReviewWithPhotos = async function(event) { if (!currentUser) { Utils.showToast('請先登入才能儲存評論！', 'warning'); showPage('login-page'); return; } const name = document.getElementById('review-restaurant-name').value.trim(), rating = document.getElementById('review-rating').dataset.rating; if (!name || rating === "0") { Utils.showToast("請務必填寫「餐廳名稱」和「喜愛程度」！", 'warning'); return; } const saveBtn = event.target; try { saveBtn.innerHTML = '<div class="loading-spinner"></div> 儲存中...'; saveBtn.disabled = true; const photoUrls = await photoManager.uploadAllPhotos(); const newPost = { id: Utils.generateId(), name: Utils.sanitizeHTML(name), items: Utils.sanitizeHTML(document.getElementById('review-meal-items').value.trim()), cost: Number(document.getElementById('review-cost').value) || 0, rating: parseInt(rating), content: Utils.sanitizeHTML(document.getElementById('review-content').value.trim()), photos: photoUrls, timestamp: new Date().toISOString() }; const posts = DataManager.getPosts(); posts.unshift(newPost); DataManager.savePosts(posts); Utils.showToast("評論已成功儲存！", 'success'); ['review-restaurant-name', 'review-meal-items', 'review-cost', 'review-content'].forEach(id => { document.getElementById(id).value = ''; }); document.getElementById('review-rating').dataset.rating = 0; updateHeartDisplay(0); photoManager.clearPhotos(); showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]')); } catch (error) { console.error('儲存失敗:', error); Utils.showToast('儲存時發生錯誤！', 'error'); } finally { saveBtn.innerHTML = '儲存評論與貼文'; saveBtn.disabled = false; } };
+      
       // === 12. 挑戰系統 (程式碼不變，省略) ===
       const challengesData = [ { id: 'healthy_week', title: '挑戰一週健康餐', desc: '連續七天只吃原型食物和健康烹調的餐點！', rank: [ { name: 'Alice', score: '7/7天', medal: '🥇' }, { name: 'David', score: '6/7天', medal: '🥈' }], participants: ['Alice', 'David', '美食探險家'] }, { id: 'budget_200', title: '省錢大作戰：日均$200', desc: '挑戰連續五天，平均每日餐費不超過200元。', rank: [ { name: 'Bob', score: '平均 $185', medal: '🥇' }, { name: 'Charlie', score: '平均 $198', medal: '🥈' }], participants: ['Bob', 'Charlie'] }, { id: 'vegan_exp', title: '素食體驗週', desc: '挑戰一週完全素食(蛋奶素可)。', rank: [ { name: 'Eve', score: '完成', medal: '🥇' }, { name: 'Frank', score: '完成', medal: '🥈' } ], participants: ['Eve', 'Frank'] }];
-      function renderChallenges() {
-        const container = document.getElementById('challenge-list-container');
-        if (!currentUser) { container.innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; return; }
-        const userChallenges = DataManager.getUserChallenges(); container.innerHTML = '';
-        challengesData.forEach(c => {
-          const isJoined = userChallenges[c.id]; const card = document.createElement('div'); card.className = 'challenge-card';
-          const rankingHtml = c.rank.map(r => `<li>${r.medal} ${r.name} (${r.score})</li>`).join('');
-          const participantsText = isJoined ? `${c.participants.join(', ')}, <b>您</b>` : c.participants.join(', ');
-          card.innerHTML = `<div class="challenge-header"><div class="challenge-title">${c.title}</div><button class="challenge-btn-join ${isJoined ? 'joined' : ''}" onclick="toggleChallenge('${c.id}')">${isJoined ? '已參加' : '參加'}</button></div><p class="challenge-desc">${c.desc}</p><div><div class="challenge-ranking-title">🏆 排行榜：</div><ul class="challenge-ranking-list">${rankingHtml}</ul></div><div style="margin-top:15px;"><div class="challenge-participants-title">👥 參與者：</div><div class="challenge-participants-list">${participantsText}</div></div>`;
-          container.appendChild(card);
-        });
-      }
-      window.toggleChallenge = function(challengeId) {
-        if (!currentUser) { Utils.showToast('請先登入！', 'warning'); showPage('login-page'); return; }
-        const userChallenges = DataManager.getUserChallenges(), wasJoined = userChallenges[challengeId];
-        userChallenges[challengeId] = !wasJoined; DataManager.saveUserChallenges(userChallenges);
-        const challenge = challengesData.find(c => c.id === challengeId);
-        if (challenge) { Utils.showToast(wasJoined ? `已退出「${challenge.title}」` : `已參加「${challenge.title}」`, 'success'); }
-        renderChallenges();
-      };
-
+      function renderChallenges() { const container = document.getElementById('challenge-list-container'); if (!currentUser) { container.innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; return; } const userChallenges = DataManager.getUserChallenges(); container.innerHTML = ''; challengesData.forEach(c => { const isJoined = userChallenges[c.id]; const card = document.createElement('div'); card.className = 'challenge-card'; const rankingHtml = c.rank.map(r => `<li>${r.medal} ${r.name} (${r.score})</li>`).join(''); const participantsText = isJoined ? `${c.participants.join(', ')}, <b>您</b>` : c.participants.join(', '); card.innerHTML = `<div class="challenge-header"><div class="challenge-title">${c.title}</div><button class="challenge-btn-join ${isJoined ? 'joined' : ''}" onclick="toggleChallenge('${c.id}')">${isJoined ? '已參加' : '參加'}</button></div><p class="challenge-desc">${c.desc}</p><div><div class="challenge-ranking-title">🏆 排行榜：</div><ul class="challenge-ranking-list">${rankingHtml}</ul></div><div style="margin-top:15px;"><div class="challenge-participants-title">👥 參與者：</div><div class="challenge-participants-list">${participantsText}</div></div>`; container.appendChild(card); }); }
+      window.toggleChallenge = function(challengeId) { if (!currentUser) { Utils.showToast('請先登入！', 'warning'); showPage('login-page'); return; } const userChallenges = DataManager.getUserChallenges(), wasJoined = userChallenges[challengeId]; userChallenges[challengeId] = !wasJoined; DataManager.saveUserChallenges(userChallenges); const challenge = challengesData.find(c => c.id === challengeId); if (challenge) { Utils.showToast(wasJoined ? `已退出「${challenge.title}」` : `已參加「${challenge.title}」`, 'success'); } renderChallenges(); };
+      
       // === 13. 個人頁面 (程式碼不變，省略) ===
-      function renderProfilePage() {
-        const activeTabBtn = document.querySelector('#profile-page .tab-btn.active');
-        if (activeTabBtn) {
-            const tabId = activeTabBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
-            showProfileTab(tabId, activeTabBtn);
-        }
-      }
-      window.showProfileTab = function(tabId, tabElement) {
-        document.querySelectorAll('#profile-page .tab-btn').forEach(btn => btn.classList.remove('active')); tabElement.classList.add('active');
-        document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active');
-        switch(tabId) { case 'accounting': renderAccountingRecords(); break; case 'posts': renderMyPosts(); break; case 'favorites': renderFavoriteRestaurants(); break; case 'friends': renderFriendsList(); break; case 'analytics': renderAnalytics(); break; }
-      };
+      function renderProfilePage() { const activeTabBtn = document.querySelector('#profile-page .tab-btn.active'); if (activeTabBtn) { const tabId = activeTabBtn.getAttribute('onclick').match(/'([^']+)'/)[1]; showProfileTab(tabId, activeTabBtn); } }
+      window.showProfileTab = function(tabId, tabElement) { document.querySelectorAll('#profile-page .tab-btn').forEach(btn => btn.classList.remove('active')); tabElement.classList.add('active'); document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active'); switch(tabId) { case 'accounting': renderAccountingRecords(); break; case 'posts': renderMyPosts(); break; case 'favorites': renderFavoriteRestaurants(); break; case 'friends': renderFriendsList(); break; case 'analytics': renderAnalytics(); break; } };
       const loggedOutPlaceholder = (message) => `<p class="placeholder-text">請先<a href="#" onclick="showPage('login-page')" style="color: var(--primary-color);">登入</a>${message}</p>`;
-      function renderAccountingRecords() {
-        const c = document.getElementById('accounting-content'); if (!currentUser) { c.innerHTML = loggedOutPlaceholder('以查看您的消費紀錄。'); return; }
-        const posts = DataManager.getPosts().filter(p => p.cost > 0); if (posts.length === 0) { c.innerHTML = `<p class="placeholder-text">尚無消費紀錄。</p>`; return; }
-        const totalCost = posts.reduce((sum, p) => sum + p.cost, 0); const averageCost = posts.length > 0 ? Math.round(totalCost / posts.length) : 0;
-        c.innerHTML = `<h3>消費紀錄 <span style="color: var(--text-light); font-size: 14px;">(共 ${posts.length} 筆，總計 $${totalCost}，平均 $${averageCost})</span></h3>${posts.map(p => `<div class="record-card"><span class="cost">$${p.cost}</span><div class="title">${p.name}</div><div class="details">${Utils.formatDate(p.timestamp)} - ${p.items || '無餐點記錄'}</div></div>`).join('')}`;
-      }
-      function renderMyPosts() {
-        const c = document.getElementById('posts-content'); if (!currentUser) { c.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); return; }
-        const posts = DataManager.getPosts(); if (posts.length === 0) { c.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`; return; }
-        c.innerHTML = posts.map(p => { const r = Array(p.rating || 0).fill('<i class="fa-solid fa-heart"></i>').join(''); const ph = p.photos && p.photos.length > 0 ? `<div class="post-photos">${p.photos.map(url => `<img src="${url}" class="post-photo" onclick="showPhotoModal('${url}')" alt="美食照片">`).join('')}</div>` : ''; return `<div class="post-card"><div class="title">${p.name}</div><div class="details">${Utils.formatDateTime(p.timestamp)}</div><p class="content">${p.content || '（無詳細評論）'}</p><div class="post-rating">${r}</div>${ph}</div>`; }).join('');
-      }
-      function renderFavoriteRestaurants() {
-        const c = document.getElementById('favorites-content'); if (!currentUser) { c.innerHTML = loggedOutPlaceholder('以查看您的最愛餐廳。'); return; }
-        const favorites = DataManager.getPosts().filter(p => p.rating >= 4).reduce((acc, cur) => { if (!acc.some(item => item.name === cur.name)) acc.push(cur); return acc; }, []).sort((a, b) => b.rating - a.rating);
-        if (favorites.length === 0) { c.innerHTML = `<p class="placeholder-text">您還沒有評分高的餐廳喔！</p>`; return; }
-        c.innerHTML = `<h3>最愛餐廳 (評分4顆心以上)</h3>${favorites.map(p => `<div class="record-card"><div class="title">${p.name}</div><div class="details">${Array(p.rating || 0).fill('<i class="fa-solid fa-heart" style="color: #ff4d6d;"></i>').join('')} - 最近造訪：${Utils.formatDate(p.timestamp)}</div></div>`).join('')}`;
-      }
-      function renderFriendsList() {
-        const c = document.getElementById('friends-content'); if (!currentUser) { c.innerHTML = loggedOutPlaceholder('以查看好友名單。'); return; }
-        const mockFriends = [{ id: '1', name: 'Alice Chen', status: '最近評論了「鼎泰豐」', online: true }, { id: '2', name: 'Bob Wang', status: '參加了素食體驗週挑戰', online: false }, { id: '3', name: 'Carol Lin', status: '昨天去了新餐廳', online: true }];
-        c.innerHTML = `<div style="margin-bottom: 20px;"><button class="btn" onclick="showAddFriendModal()"><i class="fa-solid fa-user-plus"></i> 新增好友</button></div>${mockFriends.map(f => `<div class="friend-card"><div class="friend-avatar">${f.name.charAt(0)}</div><div class="friend-info"><div class="friend-name">${f.name}</div><div class="friend-status"><i class="fa-solid fa-circle" style="color: ${f.online ? '#28a745' : '#6c757d'}; font-size: 8px;"></i> ${f.status}</div></div><div class="friend-actions"><button class="btn-sm btn-primary" onclick="viewFriendProfile('${f.id}')">查看</button><button class="btn-sm btn-danger" onclick="removeFriend('${f.id}')">移除</button></div></div>`).join('')}`;
-      }
-      function renderAnalytics() {
-        const c = document.getElementById('analytics-content'); if (!currentUser) { c.innerHTML = loggedOutPlaceholder('以查看數據分析。'); return; }
-        const posts = DataManager.getPosts(); if (posts.length < 3) { c.innerHTML = `<p class="placeholder-text">還沒有足夠的數據進行分析(至少3筆)。</p>`; return; }
-        const totalPosts = posts.length, totalCost = posts.reduce((sum, p) => sum + (p.cost || 0), 0), avgRating = posts.reduce((sum, p) => sum + p.rating, 0) / totalPosts, uniqueRestaurants = new Set(posts.map(p => p.name)).size;
-        const topRestaurants = Object.entries(posts.reduce((acc,p)=>{acc[p.name]=(acc[p.name]||0)+1;return acc;},{})).sort(([,a],[,b])=>b-a).slice(0,5);
-        c.innerHTML = `<h3>我的美食數據分析</h3><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 30px;"><div class="record-card" style="text-align: center;"><div style="font-size: 24px; font-weight: bold; color: var(--primary-color);">${totalPosts}</div><div style="color: var(--text-light);">總評論數</div></div><div class="record-card" style="text-align: center;"><div style="font-size: 24px; font-weight: bold; color: var(--success-color);">$${totalCost}</div><div style="color: var(--text-light);">總消費</div></div><div class="record-card" style="text-align: center;"><div style="font-size: 24px; font-weight: bold; color: var(--warning-color);">${avgRating.toFixed(1)}★</div><div style="color: var(--text-light);">平均評分</div></div><div class="record-card" style="text-align: center;"><div style="font-size: 24px; font-weight: bold; color: var(--danger-color);">${uniqueRestaurants}</div><div style="color: var(--text-light);">探店數量</div></div></div><div class="record-card"><h4>最常造訪的餐廳</h4>${topRestaurants.map(([name, count]) => `<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0;"><span>${name}</span><span>${count} 次</span></div>`).join('')}</div>`;
-      }
-
+      function renderAccountingRecords() { const c = document.getElementById('accounting-content'); if (!currentUser) { c.innerHTML = loggedOutPlaceholder('以查看您的消費紀錄。'); return; } const posts = DataManager.getPosts().filter(p => p.cost > 0); if (posts.length === 0) { c.innerHTML = `<p class="placeholder-text">尚無消費紀錄。</p>`; return; } const totalCost = posts.reduce((sum, p) => sum + p.cost, 0); const averageCost = posts.length > 0 ? Math.round(totalCost / posts.length) : 0; c.innerHTML = `<h3>消費紀錄 <span style="color: var(--text-light); font-size: 14px;">(共 ${posts.length} 筆，總計 $${totalCost}，平均 $${averageCost})</span></h3>${posts.map(p => `<div class="record-card"><span class="cost">$${p.cost}</span><div class="title">${p.name}</div><div class="details">${Utils.formatDate(p.timestamp)} - ${p.items || '無餐點記錄'}</div></div>`).join('')}`; }
+      function renderMyPosts() { const c = document.getElementById('posts-content'); if (!currentUser) { c.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); return; } const posts = DataManager.getPosts(); if (posts.length === 0) { c.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`; return; } c.innerHTML = posts.map(p => { const r = Array(p.rating || 0).fill('<i class="fa-solid fa-heart"></i>').join(''); const ph = p.photos && p.photos.length > 0 ? `<div class="post-photos">${p.photos.map(url => `<img src="${url}" class="post-photo" onclick="showPhotoModal('${url}')" alt="美食照片">`).join('')}</div>` : ''; return `<div class="post-card"><div class="title">${p.name}</div><div class="details">${Utils.formatDateTime(p.timestamp)}</div><p class="content">${p.content || '（無詳細評論）'}</p><div class="post-rating">${r}</div>${ph}</div>`; }).join(''); }
+      function renderFavoriteRestaurants() { const c = document.getElementById('favorites-content'); if (!currentUser) { c.innerHTML = loggedOutPlaceholder('以查看您的最愛餐廳。'); return; } const favorites = DataManager.getPosts().filter(p => p.rating >= 4).reduce((acc, cur) => { if (!acc.some(item => item.name === cur.name)) acc.push(cur); return acc; }, []).sort((a, b) => b.rating - a.rating); if (favorites.length === 0) { c.innerHTML = `<p class="placeholder-text">您還沒有評分高的餐廳喔！</p>`; return; } c.innerHTML = `<h3>最愛餐廳 (評分4顆心以上)</h3>${favorites.map(p => `<div class="record-card"><div class="title">${p.name}</div><div class="details">${Array(p.rating || 0).fill('<i class="fa-solid fa-heart" style="color: #ff4d6d;"></i>').join('')} - 最近造訪：${Utils.formatDate(p.timestamp)}</div></div>`).join('')}`; }
+      function renderFriendsList() { const c = document.getElementById('friends-content'); if (!currentUser) { c.innerHTML = loggedOutPlaceholder('以查看好友名單。'); return; } const mockFriends = [{ id: '1', name: 'Alice Chen', status: '最近評論了「鼎泰豐」', online: true }, { id: '2', name: 'Bob Wang', status: '參加了素食體驗週挑戰', online: false }, { id: '3', name: 'Carol Lin', status: '昨天去了新餐廳', online: true }]; c.innerHTML = `<div style="margin-bottom: 20px;"><button class="btn" onclick="showAddFriendModal()"><i class="fa-solid fa-user-plus"></i> 新增好友</button></div>${mockFriends.map(f => `<div class="friend-card"><div class="friend-avatar">${f.name.charAt(0)}</div><div class="friend-info"><div class="friend-name">${f.name}</div><div class="friend-status"><i class="fa-solid fa-circle" style="color: ${f.online ? '#28a745' : '#6c757d'}; font-size: 8px;"></i> ${f.status}</div></div><div class="friend-actions"><button class="btn-sm btn-primary" onclick="viewFriendProfile('${f.id}')">查看</button><button class="btn-sm btn-danger" onclick="removeFriend('${f.id}')">移除</button></div></div>`).join('')}`; }
+      function renderAnalytics() { const c = document.getElementById('analytics-content'); if (!currentUser) { c.innerHTML = loggedOutPlaceholder('以查看數據分析。'); return; } const posts = DataManager.getPosts(); if (posts.length < 3) { c.innerHTML = `<p class="placeholder-text">還沒有足夠的數據進行分析(至少3筆)。</p>`; return; } const totalPosts = posts.length, totalCost = posts.reduce((sum, p) => sum + (p.cost || 0), 0), avgRating = posts.reduce((sum, p) => sum + p.rating, 0) / totalPosts, uniqueRestaurants = new Set(posts.map(p => p.name)).size; const topRestaurants = Object.entries(posts.reduce((acc,p)=>{acc[p.name]=(acc[p.name]||0)+1;return acc;},{})).sort(([,a],[,b])=>b-a).slice(0,5); c.innerHTML = `<h3>我的美食數據分析</h3><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 30px;"><div class="record-card" style="text-align: center;"><div style="font-size: 24px; font-weight: bold; color: var(--primary-color);">${totalPosts}</div><div style="color: var(--text-light);">總評論數</div></div><div class="record-card" style="text-align: center;"><div style="font-size: 24px; font-weight: bold; color: var(--success-color);">$${totalCost}</div><div style="color: var(--text-light);">總消費</div></div><div class="record-card" style="text-align: center;"><div style="font-size: 24px; font-weight: bold; color: var(--warning-color);">${avgRating.toFixed(1)}★</div><div style="color: var(--text-light);">平均評分</div></div><div class="record-card" style="text-align: center;"><div style="font-size: 24px; font-weight: bold; color: var(--danger-color);">${uniqueRestaurants}</div><div style="color: var(--text-light);">探店數量</div></div></div><div class="record-card"><h4>最常造訪的餐廳</h4>${topRestaurants.map(([name, count]) => `<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0;"><span>${name}</span><span>${count} 次</span></div>`).join('')}</div>`; }
+      
       // === 14. 模擬功能 & 事件監聽 (程式碼不變，省略) ===
-      window.showAddFriendModal = function() { const e = prompt('請輸入好友的電子郵件地址：'); if (e && Utils.validateEmail(e)) Utils.showToast(`已發送好友邀請給 ${e}`, 'success'); else if (e) Utils.showToast('請輸入有效的電子郵件地址', 'warning'); };
-      window.viewFriendProfile = function(id) { Utils.showToast('好友個人檔案功能開發中！', 'warning'); };
-      window.removeFriend = function(id) { if (confirm('確定要移除這位好友嗎？')) { Utils.showToast('已移除好友'); renderFriendsList(); }};
-      window.showPhotoModal = function(url) { const m = document.createElement('div'); m.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;cursor:pointer;`; const i = document.createElement('img'); i.src = url; i.style.cssText = `max-width:90%;max-height:90%;border-radius:8px;`; m.appendChild(i); document.body.appendChild(m); m.onclick = () => document.body.removeChild(m); };
-      document.querySelectorAll('.rating-hearts .fa-heart').forEach(h => { h.addEventListener('click', handleRatingClick); h.addEventListener('mouseover', handleRatingHover); h.addEventListener('mouseout', handleRatingMouseout); });
+      window.showAddFriendModal = function() { const e = prompt('請輸入好友的電子郵件地址：'); if (e && Utils.validateEmail(e)) Utils.showToast(`已發送好友邀請給 ${e}`, 'success'); else if (e) Utils.showToast('請輸入有效的電子郵件地址', 'warning'); }; window.viewFriendProfile = function(id) { Utils.showToast('好友個人檔案功能開發中！', 'warning'); }; window.removeFriend = function(id) { if (confirm('確定要移除這位好友嗎？')) { Utils.showToast('已移除好友'); renderFriendsList(); }}; window.showPhotoModal = function(url) { const m = document.createElement('div'); m.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;cursor:pointer;`; const i = document.createElement('img'); i.src = url; i.style.cssText = `max-width:90%;max-height:90%;border-radius:8px;`; m.appendChild(i); document.body.appendChild(m); m.onclick = () => document.body.removeChild(m); }; document.querySelectorAll('.rating-hearts .fa-heart').forEach(h => { h.addEventListener('click', handleRatingClick); h.addEventListener('mouseover', handleRatingHover); h.addEventListener('mouseout', handleRatingMouseout); });
       
       // === 15. 網路與草稿管理 (程式碼不變，省略) ===
       class NetworkMonitor { constructor() { this.isOnline = navigator.onLine; this.setupListeners(); } setupListeners() { window.addEventListener('online', () => { this.isOnline = true; Utils.showToast('網路連線已恢復', 'success'); }); window.addEventListener('offline', () => { this.isOnline = false; Utils.showToast('網路連線中斷，部分功能可能受限', 'warning'); }); } }
       new NetworkMonitor();
-      function setupDraftSaving() {
-          const reviewForm = document.querySelector('#add-review-page');
-          if (!reviewForm) return;
-          const inputs = reviewForm.querySelectorAll('input[type=text], input[type=number], textarea');
-          const saveDraft = Utils.debounce(() => {
-              if (currentUser) {
-                  const draftData = {};
-                  inputs.forEach(inp => { if (inp.value.trim()) { draftData[inp.id] = inp.value; }});
-                  if (Object.keys(draftData).length > 0) { localStorage.setItem(`reviewDraft_${currentUser.uid}`, JSON.stringify(draftData)); } else { localStorage.removeItem(`reviewDraft_${currentUser.uid}`); }
-              }
-          }, 1000);
-          inputs.forEach(input => { input.addEventListener('input', saveDraft); });
-      }
+      function setupDraftSaving() { const reviewForm = document.querySelector('#add-review-page'); if (!reviewForm) return; const inputs = reviewForm.querySelectorAll('input[type=text], input[type=number], textarea'); const saveDraft = Utils.debounce(() => { if (currentUser) { const draftData = {}; inputs.forEach(inp => { if (inp.value.trim()) { draftData[inp.id] = inp.value; }}); if (Object.keys(draftData).length > 0) { localStorage.setItem(`reviewDraft_${currentUser.uid}`, JSON.stringify(draftData)); } else { localStorage.removeItem(`reviewDraft_${currentUser.uid}`); } } }, 1000); inputs.forEach(input => { input.addEventListener('input', saveDraft); }); }
 
       // === 16. 初始化 (程式碼不變，省略) ===
-      auth.onAuthStateChanged(user => { 
-        const oldUser = currentUser;
-        currentUser = user;
-        if (user) {
-          setupLoggedInUI(user);
-          if (!oldUser) { // 僅在剛登入時檢查草稿
-            const draftData = localStorage.getItem(`reviewDraft_${currentUser.uid}`);
-            if (draftData) {
-              if (confirm('檢測到未完成的評論草稿，是否要繼續編輯？')) {
-                  const draft = JSON.parse(draftData);
-                  showPage('add-review-page');
-                  setTimeout(() => { // 確保頁面切換後再填值
-                    Object.keys(draft).forEach(key => {
-                        const element = document.getElementById(key);
-                        if (element) element.value = draft[key];
-                    });
-                  }, 100);
-              } else {
-                  localStorage.removeItem(`reviewDraft_${currentUser.uid}`);
-              }
-            }
-          }
-        } else {
-          setupLoggedOutUI();
-        }
-      });
+      auth.onAuthStateChanged(user => { const oldUser = currentUser; currentUser = user; if (user) { setupLoggedInUI(user); if (!oldUser) { const draftData = localStorage.getItem(`reviewDraft_${currentUser.uid}`); if (draftData) { if (confirm('檢測到未完成的評論草稿，是否要繼續編輯？')) { const draft = JSON.parse(draftData); showPage('add-review-page'); setTimeout(() => { Object.keys(draft).forEach(key => { const element = document.getElementById(key); if (element) element.value = draft[key]; }); }, 100); } else { localStorage.removeItem(`reviewDraft_${currentUser.uid}`); } } } } else { setupLoggedOutUI(); } });
       setupDraftSaving();
       showPage('map-page', document.querySelector('.nav-item'));
     });
