@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>FoodieApp</title>
+  <title>美食探險家 - FoodieApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap" async defer></script>
   
@@ -154,7 +154,6 @@
       cursor: pointer; 
       padding: 8px;
       border-radius: 50%;
-      transition: background-color 0.2s;
       width: 36px;
       height: 36px;
       display: flex;
@@ -995,7 +994,7 @@
                 <div id="photo-preview-container" class="photo-preview-container"></div>
                 <div id="upload-progress" class="upload-progress" style="display: none;"><div class="upload-progress-bar"></div></div>
             </div>
-            <button class="btn" onclick="saveReviewWithPhotos()">儲存評論與貼文</button>
+            <button class="btn" onclick="saveReviewWithPhotos(event)">儲存評論與貼文</button>
         </div>
       </div>
 
@@ -1234,14 +1233,21 @@
         if(document.getElementById('picker-result')) { document.getElementById('picker-result').textContent = '?'; }
       }
 
-      // === 9. 地圖功能 (無大改，保持原樣) ===
+      // === 9. 地圖功能 ===
       window.initMap = function() { isMapReady = true; userGpsPosition = { lat: 25.0479, lng: 121.5171 }; map = new google.maps.Map(document.getElementById("map"), { center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true }); placesService = new google.maps.places.PlacesService(map); infoWindow = new google.maps.InfoWindow(); directionsService = new google.maps.DirectionsService(); directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } }); createUserMarker(userGpsPosition); setupMapListeners(); setupAutocomplete(); updateUserGPS(); };
       function createUserMarker(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
-      function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); }
+      function setupMapListeners() {
+        map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } });
+        // ================== 功能新增處 START ==================
+        map.addListener('click', () => {
+            clearSearch();
+        });
+        // ================== 功能新增處 END ==================
+      }
       function setupAutocomplete() { const input = document.getElementById('search-input'); const clearBtn = document.getElementById('clear-search'); autocomplete = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'tw' }, types: ['establishment', 'geocode'], fields: ['place_id', 'geometry', 'name', 'formatted_address', 'vicinity'] }); input.addEventListener('input', () => { clearBtn.style.display = input.value ? 'flex' : 'none'; }); autocomplete.addListener('place_changed', () => { const place = autocomplete.getPlace(); if (place.geometry && place.geometry.location) { clearSearch(true); handlePlaceSelection(place); } }); }
       window.updateUserGPS = function() { if (!isMapReady) return; document.getElementById("list-content-area").innerHTML = `<p class="list-status-text">正在獲取您的位置...</p>`; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; createUserMarker(userGpsPosition); centerOnUserGPS(); }, () => searchNearbyRestaurants(map.getCenter()) ); } else { searchNearbyRestaurants(map.getCenter()); } }
       window.centerOnUserGPS = function() { if (map && userGpsPosition) { map.panTo(userGpsPosition); } }
-      function searchNearbyRestaurants(location) { if (!isMapReady) return; const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = `<p class="list-status-text"><span class="loading-spinner"></span> 正在搜尋附近餐廳...</p>`; clearRestaurantMarkers(); const request = { location: location, radius: 1500, type: 'restaurant' }; placesService.nearbySearch(request, (results, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && results) { processAndDisplayResults(results, location); } else { listContainer.innerHTML = `<p class="list-status-text">此區域找不到餐廳</p>`; } }); }
+      function searchNearbyRestaurants(location) { if (!isMapReady) return; const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = `<p class="list-status-text"><span class="loading-spinner" style="border-top-color: var(--primary-color);"></span> 正在搜尋附近餐廳...</p>`; clearRestaurantMarkers(); const request = { location: location, radius: 1500, type: 'restaurant' }; placesService.nearbySearch(request, (results, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && results) { processAndDisplayResults(results, location); } else { listContainer.innerHTML = `<p class="list-status-text">此區域找不到餐廳</p>`; } }); }
       function processAndDisplayResults(places, center) { const listContainer = document.getElementById("list-content-area"); const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) })); placesWithDistance.sort((a, b) => a.distance - b.distance); listContainer.innerHTML = ""; placesWithDistance.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place); }); }
       function addRestaurantMarker(place) { const marker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name, animation: google.maps.Animation.DROP, icon: { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", fillColor: '#EA4335', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) } }); marker.addListener('click', () => { handlePlaceSelection(place); }); marker.place_id = place.place_id; restaurantMarkers.push(marker); }
       function addRestaurantToList(place) { const l = document.getElementById("list-content-area"); const i = document.createElement("div"); i.className = "list-item"; i.dataset.placeId = place.place_id; let o = ""; if (place.business_status === "CLOSED_PERMANENTLY") { o = `<span class="open-status closed">永久停業</span>`; } else if (place.opening_hours && typeof place.opening_hours.open_now !== 'undefined') { o = place.opening_hours.open_now ? `<span class="open-status open">營業中</span>` : `<span class="open-status closed">休息中</span>`; } const r = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`; const d = [r, o].filter(Boolean).join(' · '); const a = `<div class="item-address">${place.vicinity || place.formatted_address || ''}</div>`; const m = place.distance ? `<div class="item-distance">${Math.round(place.distance)}m</div>` : ''; i.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div>${a}<div class="item-details">${d}</div></div>${m}`; i.onclick = () => handlePlaceSelection(place); l.appendChild(i); }
@@ -1385,24 +1391,34 @@
       }
 
       // === 16. 初始化 ===
-      auth.onAuthStateChanged(user => { currentUser = user; if (user) { setupLoggedInUI(user); } else { setupLoggedOutUI(); } });
+      auth.onAuthStateChanged(user => { 
+        const oldUser = currentUser;
+        currentUser = user;
+        if (user) {
+          setupLoggedInUI(user);
+          if (!oldUser) { // 僅在剛登入時檢查草稿
+            const draftData = localStorage.getItem(`reviewDraft_${currentUser.uid}`);
+            if (draftData) {
+              if (confirm('檢測到未完成的評論草稿，是否要繼續編輯？')) {
+                  const draft = JSON.parse(draftData);
+                  showPage('add-review-page');
+                  setTimeout(() => { // 確保頁面切換後再填值
+                    Object.keys(draft).forEach(key => {
+                        const element = document.getElementById(key);
+                        if (element) element.value = draft[key];
+                    });
+                  }, 100);
+              } else {
+                  localStorage.removeItem(`reviewDraft_${currentUser.uid}`);
+              }
+            }
+          }
+        } else {
+          setupLoggedOutUI();
+        }
+      });
       setupDraftSaving();
       showPage('map-page', document.querySelector('.nav-item'));
-
-      // 恢復草稿
-      const draftData = localStorage.getItem(`reviewDraft_${currentUser?.uid}`);
-      if (draftData) {
-        if (confirm('檢測到未完成的評論草稿，是否要繼續編輯？')) {
-            const draft = JSON.parse(draftData);
-            Object.keys(draft).forEach(key => {
-                const element = document.getElementById(key);
-                if (element) element.value = draft[key];
-            });
-            showPage('add-review-page');
-        } else {
-            localStorage.removeItem(`reviewDraft_${currentUser.uid}`);
-        }
-      }
     });
 </script>
 </body>
