@@ -6,15 +6,12 @@
   <title>FoodieApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   
-  <!-- ======================= ★★★ 修改重點區域 START ★★★ ======================= -->
-  <!-- 移除 v=beta，回歸到穩定版本的 API -->
+  <!-- 使用穩定版 API -->
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
     async
     defer
   ></script>
-  <!-- ======================= ★★★ 修改重點區域 END ★★★ ======================= -->
-
 
   <!-- Firebase SDK 導入 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -244,9 +241,7 @@
         function saveUserChallenges(challenges) { if (!currentUser) return; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(challenges)); }
         
         // 3.5 Page 1: 地圖功能
-        function initMap() {
-            isMapReady = true; userGpsPosition = { lat: 25.0479, lng: 121.5171 }; map = new google.maps.Map(document.getElementById("map"), { center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true }); placesService = new google.maps.places.PlacesService(map); infoWindow = new google.maps.InfoWindow(); directionsService = new google.maps.DirectionsService(); directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } }); createUserMarker(userGpsPosition); setupMapListeners(); setupAutocomplete(); updateUserGPS();
-        }
+        function initMap() { isMapReady = true; userGpsPosition = { lat: 25.0479, lng: 121.5171 }; map = new google.maps.Map(document.getElementById("map"), { center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true }); placesService = new google.maps.places.PlacesService(map); infoWindow = new google.maps.InfoWindow(); directionsService = new google.maps.DirectionsService(); directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } }); createUserMarker(userGpsPosition); setupMapListeners(); setupAutocomplete(); updateUserGPS(); }
         function createUserMarker(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
         function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener("click", (event) => { if (!event.placeId) { clearSearch(); } }); }
         function setupAutocomplete() { const input = document.getElementById('search-input'); const clearBtn = document.getElementById('clear-search'); autocomplete = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'tw' }, types: ['establishment', 'geocode'], fields: ['place_id', 'geometry', 'name', 'formatted_address', 'vicinity'] }); input.addEventListener('input', () => { clearBtn.style.display = input.value ? 'flex' : 'none'; }); autocomplete.addListener('place_changed', () => { const place = autocomplete.getPlace(); if (place.geometry && place.geometry.location) { clearSearch(true); handlePlaceSelection(place); } }); }
@@ -255,34 +250,14 @@
         function searchNearbyRestaurants(location) { if (!isMapReady) return; const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = `<p class="list-status-text">正在搜尋附近餐廳...</p>`; clearRestaurantMarkers(); const request = { location: location, radius: 1500, type: 'restaurant' }; placesService.nearbySearch(request, (results, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && results) { processAndDisplayResults(results, location); } else { listContainer.innerHTML = `<p class="list-status-text">此區域找不到餐廳</p>`; } }); }
         function processAndDisplayResults(places, center) { const listContainer = document.getElementById("list-content-area"); const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) })); placesWithDistance.sort((a, b) => a.distance - b.distance); listContainer.innerHTML = ""; placesWithDistance.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place); }); }
         function addRestaurantMarker(place) { const marker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name }); marker.addListener('click', () => handlePlaceSelection(place)); marker.place_id = place.place_id; restaurantMarkers.push(marker); }
-        function addRestaurantToList(place, routeInfo = null) {
-            const listContainer = document.getElementById("list-content-area");
-            const item = document.createElement("div");
-            item.className = "list-item";
-            item.dataset.placeId = place.place_id;
-            let openStatusHtml = "";
-            // 使用 nearbySearch 回傳的舊版 open_now 屬性 (因為它比較可靠)
-            // 只有在 getDetails 的結果中才需要用 isOpen()
-            if (place.business_status === "CLOSED_PERMANENTLY") {
-                openStatusHtml = `<span class="open-status closed">永久停業</span>`;
-            } else if (place.opening_hours && typeof place.opening_hours.open_now !== 'undefined') {
-                openStatusHtml = place.opening_hours.open_now ? `<span class="open-status open">營業中</span>` : `<span class="open-status closed">休息中</span>`;
-            }
-            const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`;
-            const detailsText = [ratingHtml, openStatusHtml].filter(Boolean).join(' · ');
-            const addressHtml = `<div class="item-address">${place.vicinity || place.formatted_address || ''}</div>`;
-            const distanceHtml = routeInfo ? `<div class="item-distance"><i class="fas fa-route"></i> ${routeInfo.driving.distance}</div>` : (place.distance ? `<div class="item-distance">${Math.round(place.distance)}m</div>` : '');
-            item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div>${addressHtml}<div class="item-details">${detailsText}</div></div>${distanceHtml}`;
-            item.onclick = () => handlePlaceSelection(place);
-            listContainer.appendChild(item);
-        }
+        function addRestaurantToList(place, routeInfo = null) { const listContainer = document.getElementById("list-content-area"); const item = document.createElement("div"); item.className = "list-item"; item.dataset.placeId = place.place_id; let openStatusHtml = ""; if (place.business_status === "CLOSED_PERMANENTLY") { openStatusHtml = `<span class="open-status closed">永久停業</span>`; } else if (place.opening_hours && typeof place.opening_hours.open_now !== 'undefined') { openStatusHtml = place.opening_hours.open_now ? `<span class="open-status open">營業中</span>` : `<span class="open-status closed">休息中</span>`; } const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`; const detailsText = [ratingHtml, openStatusHtml].filter(Boolean).join(' · '); const addressHtml = `<div class="item-address">${place.vicinity || place.formatted_address || ''}</div>`; const distanceHtml = routeInfo ? `<div class="item-distance"><i class="fas fa-route"></i> ${routeInfo.driving.distance}</div>` : (place.distance ? `<div class="item-distance">${Math.round(place.distance)}m</div>` : ''); item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div>${addressHtml}<div class="item-details">${detailsText}</div></div>${distanceHtml}`; item.onclick = () => handlePlaceSelection(place); listContainer.appendChild(item); }
         function handlePlaceSelection(place) { const marker = restaurantMarkers.find((m) => m.place_id === place.place_id); if (marker) { map.panTo(marker.getPosition()); } else { map.panTo(place.geometry.location); } highlightListItem(place.place_id, true); calculateAndDisplayRoute(place); }
         function calculateAndDisplayRoute(place) { if (!userGpsPosition || !place.geometry || !place.geometry.location) { return; } document.getElementById('clear-search').style.display = 'flex'; clearRestaurantMarkers(); const request = { origin: userGpsPosition, destination: place.geometry.location, travelMode: google.maps.TravelMode.DRIVING }; directionsService.route(request, (res, stat) => { if (stat !== 'OK') { directionsRenderer.setDirections({ routes: [] }); addRestaurantMarker(place); showSinglePlaceResult(place); return; } directionsRenderer.setDirections(res); const leg = res.routes[0].legs[0]; const routeInfo = { driving: { distance: leg.distance.text, duration: leg.duration.text } }; const destinationMarker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name }); restaurantMarkers.push(destinationMarker); map.fitBounds(res.routes[0].bounds); showPlaceDetailsInWindow(place, destinationMarker, routeInfo); showSinglePlaceResult(place, routeInfo); }); }
         function showSinglePlaceResult(place, routeInfo) { const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = ""; addRestaurantToList(place, routeInfo); }
 
         // ======================= ★★★ 修改重點區域 START ★★★ =======================
         function showPlaceDetailsInWindow(place, marker, routeInfo = null) {
-            // 移除所有 beta/不穩定的欄位，只請求核心資訊
+            // 只請求穩定版 API 支援的欄位
             const request = {
                 placeId: place.place_id,
                 fields: [ 'name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address' ]
@@ -291,38 +266,68 @@
             placesService.getDetails(request, (details, status) => {
                 let content = `<div class="info-window-content"><h4>${place.name}</h4>`;
                 
-                // 檢查 getDetails 是否成功回傳
                 if (status === google.maps.places.PlacesServiceStatus.OK && details) {
-                    
-                    // 移除 Beta 功能 (服務選項、價位) 的顯示邏輯
                     const address = details.formatted_address || details.vicinity;
                     if (address) content += `<p><i class="fas fa-map-marker-alt"></i>${address}</p>`;
                     if (routeInfo) content += `<p><i class="fas fa-car"></i>${routeInfo.driving.distance} (${routeInfo.driving.duration})</p>`;
                     if (details.rating) content += `<p><i class="fas fa-star"></i>${details.rating}</p>`;
                     if (details.formatted_phone_number) content += `<p><i class="fas fa-phone"></i>${details.formatted_phone_number}</p>`;
                     
-                    // 營業時間的處理邏輯保持不變，因為它是穩定功能
+                    // --- 營業時間處理邏輯 ---
                     if (details.business_status === "CLOSED_PERMANENTLY") {
                         content += `<p><i class="fas fa-store-slash"></i><span style="color: #dc3545; font-weight: bold;">永久停業</span></p>`;
                     } else if (details.opening_hours) {
-                        const isOpen = details.opening_hours.isOpen(); // 使用推薦的 isOpen() 方法
-                        const statusText = isOpen ? "營業中" : "休息中";
+                        const isOpen = details.opening_hours.isOpen();
+                        let statusText = isOpen ? "營業中" : "休息中";
                         const color = isOpen ? "#28a745" : "#dc3545";
+
+                        // 如果營業中，嘗試解析關店時間
+                        if (isOpen && details.opening_hours.weekday_text) {
+                            try {
+                                const jsDay = new Date().getDay(); // 0 for Sunday, 1 for Monday...
+                                // Google's weekday_text is ordered Monday...Sunday. We need to map jsDay to this order.
+                                const weekdayTextIndex = (jsDay + 6) % 7; 
+                                const today_schedule_string = details.opening_hours.weekday_text[weekdayTextIndex];
+
+                                if (today_schedule_string && today_schedule_string.includes('–')) {
+                                    const closingTime = today_schedule_string.split('–')[1].trim();
+                                    // 確保不是 "24 小時營業" 或其他特殊格式
+                                    if (closingTime.includes(':')) {
+                                        statusText += `・${closingTime} 關店`;
+                                    }
+                                }
+                            } catch (e) {
+                                console.error("Error parsing closing time:", e);
+                                // 如果解析出錯，就只顯示 "營業中"
+                            }
+                        }
+
+                        // 顯示主要狀態，並加上點擊事件來切換詳細資訊的顯示/隱藏
                         const detailsId = `hours-details-${place.place_id.replace(/\W/g, '')}`;
                         content += `<p style="cursor: pointer; display: flex; align-items: center;" onclick="var el = document.getElementById('${detailsId}'); el.style.display = el.style.display === 'block' ? 'none' : 'block';">
                                         <i class="fas fa-clock"></i>
                                         <span style="color: ${color}; font-weight: bold;">${statusText}</span>
-                                        <i class="fas fa-chevron-down" style="font-size: 12px; margin-left: 8px; color: #888;"></i>
+                                        <i class="fas fa-chevron-down" style="font-size: 12px; margin-left: auto; color: #888; padding-left: 8px;"></i>
                                     </p>`;
+                        
+                        // 建立預設隱藏的詳細營業時間列表，並突顯當天
                         if (details.opening_hours.weekday_text) {
-                            const hoursList = details.opening_hours.weekday_text.map(day => `<li>${day}</li>`).join('');
+                            const jsDay = new Date().getDay();
+                            const weekdayTextIndex = (jsDay + 6) % 7;
+                            
+                            const hoursList = details.opening_hours.weekday_text.map((day, index) => {
+                                if (index === weekdayTextIndex) {
+                                    return `<li style="font-weight: bold; color: #1a73e8;">${day}</li>`;
+                                }
+                                return `<li>${day}</li>`;
+                            }).join('');
+
                             content += `<div id="${detailsId}" style="display: none; padding-left: 28px; font-size: 13px; color: #555; margin-top: -5px; margin-bottom: 5px;">
                                             <ul style="list-style-type: none; padding: 0; margin: 0;">${hoursList}</ul>
                                         </div>`;
                         }
                     }
                 } else {
-                    // 如果 getDetails 失敗，顯示錯誤訊息
                     content += `<p>無法獲取詳細資訊</p>`;
                 }
                 content += '</div>';
