@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+< !DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
@@ -127,18 +127,14 @@
         <div class="page-content" id="challenge-list-container"></div>
       </div>
 
-      <!-- ================== HTML 修改重點區域 START ================== -->
-      
-      <!-- 個人頁面: 結構大幅簡化 -->
+      <!-- 個人頁面 -->
       <div id="profile-page" class="page">
         <div class="page-header">
-          <div class="placeholder"></div> <!-- 左側佔位，讓標題居中 -->
+          <div class="placeholder"></div>
           <h2 id="profile-header"><i class="fa-solid fa-user"></i>個人檔案</h2>
-          <!-- 登入/登出按鈕會由 JS 控制顯示 -->
           <a id="profile-login-btn" class="header-action" style="display: none;" onclick="showPage('login-page')">登入/註冊</a>
           <a id="profile-logout-btn" class="header-action" style="display: none;" onclick="handleSignOut()">登出</a>
         </div>
-        <!-- Tab 結構不論登入與否都存在 -->
         <div class="profile-tabs">
             <button class="tab-btn active" onclick="showProfileTab('accounting', this)">記帳顯示</button>
             <button class="tab-btn" onclick="showProfileTab('posts', this)">我的貼文</button>
@@ -153,12 +149,12 @@
         </div>
       </div>
 
-      <!-- 新增：獨立的登入頁面 -->
+      <!-- 獨立的登入頁面 -->
       <div id="login-page" class="page">
         <div class="page-header">
           <i class="fa-solid fa-chevron-left header-back-btn" onclick="goBack()"></i>
           <h2>會員登入</h2>
-          <div class="placeholder"></div> <!-- 右側佔位 -->
+          <div class="placeholder"></div>
         </div>
         <div class="page-content">
           <div class="auth-form-container">
@@ -177,12 +173,12 @@
         </div>
       </div>
 
-      <!-- 新增：獨立的註冊頁面 -->
+      <!-- 獨立的註冊頁面 -->
       <div id="register-page" class="page">
          <div class="page-header">
           <i class="fa-solid fa-chevron-left header-back-btn" onclick="goBack()"></i>
           <h2>註冊新帳號</h2>
-          <div class="placeholder"></div> <!-- 右側佔位 -->
+          <div class="placeholder"></div>
         </div>
         <div class="page-content">
           <div class="auth-form-container">
@@ -197,7 +193,6 @@
           </div>
         </div>
       </div>
-      <!-- ================== HTML 修改重點區域 END ================== -->
 
     </main>
     <footer class="app-nav">
@@ -231,43 +226,33 @@
         let isMapReady = false; 
         const POSTS_DB_KEY = 'foodieAppPosts'; 
         const CHALLENGES_DB_KEY = 'foodieAppUserChallenges';
-        let pageHistory = []; // 新增：用於返回功能的頁面歷史堆疊
+        let pageHistory = [];
 
-        // ================== JAVASCRIPT 修改重點區域 START ==================
-        
         // 3.1 頁面導航與返回邏輯
         window.showPage = function(pageId, navElement = null) {
             const activePage = document.querySelector('.page.active');
             if (activePage) {
-                // 只有在不是從登入/註冊頁面之間切換時才記錄歷史
                 if (!['login-page', 'register-page'].includes(activePage.id) || !['login-page', 'register-page'].includes(pageId)) {
                     pageHistory.push(activePage.id);
                 }
             }
-
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
-
-            // 如果是透過底部導航列點擊，則更新導航列狀態並清空歷史
             if (navElement) {
                 document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
                 navElement.classList.add('active');
-                pageHistory = []; // 從主導航開始，重置歷史紀錄
+                pageHistory = [];
             }
-            
-            // 觸發特定頁面的更新函式
             if (pageId === 'random-page') updateRandomPageStatus();
             if (pageId === 'challenge-page') renderChallenges();
             if (pageId === 'profile-page') renderProfilePage();
         };
-
         window.goBack = function() {
             if (pageHistory.length > 0) {
                 const lastPageId = pageHistory.pop();
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
                 document.getElementById(lastPageId).classList.add('active');
             } else {
-                // 如果沒有歷史紀錄，預設回到地圖頁
                 showPage('map-page', document.querySelector('.nav-item[onclick*="map-page"]'));
             }
         };
@@ -279,17 +264,10 @@
             const password = document.getElementById('register-password-input').value;
             const errorDiv = document.getElementById('register-error');
             errorDiv.textContent = '';
-
-            if (!name || !email || !password) {
-                errorDiv.textContent = '所有欄位都必須填寫！'; return;
-            }
-
+            if (!name || !email || !password) { errorDiv.textContent = '所有欄位都必須填寫！'; return; }
             auth.createUserWithEmailAndPassword(email, password)
                 .then(userCredential => userCredential.user.updateProfile({ displayName: name }))
-                .then(() => {
-                    // 註冊成功後自動返回上一頁 (通常是個人頁面)
-                    goBack();
-                })
+                .then(() => { goBack(); })
                 .catch(error => {
                     switch(error.code) {
                         case 'auth/email-already-in-use': errorDiv.textContent = '此電子郵件已被註冊。'; break;
@@ -299,88 +277,54 @@
                     }
                 });
         }
-
         window.handleSignIn = function() {
             const email = document.getElementById('login-email-input').value;
             const password = document.getElementById('login-password-input').value;
             const errorDiv = document.getElementById('login-error');
             errorDiv.textContent = '';
-            
             auth.signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    // 登入成功後自動返回
-                    goBack();
-                })
+                .then(() => { goBack(); })
                 .catch(error => { errorDiv.textContent = '登入失敗，請檢查信箱或密碼。'; });
         }
-        
         window.handleGoogleSignIn = function() {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider)
-                .then(() => {
-                    // Google 登入成功後自動返回
-                    goBack();
-                })
-                .catch(error => {
-                    const errorDiv = document.getElementById('login-error');
-                    errorDiv.textContent = 'Google 登入失敗，請稍後再試。'; 
-                });
+                .then(() => { goBack(); })
+                .catch(error => { document.getElementById('login-error').textContent = 'Google 登入失敗，請稍後再試。'; });
         }
-
-        window.handleSignOut = function() {
-            auth.signOut().catch(error => console.error("登出錯誤:", error));
-        }
+        window.handleSignOut = function() { auth.signOut().catch(error => console.error("登出錯誤:", error)); }
         
         // 3.3 UI 狀態切換
         function setupLoggedInUI(user) {
             document.getElementById('profile-login-btn').style.display = 'none';
             document.getElementById('profile-logout-btn').style.display = 'block';
-            
             const userName = user.displayName || user.email;
             document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`;
-            renderProfilePage(); // 登入後重新渲染個人頁面內容
+            renderProfilePage();
         }
-
         function setupLoggedOutUI() {
             document.getElementById('profile-login-btn').style.display = 'block';
             document.getElementById('profile-logout-btn').style.display = 'none';
             document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`;
-            
-            // 清理需要登入才能看的內容
-            renderProfilePage(); // 登出後用 placeholder 重新渲染個人頁面
+            renderProfilePage();
             document.getElementById('challenge-list-container').innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>';
             document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！';
-            if(document.getElementById('picker-result')) {
-                document.getElementById('picker-result').textContent = '?';
-            }
+            if(document.getElementById('picker-result')) { document.getElementById('picker-result').textContent = '?'; }
         }
 
-        // 3.9 Page 5: 個人功能 (更新渲染邏輯)
-        function renderProfilePage() {
-            // 不論是否登入，都執行渲染，函式內部會判斷狀態
-            showProfileTab(document.querySelector('#profile-page .tab-btn.active').dataset.tab || 'accounting', document.querySelector('#profile-page .tab-btn.active'));
-        }
-        
+        // 3.9 Page 5: 個人功能 (渲染邏輯)
+        function renderProfilePage() { showProfileTab(document.querySelector('#profile-page .tab-btn.active').dataset.tab || 'accounting', document.querySelector('#profile-page .tab-btn.active')); }
         window.showProfileTab = function(tabId, tabElement) {
-            document.querySelectorAll('#profile-page .tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.removeAttribute('data-tab');
-            });
-            tabElement.classList.add('active');
-            tabElement.dataset.tab = tabId; // 記住當前 tab
-            
+            document.querySelectorAll('#profile-page .tab-btn').forEach(btn => { btn.classList.remove('active'); btn.removeAttribute('data-tab'); });
+            tabElement.classList.add('active'); tabElement.dataset.tab = tabId;
             document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById(`${tabId}-content`).classList.add('active');
-
-            // 根據 tabId 呼叫對應的渲染函式
             if (tabId === 'accounting') renderAccountingRecords();
             if (tabId === 'posts') renderMyPosts();
             if (tabId === 'favorites') renderFavoriteRestaurants();
             if (tabId === 'friends') renderFriendsList();
         }
-
         const loggedOutPlaceholder = (message) => `<p class="placeholder-text">請先<a href="#" onclick="showPage('login-page')">登入</a>${message}</p>`;
-
         function renderAccountingRecords() {
             const container = document.getElementById('accounting-content');
             if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的消費紀錄。'); return; }
@@ -408,19 +352,42 @@
             container.innerHTML = `<p class="placeholder-text">好友功能開發中！</p>`;
         }
         
-        // ================== JAVASCRIPT 修改重點區域 END ==================
-
-        // --- 以下函式保持不變或僅微調 ---
-        // 3.3 資料儲存 (不變)
+        // 3.3 資料儲存
         function getPosts() { if (!currentUser) return []; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
         function savePosts(posts) { if (!currentUser) return; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(posts)); }
         function getUserChallenges() { if (!currentUser) return {}; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || {}; }
         function saveUserChallenges(challenges) { if (!currentUser) return; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(challenges)); }
         
-        // 3.5 Page 1: 地圖 (不變)
+        // 3.5 Page 1: 地圖
         window.initMap = function () { isMapReady = true; userGpsPosition = { lat: 25.0479, lng: 121.5171 }; restaurantMarkers = []; map = new google.maps.Map(document.getElementById("map"), { center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true }); placesService = new google.maps.places.PlacesService(map); infoWindow = new google.maps.InfoWindow(); directionsService = new google.maps.DirectionsService(); directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } }); createUserMarker(userGpsPosition); setupMapListeners(); setupAutocomplete(); updateUserGPS(); };
         window.createUserMarker = function(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
-        function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); }
+        
+        // ================== 功能新增與確認：地圖事件監聽器 ==================
+        // 說明：此函式負責為地圖加入核心的互動功能。
+        // 您的程式碼中已經有此功能，這是一個非常好的實作。
+        function setupMapListeners() {
+            // 監聽 'idle' 事件：當地圖停止移動（拖曳、縮放）後觸發。
+            // 這是搜尋附近地點的最佳時機，可以避免在移動過程中頻繁發送請求。
+            map.addListener("idle", () => {
+                // 判斷：只有在沒有顯示路線規劃 (directions) 的情況下才執行搜尋。
+                // 這可以防止使用者在查看導航路線時，地圖因移動而意外觸發新的搜尋，覆蓋掉現有路線。
+                if (!directionsRenderer.getDirections()) {
+                    // 使用 debounce 技巧：延遲 500ms 執行，確保使用者是真的停下操作。
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => {
+                        // 以目前地圖的中心點，重新搜尋附近的餐廳。
+                        searchNearbyRestaurants(map.getCenter());
+                    }, 500);
+                }
+            });
+
+            // 未來若要新增其他監聽器，也可以加在這裡，例如：
+            // map.addListener("click", (e) => {
+            //   console.log("使用者點擊了地圖座標:", e.latLng.toJSON());
+            // });
+        }
+        // ================================================================
+
         function setupAutocomplete() { const input = document.getElementById('search-input'); const clearBtn = document.getElementById('clear-search'); autocomplete = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'tw' }, types: ['establishment', 'geocode'], fields: ['place_id', 'geometry', 'name', 'formatted_address', 'vicinity'] }); input.addEventListener('input', () => { clearBtn.style.display = input.value ? 'flex' : 'none'; }); autocomplete.addListener('place_changed', () => { const place = autocomplete.getPlace(); if (place.geometry && place.geometry.location) { clearSearch(true); handlePlaceSelection(place); } }); }
         window.updateUserGPS = function() { if (!isMapReady) return; document.getElementById("list-content-area").innerHTML = `<p class="list-status-text">正在獲取您的位置...</p>`; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; createUserMarker(userGpsPosition); centerOnUserGPS(); }, () => searchNearbyRestaurants(map.getCenter()) ); } else { searchNearbyRestaurants(map.getCenter()); } }
         window.centerOnUserGPS = function() { if (map && userGpsPosition) { map.panTo(userGpsPosition); } }
