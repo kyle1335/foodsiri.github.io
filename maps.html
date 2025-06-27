@@ -47,11 +47,11 @@
     .open-status.closed { color: #dc3545; font-weight: bold; }
     .list-status-text { text-align: center; color: #999; padding: 40px 20px; }
     .location-btn { position: absolute; bottom: 20px; right: 20px; background: #fff; color: var(--primary-color); border: none; width: 50px; height: 50px; border-radius: 25px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); cursor: pointer; z-index: 10; font-size: 24px; display: flex; justify-content: center; align-items: center; }
-    .gm-style-iw-d { overflow: hidden !important; }
+    .gm-style-iw-d { overflow: auto !important; } /* Allow scrolling in InfoWindow */
     .info-window-content { font-family: inherit; padding: 5px; max-width: 280px; }
     .info-window-content h4 { font-size: 16px; margin: 0 0 8px 0; font-weight: 600; }
     .info-window-content p { font-size: 14px; margin: 0 0 5px 0; color: #555; display: flex; align-items: center; }
-    .info-window-content i { margin-right: 8px; color: var(--primary-color); width: 16px; text-align: center; }
+    .info-window-content i { margin-right: 8px; color: var(--primary-color); width: 16px; text-align: center; flex-shrink: 0; }
     .page-header { padding: 15px 20px; background-color: #fff; border-bottom: 1px solid #eee; text-align: center; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
     .page-header h2 { margin: 0; font-size: 18px; color: var(--text-color); display: flex; align-items: center; justify-content: center; flex-grow: 1; }
     .page-header h2 i { margin-right: 10px; color: var(--primary-color); }
@@ -202,7 +202,7 @@
     const POSTS_DB_KEY = 'foodieAppPosts'; 
     const CHALLENGES_DB_KEY = 'foodieAppUserChallenges';
     let pageHistory = [];
-    let auth; // 將 auth 宣告為全域
+    let auth; 
 
     // --- Firebase 初始化 ---
     const firebaseConfig = {
@@ -215,7 +215,7 @@
         measurementId: "G-5FD72CVKGB"
     };
     firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth(); // 初始化全域的 auth 變數
+    auth = firebase.auth(); 
 
     // --- Google Map 初始化回呼函式 (必須為全域) ---
     window.initMap = function () {
@@ -312,7 +312,47 @@
     function getRoutePromise(origin, destination, travelMode) { return new Promise(resolve => { const request = { origin, destination, travelMode }; directionsService.route(request, (res, stat) => { if (stat === 'OK') { const leg = res.routes[0].legs[0]; resolve({ distance: leg.distance.text, duration: leg.duration.text, response: res }); } else { resolve(null); } }); }); }
     function getPlaceDetailsPromise(placeId) { const request = { placeId: placeId, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address'] }; return new Promise(resolve => { placesService.getDetails(request, (details, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && details) { resolve(details); } else { resolve(null); } }); }); }
     function showSinglePlaceResult(place, routeInfo, details) { const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = ""; addRestaurantToList(place, routeInfo, details); highlightListItem(place.place_id); }
-    function showPlaceDetailsInWindow(place, marker, routeInfo = {}, details = null) { let content = `<div class="info-window-content"><h4>${place.name}</h4>`; const finalDetails = details || place; const address = finalDetails.formatted_address || finalDetails.vicinity; if (address) content += `<p><i class="fas fa-map-marker-alt"></i>${address}</p>`; if (routeInfo.driving) { content += `<p><i class="fas fa-car"></i>${routeInfo.driving.distance} (${routeInfo.driving.duration})</p>`; } if (routeInfo.walking) { content += `<p><i class="fas fa-walking"></i>${routeInfo.walking.distance} (${routeInfo.walking.duration})</p>`; } if (details && details.formatted_phone_number) { content += `<p><i class="fas fa-phone"></i>${details.formatted_phone_number}</p>`; } if (details && details.business_status === "CLOSED_PERMANENTLY") { content += `<p><i class="fas fa-store-slash"></i><span style="color: #dc3545; font-weight: bold;">永久停業</span></p>`; } else if (details && details.opening_hours) { const isOpen = details.opening_hours.isOpen(); const statusText = isOpen ? "營業中" : "休息中"; const color = isOpen ? "#28a745" : "#dc3545"; content += `<p><i class="fas fa-clock"></i><span style="color: ${color}; font-weight: bold;">${statusText}</span></p>`; } else { content += `<p><i class="fas fa-clock"></i>營業時間資訊不明</p>`; } content += '</div>'; infoWindow.setContent(content); infoWindow.open({ anchor: marker, map: map, shouldFocus: false }); }
+    
+    // ================== 主要修改區域 START ==================
+    function showPlaceDetailsInWindow(place, marker, routeInfo = {}, details = null) {
+        let content = `<div class="info-window-content"><h4>${place.name}</h4>`;
+        const finalDetails = details || place; 
+        const address = finalDetails.formatted_address || finalDetails.vicinity;
+        
+        if (address) content += `<p><i class="fas fa-map-marker-alt"></i><span>${address}</span></p>`;
+        if (routeInfo.driving) { content += `<p><i class="fas fa-car"></i><span>${routeInfo.driving.distance} (${routeInfo.driving.duration})</span></p>`; }
+        if (routeInfo.walking) { content += `<p><i class="fas fa-walking"></i><span>${routeInfo.walking.distance} (${routeInfo.walking.duration})</span></p>`; }
+        if (details && details.formatted_phone_number) { content += `<p><i class="fas fa-phone"></i><span>${details.formatted_phone_number}</span></p>`; }
+        
+        // 【功能增強】顯示營業時間的邏輯
+        if (details && details.business_status === "CLOSED_PERMANENTLY") {
+            content += `<p><i class="fas fa-store-slash"></i><span style="color: #dc3545; font-weight: bold;">永久停業</span></p>`;
+        } else if (details && details.opening_hours) {
+            // 1. 顯示當前營業狀態
+            const isOpen = details.opening_hours.isOpen();
+            const statusText = isOpen ? "營業中" : "休息中";
+            const color = isOpen ? "#28a745" : "#dc3545";
+            content += `<p><i class="fas fa-clock"></i><span style="color: ${color}; font-weight: bold;">${statusText}</span></p>`;
+            
+            // 2. 檢查並顯示每週營業時間 (weekday_text)
+            if (details.opening_hours.weekday_text) {
+                // 使用 map 產生每一天的 HTML，並用 join 合併成一個字串
+                const weeklyHoursHtml = details.opening_hours.weekday_text.map(day => 
+                    // 為了對齊，給予一個左邊距 (padding-left)
+                    `<div style="padding-left: 24px; font-size: 13px; color: #555; line-height: 1.5;">${day}</div>`
+                ).join('');
+                content += weeklyHoursHtml; // 將組合好的 HTML 字串加入 content
+            }
+        } else {
+            content += `<p><i class="fas fa-clock"></i><span>營業時間資訊不明</span></p>`;
+        }
+        
+        content += '</div>';
+        infoWindow.setContent(content);
+        infoWindow.open({ anchor: marker, map: map, shouldFocus: false });
+    }
+    // ================== 主要修改區域 END ==================
+
     window.clearSearch = function(suppressSearch = false) { directionsRenderer.setDirections({ routes: [] }); infoWindow.close(); const input = document.getElementById('search-input'); input.value = ''; document.getElementById('clear-search').style.display = 'none'; highlightListItem(null); if (!suppressSearch) { searchNearbyRestaurants(map.getCenter()); } }
     function highlightListItem(placeId, scroll) { document.querySelectorAll(".list-item.is-selected").forEach((el) => el.classList.remove("is-selected")); if(placeId) { const listItem = document.querySelector(`.list-item[data-place-id="${placeId}"]`); if (listItem) { listItem.classList.add("is-selected"); if (scroll) { listItem.scrollIntoView({ behavior: "smooth", block: "center" }); } } } }
     function clearRestaurantMarkers() { restaurantMarkers.forEach((marker) => marker.setMap(null)); restaurantMarkers = []; }
@@ -329,9 +369,8 @@
     function renderChallenges() { const container = document.getElementById('challenge-list-container'); if (!currentUser) { container.innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; return; } const userChallenges = getUserChallenges(); container.innerHTML = ''; challengesData.forEach(c => { const isJoined = userChallenges[c.id]; const card = document.createElement('div'); card.className = 'challenge-card'; card.innerHTML = `<div class="challenge-header"><div class="challenge-title">${c.title}</div><button class="challenge-btn-join ${isJoined ? 'joined' : ''}" onclick="toggleChallenge('${c.id}')">${isJoined ? '已參加' : '參加'}</button></div><p class="challenge-desc">${c.desc}</p><div><div class="challenge-ranking-title">🏆 排行榜：</div><ul class="challenge-ranking-list" style="flex-direction:column; gap: 5px;">${c.rank}</ul></div><div style="margin-top:15px;"><div class="challenge-participants-title">👥 參與者：</div><div class="challenge-participants-list">${c.participants} ${isJoined ? ', <b>您</b>' : ''}</div></div>`; container.appendChild(card); }); }
     window.toggleChallenge = function(challengeId) { if (!currentUser) { alert('請先登入才能參加挑戰！'); showPage('login-page'); return; } const userChallenges = getUserChallenges(); userChallenges[challengeId] = !userChallenges[challengeId]; saveUserChallenges(userChallenges); renderChallenges(); }
     
-    // --- App 初始化 & DOM 事件綁定 ---
+    // App 初始化 & DOM 事件綁定
     document.addEventListener('DOMContentLoaded', () => {
-        // Firebase Auth 狀態監聽
         auth.onAuthStateChanged(user => { 
             currentUser = user;
             if (user) { 
@@ -341,14 +380,12 @@
             } 
         });
 
-        // 為新增評論頁面的愛心評分綁定事件
         document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => {
             heart.addEventListener('click', handleRatingClick);
             heart.addEventListener('mouseover', handleRatingHover);
             heart.addEventListener('mouseout', handleRatingMouseout);
         });
         
-        // 初始載入 App
         showPage('map-page', document.querySelector('.nav-item')); 
     });
 </script>
