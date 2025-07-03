@@ -16,6 +16,9 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   
+  <!-- 【功能增強】引入 QR Code 掃描函式庫 -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
   <style>
     :root { --primary-color: #667eea; --secondary-color: #764ba2; --success-color: #28a745; --background-color: #f8f9fa; --text-color: #333; --text-light: #6c757d; --nav-height: 60px; }
     html, body { height: 100%; margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--background-color); }
@@ -65,7 +68,7 @@
     #picker-wheel { width: 280px; height: 280px; border: 10px solid #ddd; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1); }
     #picker-arrow { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #dc3545; position: absolute; top: -35px; left: 50%; transform: translateX(-50%); z-index: 2; }
     #picker-result { font-size: 20px; font-weight: bold; color: var(--primary-color); text-align: center; height: 60px; padding: 0 10px; }
-    .form-group { margin-bottom: 20px; } .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-color); } .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; } .form-group textarea { min-height: 120px; resize: vertical; } .rating-hearts { display: flex; gap: 10px; font-size: 30px; color: #ddd; cursor: pointer; } .rating-hearts .fa-heart:hover, .rating-hearts .fa-heart.active { color: #ff4d6d; } .photo-upload-area { background: #f0f0f0; border: 2px dashed #ccc; border-radius: 8px; padding: 20px; display: flex; justify-content: center; gap: 20px; } .photo-upload-area .btn-upload { background: #fff; color: var(--text-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; } .photo-upload-area .btn-upload i { margin-right: 8px; }
+    .form-group { margin-bottom: 20px; position: relative; } .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-color); } .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; } .form-group textarea { min-height: 120px; resize: vertical; } .rating-hearts { display: flex; gap: 10px; font-size: 30px; color: #ddd; cursor: pointer; } .rating-hearts .fa-heart:hover, .rating-hearts .fa-heart.active { color: #ff4d6d; } .photo-upload-area { background: #f0f0f0; border: 2px dashed #ccc; border-radius: 8px; padding: 20px; display: flex; justify-content: center; gap: 20px; } .photo-upload-area .btn-upload { background: #fff; color: var(--text-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; } .photo-upload-area .btn-upload i { margin-right: 8px; }
     .challenge-card { background: #fff; border-radius: 12px; margin-bottom: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); } .challenge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; } .challenge-title { font-size: 18px; font-weight: 600; } .challenge-btn-join { background-color: var(--success-color); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 14px; border: none; cursor: pointer; } .challenge-btn-join.joined { background-color: var(--text-light); } .challenge-desc { font-size: 14px; color: var(--text-light); margin-bottom: 15px; } .challenge-ranking-title, .challenge-participants-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; } .challenge-ranking-list, .challenge-participants-list { font-size: 14px; color: #555; list-style: none; padding-left: 0; } .challenge-ranking-list li i { color: #ffd700; margin-right: 4px; }
     .profile-tabs { display: flex; gap: 10px; padding: 15px 20px; background: #fff; border-bottom: 1px solid #eee; overflow-x: auto; flex-shrink: 0; } .tab-btn { background: #f0f0f0; border: none; border-radius: 20px; padding: 8px 15px; font-size: 14px; cursor: pointer; white-space: nowrap; } .tab-btn.active { background: var(--primary-color); color: #fff; } .tab-content { display: none; } .tab-content.active { display: block; } .record-card, .post-card { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); } .record-card .title, .post-card .title { font-weight: 600; margin-bottom: 5px; } .record-card .details, .post-card .details { font-size: 14px; color: var(--text-light); } .record-card .cost { font-weight: bold; color: var(--success-color); float: right; } .post-card .content { margin-top: 10px; font-size: 15px; line-height: 1.6; } .post-card .post-rating { margin-top: 10px; color: #ff4d6d; }
     .auth-form-container { width: 100%; max-width: 400px; margin: 0 auto; padding: 20px;}
@@ -80,6 +83,16 @@
     .auth-separator:not(:empty)::after { margin-left: .25em; }
     .auth-switch-link { text-align: center; margin-top: 15px; font-size: 14px; color: var(--primary-color); cursor: pointer; }
     #auth-error { color: #dc3545; margin-top: 15px; min-height: 20px; font-weight: 500; text-align: center; }
+
+    /* 【功能增強】QR Code 掃描器樣式 */
+    .btn-scan-qr { position: absolute; top: 0; right: 0; background: var(--primary-color); color: white; border: none; border-radius: 0 8px 0 8px; padding: 5px 10px; font-size: 13px; cursor: pointer; }
+    .btn-scan-qr i { margin-right: 5px; }
+    #qr-scanner-modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); flex-direction: column; justify-content: center; align-items: center; }
+    .qr-scanner-content { position: relative; background-color: #111; padding: 20px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 10px; text-align: center; }
+    #qr-scanner-video { width: 100%; border-radius: 8px; }
+    #qr-status-text { color: white; font-size: 16px; margin-top: 15px; height: 25px; }
+    .qr-scanner-close-btn { position: absolute; top: -15px; right: -15px; color: white; background-color: #dc3545; border-radius: 50%; width: 30px; height: 30px; font-size: 20px; font-weight: bold; cursor: pointer; border: 2px solid white; display:flex; justify-content:center; align-items:center; }
+    #scan-box { position: absolute; left: 50%; top: 50%; width: 60%; height: 50%; transform: translate(-50%, -50%); border: 3px solid rgba(255, 255, 255, 0.7); border-radius: 10px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); }
   </style>
 </head>
 <body>
@@ -111,7 +124,13 @@
         <div class="page-header"><h2><i class="fa-solid fa-pencil"></i>新增美食評論</h2><div class="placeholder"></div></div>
         <div class="page-content">
             <div class="form-group"><label for="review-restaurant-name">餐廳名稱</label><input type="text" id="review-restaurant-name" placeholder="輸入吃過的餐廳"></div>
-            <div class="form-group"><label for="review-meal-items">餐點項目</label><textarea id="review-meal-items" placeholder="吃了什麼好料？ (例如：小籠包、牛肉麵)"></textarea></div>
+            <!-- 【功能增強】餐點項目新增掃描按鈕 -->
+            <div class="form-group">
+                <label for="review-meal-items">餐點項目</label>
+                <button class="btn-scan-qr" onclick="openQrScanner()"><i class="fa-solid fa-qrcode"></i>掃描發票</button>
+                <textarea id="review-meal-items" placeholder="吃了什麼好料？ (例如：小籠包、牛肉麵)
+或點擊右上角掃描發票自動帶入"></textarea>
+            </div>
             <div class="form-group"><label for="review-cost">花費金額 (NT$)</label><input type="number" id="review-cost" placeholder="大約花了多少錢？"></div>
             <div class="form-group"><label>喜愛程度</label><div class="rating-hearts" id="review-rating" data-rating="0"><i class="fa-solid fa-heart" data-value="1"></i><i class="fa-solid fa-heart" data-value="2"></i><i class="fa-solid fa-heart" data-value="3"></i><i class="fa-solid fa-heart" data-value="4"></i><i class="fa-solid fa-heart" data-value="5"></i></div></div>
             <div class="form-group"><label for="review-content">評論內容 (會成為貼文)</label><textarea id="review-content" placeholder="分享你的心得、推薦或建議..."></textarea></div>
@@ -194,6 +213,18 @@
     </footer>
   </div>
 
+  <!-- 【功能增強】QR Code 掃描器介面 -->
+  <div id="qr-scanner-modal">
+    <div class="qr-scanner-content">
+        <span class="qr-scanner-close-btn" onclick="closeQrScanner()">×</span>
+        <video id="qr-scanner-video" playsinline></video>
+        <div id="scan-box"></div>
+        <canvas id="qr-canvas" style="display: none;"></canvas>
+        <p id="qr-status-text">請將發票左方QR Code對準掃描框</p>
+    </div>
+  </div>
+
+
 <script>
     // --- 全域變數定義 ---
     let currentUser = null; 
@@ -203,7 +234,10 @@
     const CHALLENGES_DB_KEY = 'foodieAppUserChallenges';
     let pageHistory = [];
     let auth; 
-    let selectedPlaceForReview = null; // 【功能增強】用於暫存從地圖點選要評論的餐廳資訊
+    let selectedPlaceForReview = null; 
+
+    // --- 【功能增強】QR Code 掃描器相關變數 ---
+    let qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
 
     // --- Firebase 初始化 ---
     const firebaseConfig = {
@@ -259,7 +293,7 @@
         if (navElement) {
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             navElement.classList.add('active');
-            pageHistory = []; // Reset history when using nav bar
+            pageHistory = [];
         }
         if (pageId === 'random-page') updateRandomPageStatus();
         if (pageId === 'challenge-page') renderChallenges();
@@ -342,7 +376,6 @@
             content += `<p><i class="fas fa-clock"></i><span>營業時間資訊不明</span></p>`;
         }
 
-        // 【功能增強】儲存點選的餐廳資訊，並顯示新增評論按鈕
         selectedPlaceForReview = { name: place.name };
         const reviewLinkHtml = `<p style="margin-top: 10px; text-align: center;"><a href="#" onclick="goToReviewPageFromMap(); return false;" style="text-decoration:none; background-color: var(--primary-color); color: white; padding: 6px 12px; border-radius: 5px; font-weight: 500; font-size:14px; display: inline-block;"><i class="fa-solid fa-pencil" style="color: white; margin-right: 5px;"></i>新增評論</a></p>`;
         content += reviewLinkHtml;
@@ -352,28 +385,12 @@
         infoWindow.open({ anchor: marker, map: map, shouldFocus: false });
     }
 
-    // 【功能增強】從地圖 InfoWindow 前往新增評論頁面的函式
     window.goToReviewPageFromMap = function() {
-      // 關閉 info window
-      if (infoWindow) {
-        infoWindow.close();
-      }
-      
-      // 檢查登入狀態
-      if (!currentUser) {
-        alert('請先登入才能新增評論！');
-        showPage('login-page');
-        return;
-      }
-      
-      // 檢查是否有暫存的餐廳資訊
+      if (infoWindow) { infoWindow.close(); }
+      if (!currentUser) { alert('請先登入才能新增評論！'); showPage('login-page'); return; }
       if (!selectedPlaceForReview) return;
-
-      // 切換到新增頁面，並將底部導覽列的 "新增" 設為 active
       const addReviewNavButton = document.querySelector('.nav-item[onclick*="add-review-page"]');
       showPage('add-review-page', addReviewNavButton);
-
-      // 自動填入餐廳名稱
       document.getElementById('review-restaurant-name').value = selectedPlaceForReview.name;
     };
 
@@ -394,6 +411,109 @@
     function renderChallenges() { const container = document.getElementById('challenge-list-container'); if (!currentUser) { container.innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; return; } const userChallenges = getUserChallenges(); container.innerHTML = ''; challengesData.forEach(c => { const isJoined = userChallenges[c.id]; const card = document.createElement('div'); card.className = 'challenge-card'; card.innerHTML = `<div class="challenge-header"><div class="challenge-title">${c.title}</div><button class="challenge-btn-join ${isJoined ? 'joined' : ''}" onclick="toggleChallenge('${c.id}')">${isJoined ? '已參加' : '參加'}</button></div><p class="challenge-desc">${c.desc}</p><div><div class="challenge-ranking-title">🏆 排行榜：</div><ul class="challenge-ranking-list" style="flex-direction:column; gap: 5px;">${c.rank}</ul></div><div style="margin-top:15px;"><div class="challenge-participants-title">👥 參與者：</div><div class="challenge-participants-list">${c.participants} ${isJoined ? ', <b>您</b>' : ''}</div></div>`; container.appendChild(card); }); }
     window.toggleChallenge = function(challengeId) { if (!currentUser) { alert('請先登入才能參加挑戰！'); showPage('login-page'); return; } const userChallenges = getUserChallenges(); userChallenges[challengeId] = !userChallenges[challengeId]; saveUserChallenges(userChallenges); renderChallenges(); }
     
+    // --- 【功能增強】QR Code 掃描功能 ---
+    function openQrScanner() {
+        qrModal.style.display = 'flex';
+        qrStatusText.textContent = '正在啟動相機...';
+        scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(function(s) {
+                stream = s;
+                video.srcObject = stream;
+                video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
+                video.play();
+                requestAnimationFrame(tick);
+            }).catch(function(err) {
+                qrStatusText.textContent = '無法啟動相機';
+                console.error("相機錯誤:", err);
+            });
+    }
+
+    function closeQrScanner() {
+        qrModal.style.display = 'none';
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+    }
+
+    function tick() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            qrStatusText.textContent = '請將發票左方QR Code對準掃描框';
+            canvasElement.height = video.videoHeight;
+            canvasElement.width = video.videoWidth;
+            canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+            var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            var code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert",
+            });
+            if (code) {
+                handleQrCodeResult(code.data);
+                return; // Stop scanning
+            }
+        }
+        animationFrameId = requestAnimationFrame(tick);
+    }
+
+    function handleQrCodeResult(qrData) {
+        scanBox.style.borderColor = 'var(--success-color)';
+        qrStatusText.textContent = '掃描成功！正在解析...';
+
+        try {
+            // 台灣發票格式：左邊QR Code包含明細，通常以**開頭，或在長字串的第78個字元開始
+            let detailsData = '';
+            if (qrData.length > 77 && qrData.charAt(77) === '*') {
+                detailsData = qrData.substring(77);
+            } else if (qrData.startsWith('**')) {
+                detailsData = qrData;
+            } else {
+                 qrStatusText.textContent = '非明細QR Code，請掃左方較大的碼';
+                 setTimeout(() => { // 給使用者時間看提示
+                    scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+                    requestAnimationFrame(tick); // 繼續掃描
+                 }, 2000);
+                return;
+            }
+
+            const parts = detailsData.split(':');
+            if (parts.length < 6) throw new Error('資料格式不符');
+
+            const totalAmountHex = parts[3];
+            const totalAmount = parseInt(totalAmountHex, 16);
+            
+            let parsedItems = [];
+            const itemCount = parseInt(parts[5]);
+            let currentIndex = 6;
+            for (let i = 0; i < itemCount; i++) {
+                if (currentIndex + 2 >= parts.length) break;
+                const itemName = parts[currentIndex];
+                const itemQty = parts[currentIndex + 1];
+                parsedItems.push(`${itemName} x ${itemQty}`);
+                currentIndex += 3; // 移到下一個品項 (品名、數量、單價)
+            }
+            
+            const itemsText = parsedItems.join('\n');
+
+            // 填入表單
+            document.getElementById('review-meal-items').value = itemsText;
+            document.getElementById('review-cost').value = totalAmount;
+
+            setTimeout(closeQrScanner, 1000); // 延遲關閉，讓使用者看到成功訊息
+
+        } catch (error) {
+            console.error("解析錯誤:", error);
+            qrStatusText.textContent = '解析失敗，請重試';
+            setTimeout(() => {
+                scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+                requestAnimationFrame(tick);
+            }, 2000);
+        }
+    }
+
+
     // App 初始化 & DOM 事件綁定
     document.addEventListener('DOMContentLoaded', () => {
         auth.onAuthStateChanged(user => { 
@@ -410,6 +530,14 @@
             heart.addEventListener('mouseover', handleRatingHover);
             heart.addEventListener('mouseout', handleRatingMouseout);
         });
+
+        // 【功能增強】初始化 QR Code 掃描器 DOM 元素
+        qrModal = document.getElementById('qr-scanner-modal');
+        video = document.getElementById('qr-scanner-video');
+        canvasElement = document.getElementById('qr-canvas');
+        canvas = canvasElement.getContext('2d');
+        qrStatusText = document.getElementById('qr-status-text');
+        scanBox = document.getElementById('scan-box');
         
         showPage('map-page', document.querySelector('.nav-item')); 
     });
