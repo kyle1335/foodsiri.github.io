@@ -259,7 +259,7 @@
         if (navElement) {
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             navElement.classList.add('active');
-            pageHistory = [];
+            pageHistory = []; // Reset history when using nav bar
         }
         if (pageId === 'random-page') updateRandomPageStatus();
         if (pageId === 'challenge-page') renderChallenges();
