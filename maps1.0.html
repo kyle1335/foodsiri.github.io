@@ -16,7 +16,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   
-  <!-- 【功能增強】引入 QR Code 掃描函式庫 -->
+  <!-- QR Code 掃描函式庫 -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
   <style>
@@ -84,7 +84,7 @@
     .auth-switch-link { text-align: center; margin-top: 15px; font-size: 14px; color: var(--primary-color); cursor: pointer; }
     #auth-error { color: #dc3545; margin-top: 15px; min-height: 20px; font-weight: 500; text-align: center; }
 
-    /* 【功能增強】QR Code 掃描器樣式 */
+    /* QR Code 掃描器樣式 */
     .btn-scan-qr { position: absolute; top: 0; right: 0; background: var(--primary-color); color: white; border: none; border-radius: 0 8px 0 8px; padding: 5px 10px; font-size: 13px; cursor: pointer; }
     .btn-scan-qr i { margin-right: 5px; }
     #qr-scanner-modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); flex-direction: column; justify-content: center; align-items: center; }
@@ -222,7 +222,6 @@
     </div>
   </div>
 
-
 <script>
     // --- 全域變數定義 ---
     let currentUser = null; 
@@ -276,9 +275,7 @@
         updateUserGPS();
     };
 
-    // --- 全域函式定義 ---
-
-    // 【修正】將所有從 HTML onclick 呼叫的函式明確掛載到 window
+    // --- 全域可呼叫函式 (掛載到 window) ---
     window.showPage = function(pageId, navElement = null) {
         const activePage = document.querySelector('.page.active');
         if (activePage) {
@@ -316,8 +313,42 @@
     window.saveReview = function() { if (!currentUser) { alert('請先登入才能儲存評論！'); window.showPage('login-page'); return; } const name = document.getElementById('review-restaurant-name').value.trim(); const rating = document.getElementById('review-rating').dataset.rating; if (!name || rating === "0") { alert("請務必填寫「餐廳名稱」和「喜愛程度」！"); return; } const newPost = { id: Date.now(), name, items: document.getElementById('review-meal-items').value.trim(), cost: Number(document.getElementById('review-cost').value) || 0, rating, content: document.getElementById('review-content').value.trim(), timestamp: new Date().toISOString() }; const posts = getPosts(); posts.unshift(newPost); savePosts(posts); alert("評論已成功儲存！"); ['review-restaurant-name', 'review-meal-items', 'review-cost', 'review-content'].forEach(id => document.getElementById(id).value = ''); document.getElementById('review-rating').dataset.rating = 0; updateHeartDisplay(0); window.showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]')); }
     window.toggleChallenge = function(challengeId) { if (!currentUser) { alert('請先登入才能參加挑戰！'); window.showPage('login-page'); return; } const userChallenges = getUserChallenges(); userChallenges[challengeId] = !userChallenges[challengeId]; saveUserChallenges(userChallenges); renderChallenges(); }
     window.showProfileTab = function(tabId, tabElement) { document.querySelectorAll('#profile-page .tab-btn').forEach(btn => { btn.classList.remove('active'); btn.removeAttribute('data-tab'); }); tabElement.classList.add('active'); tabElement.dataset.tab = tabId; document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active'); if (tabId === 'accounting') renderAccountingRecords(); if (tabId === 'posts') renderMyPosts(); if (tabId === 'favorites') renderFavoriteRestaurants(); if (tabId === 'friends') renderFriendsList(); }
-    
-    // --- 內部函式 ---
+    window.goToReviewPageFromMap = function() {
+      if (infoWindow) { infoWindow.close(); }
+      if (!currentUser) { alert('請先登入才能新增評論！'); window.showPage('login-page'); return; }
+      if (!selectedPlaceForReview) return;
+      const addReviewNavButton = document.querySelector('.nav-item[onclick*="add-review-page"]');
+      window.showPage('add-review-page', addReviewNavButton);
+      document.getElementById('review-restaurant-name').value = selectedPlaceForReview.name;
+    };
+    window.openQrScanner = function() {
+        qrModal.style.display = 'flex';
+        qrStatusText.textContent = '正在啟動相機...';
+        scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(function(s) {
+                stream = s;
+                video.srcObject = stream;
+                video.setAttribute("playsinline", true);
+                video.play();
+                requestAnimationFrame(tick);
+            }).catch(function(err) {
+                qrStatusText.textContent = '無法啟動相機。請確認已授權。';
+                console.error("相機錯誤:", err);
+            });
+    }
+    window.closeQrScanner = function() {
+        qrModal.style.display = 'none';
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+    }
+
+    // --- 內部專用函式 (不需掛載到 window) ---
     function setupLoggedInUI(user) { document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block'; const userName = user.displayName || user.email; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`; renderProfilePage(); }
     function setupLoggedOutUI() { document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; renderProfilePage(); document.getElementById('challenge-list-container').innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; if(document.getElementById('picker-result')) { document.getElementById('picker-result').textContent = '?'; } }
     function renderProfilePage() { const activeTabBtn = document.querySelector('#profile-page .tab-btn.active'); window.showProfileTab(activeTabBtn?.dataset.tab || 'accounting', activeTabBtn || document.querySelector('#profile-page .tab-btn')); }
@@ -368,20 +399,12 @@
             content += `<p><i class="fas fa-clock"></i><span>營業時間資訊不明</span></p>`;
         }
         selectedPlaceForReview = { name: place.name };
-        const reviewLinkHtml = `<p style="margin-top: 10px; text-align: center;"><a href="#" onclick="goToReviewPageFromMap(); return false;" style="text-decoration:none; background-color: var(--primary-color); color: white; padding: 6px 12px; border-radius: 5px; font-weight: 500; font-size:14px; display: inline-block;"><i class="fa-solid fa-pencil" style="color: white; margin-right: 5px;"></i>新增評論</a></p>`;
+        const reviewLinkHtml = `<p style="margin-top: 10px; text-align: center;"><a href="#" onclick="window.goToReviewPageFromMap(); return false;" style="text-decoration:none; background-color: var(--primary-color); color: white; padding: 6px 12px; border-radius: 5px; font-weight: 500; font-size:14px; display: inline-block;"><i class="fa-solid fa-pencil" style="color: white; margin-right: 5px;"></i>新增評論</a></p>`;
         content += reviewLinkHtml;
         content += '</div>';
         infoWindow.setContent(content);
         infoWindow.open({ anchor: marker, map: map, shouldFocus: false });
     }
-    window.goToReviewPageFromMap = function() {
-      if (infoWindow) { infoWindow.close(); }
-      if (!currentUser) { alert('請先登入才能新增評論！'); window.showPage('login-page'); return; }
-      if (!selectedPlaceForReview) return;
-      const addReviewNavButton = document.querySelector('.nav-item[onclick*="add-review-page"]');
-      window.showPage('add-review-page', addReviewNavButton);
-      document.getElementById('review-restaurant-name').value = selectedPlaceForReview.name;
-    };
     function highlightListItem(placeId, scroll) { document.querySelectorAll(".list-item.is-selected").forEach((el) => el.classList.remove("is-selected")); if(placeId) { const listItem = document.querySelector(`.list-item[data-place-id="${placeId}"]`); if (listItem) { listItem.classList.add("is-selected"); if (scroll) { listItem.scrollIntoView({ behavior: "smooth", block: "center" }); } } } }
     function clearRestaurantMarkers() { restaurantMarkers.forEach((marker) => marker.setMap(null)); restaurantMarkers = []; }
     function updateRandomPageStatus() { if (!currentUser) { document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; document.getElementById('picker-result').textContent = '?'; return; } const allPosts = getPosts(); const restaurants = [...new Set(allPosts.map(p => p.name))]; const statusText = document.getElementById('random-status-text'); const pickerResult = document.getElementById('picker-result'); pickerResult.textContent = "?"; pickerResult.style.color = 'var(--primary-color)'; if (restaurants.length === 0) { statusText.textContent = "您還沒有新增任何餐廳喔！請到「新增」頁面加入吧！"; } else { statusText.textContent = `目前有 ${restaurants.length} 家獨特的餐廳在您的口袋名單中。`; } }
@@ -389,38 +412,8 @@
     function handleRatingHover(e) { updateHeartDisplay(e.target.dataset.value); }
     function handleRatingMouseout() { updateHeartDisplay(document.getElementById('review-rating').dataset.rating); }
     function updateHeartDisplay(rating) { document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => { heart.classList.toggle('active', heart.dataset.value <= rating); }); }
-    function renderChallenges() { const container = document.getElementById('challenge-list-container'); if (!currentUser) { container.innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; return; } const userChallenges = getUserChallenges(); container.innerHTML = ''; challengesData.forEach(c => { const isJoined = userChallenges[c.id]; const card = document.createElement('div'); card.className = 'challenge-card'; card.innerHTML = `<div class="challenge-header"><div class="challenge-title">${c.title}</div><button class="challenge-btn-join ${isJoined ? 'joined' : ''}" onclick="toggleChallenge('${c.id}')">${isJoined ? '已參加' : '參加'}</button></div><p class="challenge-desc">${c.desc}</p><div><div class="challenge-ranking-title">🏆 排行榜：</div><ul class="challenge-ranking-list" style="flex-direction:column; gap: 5px;">${c.rank}</ul></div><div style="margin-top:15px;"><div class="challenge-participants-title">👥 參與者：</div><div class="challenge-participants-list">${c.participants} ${isJoined ? ', <b>您</b>' : ''}</div></div>`; container.appendChild(card); }); }
-
-    // --- QR Code 掃描功能 ---
-    // 【修正】將函式明確掛載到 window
-    window.openQrScanner = function() {
-        qrModal.style.display = 'flex';
-        qrStatusText.textContent = '正在啟動相機...';
-        scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(function(s) {
-                stream = s;
-                video.srcObject = stream;
-                video.setAttribute("playsinline", true);
-                video.play();
-                requestAnimationFrame(tick);
-            }).catch(function(err) {
-                qrStatusText.textContent = '無法啟動相機。請確認已授權。';
-                console.error("相機錯誤:", err);
-            });
-    }
-    // 【修正】將函式明確掛載到 window
-    window.closeQrScanner = function() {
-        qrModal.style.display = 'none';
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-        }
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-            animationFrameId = null;
-        }
-    }
-
+    function renderChallenges() { const container = document.getElementById('challenge-list-container'); if (!currentUser) { container.innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; return; } const userChallenges = getUserChallenges(); container.innerHTML = ''; challengesData.forEach(c => { const isJoined = userChallenges[c.id]; const card = document.createElement('div'); card.className = 'challenge-card'; card.innerHTML = `<div class="challenge-header"><div class="challenge-title">${c.title}</div><button class="challenge-btn-join ${isJoined ? 'joined' : ''}" onclick="window.toggleChallenge('${c.id}')">${isJoined ? '已參加' : '參加'}</button></div><p class="challenge-desc">${c.desc}</p><div><div class="challenge-ranking-title">🏆 排行榜：</div><ul class="challenge-ranking-list" style="flex-direction:column; gap: 5px;">${c.rank}</ul></div><div style="margin-top:15px;"><div class="challenge-participants-title">👥 參與者：</div><div class="challenge-participants-list">${c.participants} ${isJoined ? ', <b>您</b>' : ''}</div></div>`; container.appendChild(card); }); }
+    
     function tick() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
             qrStatusText.textContent = '請將發票左方QR Code對準掃描框';
@@ -438,7 +431,6 @@
         }
         animationFrameId = requestAnimationFrame(tick);
     }
-
     function handleQrCodeResult(qrData) {
         scanBox.style.borderColor = 'var(--success-color)';
         qrStatusText.textContent = '掃描成功！正在解析...';
@@ -484,7 +476,7 @@
         }
     }
 
-    // App 初始化 & DOM 事件綁定
+    // --- App 初始化 & DOM 事件綁定 ---
     document.addEventListener('DOMContentLoaded', () => {
         auth.onAuthStateChanged(user => { 
             currentUser = user;
