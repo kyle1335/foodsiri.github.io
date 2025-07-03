@@ -203,6 +203,7 @@
     const CHALLENGES_DB_KEY = 'foodieAppUserChallenges';
     let pageHistory = [];
     let auth; 
+    let selectedPlaceForReview = null; // 【功能增強】用於暫存從地圖點選要評論的餐廳資訊
 
     // --- Firebase 初始化 ---
     const firebaseConfig = {
@@ -313,7 +314,6 @@
     function getPlaceDetailsPromise(placeId) { const request = { placeId: placeId, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address'] }; return new Promise(resolve => { placesService.getDetails(request, (details, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && details) { resolve(details); } else { resolve(null); } }); }); }
     function showSinglePlaceResult(place, routeInfo, details) { const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = ""; addRestaurantToList(place, routeInfo, details); highlightListItem(place.place_id); }
     
-    // ================== 主要修改區域 START ==================
     function showPlaceDetailsInWindow(place, marker, routeInfo = {}, details = null) {
         let content = `<div class="info-window-content"><h4>${place.name}</h4>`;
         const finalDetails = details || place; 
@@ -324,34 +324,59 @@
         if (routeInfo.walking) { content += `<p><i class="fas fa-walking"></i><span>${routeInfo.walking.distance} (${routeInfo.walking.duration})</span></p>`; }
         if (details && details.formatted_phone_number) { content += `<p><i class="fas fa-phone"></i><span>${details.formatted_phone_number}</span></p>`; }
         
-        // 【功能增強】顯示營業時間的邏輯
         if (details && details.business_status === "CLOSED_PERMANENTLY") {
             content += `<p><i class="fas fa-store-slash"></i><span style="color: #dc3545; font-weight: bold;">永久停業</span></p>`;
         } else if (details && details.opening_hours) {
-            // 1. 顯示當前營業狀態
             const isOpen = details.opening_hours.isOpen();
             const statusText = isOpen ? "營業中" : "休息中";
             const color = isOpen ? "#28a745" : "#dc3545";
             content += `<p><i class="fas fa-clock"></i><span style="color: ${color}; font-weight: bold;">${statusText}</span></p>`;
             
-            // 2. 檢查並顯示每週營業時間 (weekday_text)
             if (details.opening_hours.weekday_text) {
-                // 使用 map 產生每一天的 HTML，並用 join 合併成一個字串
                 const weeklyHoursHtml = details.opening_hours.weekday_text.map(day => 
-                    // 為了對齊，給予一個左邊距 (padding-left)
                     `<div style="padding-left: 24px; font-size: 13px; color: #555; line-height: 1.5;">${day}</div>`
                 ).join('');
-                content += weeklyHoursHtml; // 將組合好的 HTML 字串加入 content
+                content += weeklyHoursHtml;
             }
         } else {
             content += `<p><i class="fas fa-clock"></i><span>營業時間資訊不明</span></p>`;
         }
+
+        // 【功能增強】儲存點選的餐廳資訊，並顯示新增評論按鈕
+        selectedPlaceForReview = { name: place.name };
+        const reviewLinkHtml = `<p style="margin-top: 10px; text-align: center;"><a href="#" onclick="goToReviewPageFromMap(); return false;" style="text-decoration:none; background-color: var(--primary-color); color: white; padding: 6px 12px; border-radius: 5px; font-weight: 500; font-size:14px; display: inline-block;"><i class="fa-solid fa-pencil" style="color: white; margin-right: 5px;"></i>新增評論</a></p>`;
+        content += reviewLinkHtml;
         
         content += '</div>';
         infoWindow.setContent(content);
         infoWindow.open({ anchor: marker, map: map, shouldFocus: false });
     }
-    // ================== 主要修改區域 END ==================
+
+    // 【功能增強】從地圖 InfoWindow 前往新增評論頁面的函式
+    window.goToReviewPageFromMap = function() {
+      // 關閉 info window
+      if (infoWindow) {
+        infoWindow.close();
+      }
+      
+      // 檢查登入狀態
+      if (!currentUser) {
+        alert('請先登入才能新增評論！');
+        showPage('login-page');
+        return;
+      }
+      
+      // 檢查是否有暫存的餐廳資訊
+      if (!selectedPlaceForReview) return;
+
+      // 切換到新增頁面，並將底部導覽列的 "新增" 設為 active
+      const addReviewNavButton = document.querySelector('.nav-item[onclick*="add-review-page"]');
+      showPage('add-review-page', addReviewNavButton);
+
+      // 自動填入餐廳名稱
+      document.getElementById('review-restaurant-name').value = selectedPlaceForReview.name;
+    };
+
 
     window.clearSearch = function(suppressSearch = false) { directionsRenderer.setDirections({ routes: [] }); infoWindow.close(); const input = document.getElementById('search-input'); input.value = ''; document.getElementById('clear-search').style.display = 'none'; highlightListItem(null); if (!suppressSearch) { searchNearbyRestaurants(map.getCenter()); } }
     function highlightListItem(placeId, scroll) { document.querySelectorAll(".list-item.is-selected").forEach((el) => el.classList.remove("is-selected")); if(placeId) { const listItem = document.querySelector(`.list-item[data-place-id="${placeId}"]`); if (listItem) { listItem.classList.add("is-selected"); if (scroll) { listItem.scrollIntoView({ behavior: "smooth", block: "center" }); } } } }
