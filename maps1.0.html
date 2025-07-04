@@ -69,7 +69,6 @@
     #picker-arrow { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #dc3545; position: absolute; top: -35px; left: 50%; transform: translateX(-50%); z-index: 2; }
     #picker-result { font-size: 20px; font-weight: bold; color: var(--primary-color); text-align: center; height: 60px; padding: 0 10px; }
     .form-group { margin-bottom: 20px; position: relative; } .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-color); } .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; } .form-group textarea { min-height: 120px; resize: vertical; } .rating-hearts { display: flex; gap: 10px; font-size: 30px; color: #ddd; cursor: pointer; } .rating-hearts .fa-heart:hover, .rating-hearts .fa-heart.active { color: #ff4d6d; } 
-    /* --- CSS 修改 START --- */
     .photo-upload-container { background: #f0f0f0; border: 2px dashed #ccc; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
     .photo-upload-buttons { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
     .btn-upload { background: #fff; color: var(--text-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; display: inline-flex; align-items: center; }
@@ -78,7 +77,6 @@
     .photo-preview-item { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
     .photo-preview-item img { width: 100%; height: 100%; object-fit: cover; }
     .delete-photo-btn { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; background-color: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; line-height: 20px; }
-    /* --- CSS 修改 END --- */
     .challenge-card { background: #fff; border-radius: 12px; margin-bottom: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); } .challenge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; } .challenge-title { font-size: 18px; font-weight: 600; } .challenge-btn-join { background-color: var(--success-color); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 14px; border: none; cursor: pointer; } .challenge-btn-join.joined { background-color: var(--text-light); } .challenge-desc { font-size: 14px; color: var(--text-light); margin-bottom: 15px; } .challenge-ranking-title, .challenge-participants-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; } .challenge-ranking-list, .challenge-participants-list { font-size: 14px; color: #555; list-style: none; padding-left: 0; } .challenge-ranking-list li i { color: #ffd700; margin-right: 4px; }
     .profile-tabs { display: flex; gap: 10px; padding: 15px 20px; background: #fff; border-bottom: 1px solid #eee; overflow-x: auto; flex-shrink: 0; } .tab-btn { background: #f0f0f0; border: none; border-radius: 20px; padding: 8px 15px; font-size: 14px; cursor: pointer; white-space: nowrap; } .tab-btn.active { background: var(--primary-color); color: #fff; } .tab-content { display: none; } .tab-content.active { display: block; }
     .record-card, .post-card { position: relative; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); } .record-card .title, .post-card .title { font-weight: 600; margin-bottom: 5px; } .record-card .details, .post-card .details { font-size: 14px; color: var(--text-light); } .record-card .cost { font-weight: bold; color: var(--success-color); float: right; } .post-card .content { margin-top: 10px; font-size: 15px; line-height: 1.6; } .post-card .post-rating { margin-top: 10px; color: #ff4d6d; }
@@ -148,7 +146,6 @@
             <div class="form-group"><label for="review-cost">花費金額 (NT$)</label><input type="number" id="review-cost" placeholder="大約花了多少錢？"></div>
             <div class="form-group"><label>喜愛程度</label><div class="rating-hearts" id="review-rating" data-rating="0"><i class="fa-solid fa-heart" data-value="1"></i><i class="fa-solid fa-heart" data-value="2"></i><i class="fa-solid fa-heart" data-value="3"></i><i class="fa-solid fa-heart" data-value="4"></i><i class="fa-solid fa-heart" data-value="5"></i></div></div>
             <div class="form-group"><label for="review-content">評論內容 (會成為貼文)</label><textarea id="review-content" placeholder="分享你的心得、推薦或建議..."></textarea></div>
-            <!-- --- HTML 修改 START --- -->
             <div class="form-group">
                 <label>新增照片</label>
                 <div class="photo-upload-container">
@@ -156,15 +153,11 @@
                         <div id="btn-select-from-album" class="btn-upload"><i class="fa-solid fa-images"></i>從相簿選擇</div>
                         <div id="btn-open-camera" class="btn-upload"><i class="fa-solid fa-camera"></i>開啟相機</div>
                     </div>
-                    <!-- 隱藏的 input 元素，用於觸發檔案選擇和相機 -->
                     <input type="file" id="photo-file-input" accept="image/*" multiple style="display: none;">
                     <input type="file" id="camera-file-input" accept="image/*" capture="environment" style="display: none;">
-                    
-                    <!-- 用於顯示預覽圖的容器 -->
                     <div id="photo-preview-container"></div>
                 </div>
             </div>
-            <!-- --- HTML 修改 END --- -->
             <button class="btn" id="save-review-btn" onclick="saveReview()">儲存評論與貼文</button>
         </div>
       </div>
@@ -524,16 +517,56 @@
     function saveUserChallenges(challenges) { if (!currentUser) return; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(challenges)); }
     function createUserMarker(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
     function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener("click", (e) => { if (e.placeId) { e.stop(); } window.clearSearch(); }); }
-    function setupAutocomplete() { const input = document.getElementById('search-input'); const clearBtn = document.getElementById('clear-search'); autocomplete = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'tw' }, types: ['establishment', 'geocode'], fields: ['place_id', 'geometry', 'name', 'formatted_address', 'vicinity'] }); input.addEventListener('input', () => { clearBtn.style.display = input.value ? 'flex' : 'none'; }); autocomplete.addListener('place_changed', () => { const place = autocomplete.getPlace(); if (place.geometry && place.geometry.location) { window.clearSearch(true); handlePlaceSelection(place); } }); }
+    function setupAutocomplete() { 
+        const input = document.getElementById('search-input'); 
+        const clearBtn = document.getElementById('clear-search');
+        // --- 修正 START ---
+        // 在 fields 陣列中加入 'business_status'
+        autocomplete = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'tw' }, types: ['establishment', 'geocode'], fields: ['place_id', 'geometry', 'name', 'formatted_address', 'vicinity', 'business_status'] }); 
+        // --- 修正 END ---
+        input.addEventListener('input', () => { clearBtn.style.display = input.value ? 'flex' : 'none'; }); 
+        autocomplete.addListener('place_changed', () => { const place = autocomplete.getPlace(); if (place.geometry && place.geometry.location) { window.clearSearch(true); handlePlaceSelection(place); } }); 
+    }
     function updateUserGPS() { if (!isMapReady) return; document.getElementById("list-content-area").innerHTML = `<p class="list-status-text">正在獲取您的位置...</p>`; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; createUserMarker(userGpsPosition); window.centerOnUserGPS(); }, () => searchNearbyRestaurants(map.getCenter()) ); } else { searchNearbyRestaurants(map.getCenter()); } }
     function searchNearbyRestaurants(location) { if (!isMapReady) return; const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = `<p class="list-status-text">正在搜尋附近餐廳...</p>`; clearRestaurantMarkers(); const request = { location: location, radius: 1500, type: 'restaurant' }; placesService.nearbySearch(request, (results, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && results) { processAndDisplayResults(results, location); } else { listContainer.innerHTML = `<p class="list-status-text">此區域找不到餐廳</p>`; } }); }
     function processAndDisplayResults(places, center) { const listContainer = document.getElementById("list-content-area"); const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) })); placesWithDistance.sort((a, b) => a.distance - b.distance); listContainer.innerHTML = ""; placesWithDistance.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place); }); }
     function addRestaurantMarker(place) { const marker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name, icon: { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", fillColor: '#EA4335', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) } }); marker.addListener('click', (e) => { e.domEvent.stopPropagation(); handlePlaceSelection(place); }); marker.place_id = place.place_id; restaurantMarkers.push(marker); }
-    function addRestaurantToList(place, routeInfo = null, details = null) { const listContainer = document.getElementById("list-content-area"); const item = document.createElement("div"); item.className = "list-item"; item.dataset.placeId = place.place_id; let openStatusHtml = ""; if (place.business_status === "CLOSED_PERMANENTLY") { openStatusHtml = `<span class="open-status closed">永久停業</span>`; } else if (details && details.opening_hours) { const isOpen = details.opening_hours.isOpen(); openStatusHtml = isOpen ? `<span class="open-status open">營業中</span>` : `<span class="open-status closed">休息中</span>`; } const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`; const detailsText = [ratingHtml, openStatusHtml].filter(Boolean).join(' · '); const addressHtml = `<div class="item-address">${place.vicinity || place.formatted_address || ''}</div>`; let distanceHtml = ''; if (routeInfo && routeInfo.driving) { distanceHtml = `<div class="item-distance"><i class="fas fa-car"></i> ${routeInfo.driving.distance}</div>`; } else if (place.distance) { distanceHtml = `<div class="item-distance">${Math.round(place.distance)}m</div>`; } item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div>${addressHtml}<div class="item-details">${detailsText}</div></div>${distanceHtml}`; item.onclick = (e) => { e.stopPropagation(); handlePlaceSelection(place); }; listContainer.appendChild(item); }
+    function addRestaurantToList(place, routeInfo = null, details = null) { 
+        const listContainer = document.getElementById("list-content-area"); 
+        const item = document.createElement("div"); 
+        item.className = "list-item"; 
+        item.dataset.placeId = place.place_id; 
+        let openStatusHtml = ""; 
+        // --- 修正 START ---
+        // 將 place.permanently_closed 改為檢查 place.business_status
+        if (place.business_status === "CLOSED_PERMANENTLY") { 
+            openStatusHtml = `<span class="open-status closed">永久停業</span>`; 
+        } else if (details && details.opening_hours) { 
+            const isOpen = details.opening_hours.isOpen(); 
+            openStatusHtml = isOpen ? `<span class="open-status open">營業中</span>` : `<span class="open-status closed">休息中</span>`; 
+        } 
+        // --- 修正 END ---
+        const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`; 
+        const detailsText = [ratingHtml, openStatusHtml].filter(Boolean).join(' · '); 
+        const addressHtml = `<div class="item-address">${place.vicinity || place.formatted_address || ''}</div>`; 
+        let distanceHtml = ''; 
+        if (routeInfo && routeInfo.driving) { distanceHtml = `<div class="item-distance"><i class="fas fa-car"></i> ${routeInfo.driving.distance}</div>`; } else if (place.distance) { distanceHtml = `<div class="item-distance">${Math.round(place.distance)}m</div>`; } 
+        item.innerHTML = `<div class="item-icon"><i class="fas fa-utensils"></i></div><div class="item-info"><div class="item-name">${place.name}</div>${addressHtml}<div class="item-details">${detailsText}</div></div>${distanceHtml}`; 
+        item.onclick = (e) => { e.stopPropagation(); handlePlaceSelection(place); }; 
+        listContainer.appendChild(item); 
+    }
     function handlePlaceSelection(place) { const marker = restaurantMarkers.find((m) => m.place_id === place.place_id); if (marker) { map.panTo(marker.getPosition()); } else { map.panTo(place.geometry.location); } highlightListItem(place.place_id, true); initiateRouteAndDetailsFetch(place); }
     async function initiateRouteAndDetailsFetch(place) { if (!userGpsPosition || !place.geometry || !place.geometry.location) { showPlaceDetailsInWindow(place, null, {}); return; } document.getElementById('clear-search').style.display = 'flex'; clearRestaurantMarkers(); const [drivingResult, walkingResult, placeDetails] = await Promise.all([ getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.DRIVING), getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.WALKING), getPlaceDetailsPromise(place.place_id) ]); const routeInfo = { driving: drivingResult, walking: walkingResult }; if (drivingResult) { directionsRenderer.setDirections(drivingResult.response); map.fitBounds(drivingResult.response.routes[0].bounds); } else { directionsRenderer.setDirections({ routes: [] }); } const destinationMarker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name }); destinationMarker.addListener('click', (e) => { e.stopPropagation(); handlePlaceSelection(place); }); restaurantMarkers.push(destinationMarker); showPlaceDetailsInWindow(place, destinationMarker, routeInfo, placeDetails); showSinglePlaceResult(place, routeInfo, placeDetails); }
     function getRoutePromise(origin, destination, travelMode) { return new Promise(resolve => { const request = { origin, destination, travelMode }; directionsService.route(request, (res, stat) => { if (stat === 'OK') { const leg = res.routes[0].legs[0]; resolve({ distance: leg.distance.text, duration: leg.duration.text, response: res }); } else { resolve(null); } }); }); }
-    function getPlaceDetailsPromise(placeId) { const request = { placeId: placeId, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address'] }; return new Promise(resolve => { placesService.getDetails(request, (details, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && details) { resolve(details); } else { resolve(null); } }); }); }
+    function getPlaceDetailsPromise(placeId) { 
+        // --- 修正 START ---
+        // 在 fields 陣列中加入 'business_status'
+        const request = { placeId: placeId, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address'] }; 
+        // --- 修正 END ---
+        return new Promise(resolve => { 
+            placesService.getDetails(request, (details, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && details) { resolve(details); } else { resolve(null); } }); 
+        }); 
+    }
     function showSinglePlaceResult(place, routeInfo, details) { const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = ""; addRestaurantToList(place, routeInfo, details); highlightListItem(place.place_id); }
     function showPlaceDetailsInWindow(place, marker, routeInfo = {}, details = null) {
         let content = `<div class="info-window-content"><h4>${place.name}</h4>`;
@@ -543,9 +576,12 @@
         if (routeInfo.driving) { content += `<p><i class="fas fa-car"></i><span>${routeInfo.driving.distance} (${routeInfo.driving.duration})</span></p>`; }
         if (routeInfo.walking) { content += `<p><i class="fas fa-walking"></i><span>${routeInfo.walking.distance} (${routeInfo.walking.duration})</span></p>`; }
         if (details && details.formatted_phone_number) { content += `<p><i class="fas fa-phone"></i><span>${details.formatted_phone_number}</span></p>`; }
+        // --- 修正 START ---
+        // 將 details.permanently_closed 改為檢查 details.business_status
         if (details && details.business_status === "CLOSED_PERMANENTLY") {
             content += `<p><i class="fas fa-store-slash"></i><span style="color: var(--danger-color); font-weight: bold;">永久停業</span></p>`;
         } else if (details && details.opening_hours) {
+        // --- 修正 END ---
             const isOpen = details.opening_hours.isOpen();
             const statusText = isOpen ? "營業中" : "休息中";
             const color = isOpen ? "var(--success-color)" : "var(--danger-color)";
@@ -582,10 +618,7 @@
         ['review-restaurant-name', 'review-meal-items', 'review-cost', 'review-content'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('review-rating').dataset.rating = 0;
         updateHeartDisplay(0);
-        // --- JS 新增 START ---
-        // 清空照片預覽
         document.getElementById('photo-preview-container').innerHTML = '';
-        // --- JS 新增 END ---
     }
     
     function tick() {
@@ -633,51 +666,37 @@
         }
     }
 
-    // --- JS 新增 START ---
-    /**
-     * 處理選擇的檔案並顯示預覽圖
-     * @param {FileList} files - 從 input 元素獲取的檔案列表
-     */
     function displayPhotoPreviews(files) {
         const previewContainer = document.getElementById('photo-preview-container');
         if (!files) return;
 
         for (const file of files) {
-            // 確保選擇的是圖片檔
             if (!file.type.startsWith('image/')){ continue; }
 
             const reader = new FileReader();
             
             reader.onload = function(e) {
-                // 創建預覽項目的容器
                 const previewItem = document.createElement('div');
                 previewItem.className = 'photo-preview-item';
 
-                // 創建圖片元素
                 const img = document.createElement('img');
                 img.src = e.target.result;
 
-                // 創建刪除按鈕
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'delete-photo-btn';
                 deleteBtn.innerHTML = '×';
                 deleteBtn.onclick = function() {
-                    // 點擊按鈕時，從 DOM 中移除該預覽項目
                     previewItem.remove();
                 };
 
-                // 將圖片和刪除按鈕加入容器
                 previewItem.appendChild(img);
                 previewItem.appendChild(deleteBtn);
 
-                // 將預覽項目加入到主預覽容器中
                 previewContainer.appendChild(previewItem);
             }
-            // 讀取檔案內容
             reader.readAsDataURL(file);
         }
     }
-    // --- JS 新增 END ---
 
 
     // --- App 初始化 & DOM 事件綁定 ---
@@ -698,32 +717,24 @@
         qrStatusText = document.getElementById('qr-status-text');
         scanBox = document.getElementById('scan-box');
         
-        // --- JS 新增 START ---
-        // 獲取照片上傳相關的 DOM 元素
         const btnSelectAlbum = document.getElementById('btn-select-from-album');
         const btnOpenCamera = document.getElementById('btn-open-camera');
         const photoFileInput = document.getElementById('photo-file-input');
         const cameraFileInput = document.getElementById('camera-file-input');
 
-        // 綁定「從相簿選擇」按鈕事件
         btnSelectAlbum.addEventListener('click', () => photoFileInput.click());
-
-        // 綁定「開啟相機」按鈕事件
         btnOpenCamera.addEventListener('click', () => cameraFileInput.click());
 
-        // 監聽檔案輸入的變更事件 (處理選擇的檔案)
         const handleFileSelection = (event) => {
             const files = event.target.files;
             if (files.length > 0) {
                 displayPhotoPreviews(files);
             }
-            // 清空 input 的值，這樣才能重複選擇同一個檔案
             event.target.value = null; 
         };
 
         photoFileInput.addEventListener('change', handleFileSelection);
         cameraFileInput.addEventListener('change', handleFileSelection);
-        // --- JS 新增 END ---
 
         window.showPage('map-page', document.querySelector('.nav-item')); 
     });
