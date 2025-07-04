@@ -80,6 +80,10 @@
     .challenge-card { background: #fff; border-radius: 12px; margin-bottom: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); } .challenge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; } .challenge-title { font-size: 18px; font-weight: 600; } .challenge-btn-join { background-color: var(--success-color); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 14px; border: none; cursor: pointer; } .challenge-btn-join.joined { background-color: var(--text-light); } .challenge-desc { font-size: 14px; color: var(--text-light); margin-bottom: 15px; } .challenge-ranking-title, .challenge-participants-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; } .challenge-ranking-list, .challenge-participants-list { font-size: 14px; color: #555; list-style: none; padding-left: 0; } .challenge-ranking-list li i { color: #ffd700; margin-right: 4px; }
     .profile-tabs { display: flex; gap: 10px; padding: 15px 20px; background: #fff; border-bottom: 1px solid #eee; overflow-x: auto; flex-shrink: 0; } .tab-btn { background: #f0f0f0; border: none; border-radius: 20px; padding: 8px 15px; font-size: 14px; cursor: pointer; white-space: nowrap; } .tab-btn.active { background: var(--primary-color); color: #fff; } .tab-content { display: none; } .tab-content.active { display: block; }
     .record-card, .post-card { position: relative; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); } .record-card .title, .post-card .title { font-weight: 600; margin-bottom: 5px; } .record-card .details, .post-card .details { font-size: 14px; color: var(--text-light); } .record-card .cost { font-weight: bold; color: var(--success-color); float: right; } .post-card .content { margin-top: 10px; font-size: 15px; line-height: 1.6; } .post-card .post-rating { margin-top: 10px; color: #ff4d6d; }
+    /* --- 新增 START：貼文照片樣式 --- */
+    .post-photos { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .post-photos img { width: 70px; height: 70px; object-fit: cover; border-radius: 6px; border: 1px solid #eee; }
+    /* --- 新增 END --- */
     .card-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 8px; }
     .action-btn { background: none; border: 1px solid #ccc; border-radius: 5px; padding: 3px 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
     .action-btn.btn-edit { color: var(--primary-color); border-color: var(--primary-color); }
@@ -340,33 +344,43 @@
     window.clearSearch = function(suppressSearch = false) { directionsRenderer.setDirections({ routes: [] }); infoWindow.close(); const input = document.getElementById('search-input'); input.value = ''; document.getElementById('clear-search').style.display = 'none'; highlightListItem(null); if (!suppressSearch) { searchNearbyRestaurants(map.getCenter()); } }
     window.startRandomPick = function() { if (!currentUser) { alert('請先登入才能使用您的美食清單進行抽籤！'); window.showPage('login-page'); return; } const allPosts = getPosts(); const restaurants = [...new Set(allPosts.map(p => p.name))]; if (restaurants.length === 0) { alert("口袋名單是空的，無法抽籤！"); return; } const wheel = document.getElementById('picker-wheel'); const resultDiv = document.getElementById('picker-result'); const pickButton = document.getElementById('random-pick-btn'); pickButton.disabled = true; resultDiv.textContent = '...'; const randomSpins = Math.floor(Math.random() * 5) + 5; const randomStopAngle = Math.floor(Math.random() * 360); wheel.style.transform = `rotate(${randomSpins * 360 + randomStopAngle}deg)`; setTimeout(() => { const randomIndex = Math.floor(Math.random() * restaurants.length); const winner = restaurants[randomIndex]; resultDiv.textContent = winner; resultDiv.style.color = '#28a745'; pickButton.disabled = false; }, 4000); }
     
-    window.saveReview = function() {
+    // --- 修改 START：改為 async function 以處理照片儲存 ---
+    window.saveReview = async function() {
         if (!currentUser) { alert('請先登入！'); window.showPage('login-page'); return; }
         const name = document.getElementById('review-restaurant-name').value.trim();
         const rating = document.getElementById('review-rating').dataset.rating;
         if (!name || rating === "0") { alert("請務必填寫「餐廳名稱」和「喜愛程度」！"); return; }
         
+        // 獲取預覽中的照片並轉換為 Base64
+        const photoPreviews = document.querySelectorAll('#photo-preview-container .photo-preview-item img');
+        const photos = [];
+        for (const img of photoPreviews) {
+            photos.push(img.src); // img.src 就是 Base64 字串
+        }
+        
         const posts = getPosts();
         
+        const postData = {
+            name, 
+            items: document.getElementById('review-meal-items').value.trim(), 
+            cost: Number(document.getElementById('review-cost').value) || 0, 
+            rating, 
+            content: document.getElementById('review-content').value.trim(),
+            photos // 新增 photos 陣列
+        };
+
         if (editingPostId) { 
             const postIndex = posts.findIndex(p => p.id === editingPostId);
             if (postIndex > -1) {
-                posts[postIndex].name = name;
-                posts[postIndex].items = document.getElementById('review-meal-items').value.trim();
-                posts[postIndex].cost = Number(document.getElementById('review-cost').value) || 0;
-                posts[postIndex].rating = rating;
-                posts[postIndex].content = document.getElementById('review-content').value.trim();
+                // 更新時保留原有的 id 和 timestamp
+                posts[postIndex] = { ...posts[postIndex], ...postData };
                 alert("評論已成功更新！");
             }
         } else { 
             const newPost = { 
                 id: Date.now(), 
-                name, 
-                items: document.getElementById('review-meal-items').value.trim(), 
-                cost: Number(document.getElementById('review-cost').value) || 0, 
-                rating, 
-                content: document.getElementById('review-content').value.trim(), 
-                timestamp: new Date().toISOString() 
+                timestamp: new Date().toISOString(),
+                ...postData
             };
             posts.unshift(newPost);
             alert("評論已成功儲存！");
@@ -377,6 +391,7 @@
         resetReviewForm();
         window.showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]'));
     }
+    // --- 修改 END ---
 
     window.toggleChallenge = function(challengeId) { if (!currentUser) { alert('請先登入才能參加挑戰！'); window.showPage('login-page'); return; } const userChallenges = getUserChallenges(); userChallenges[challengeId] = !userChallenges[challengeId]; saveUserChallenges(userChallenges); renderChallenges(); }
     window.showProfileTab = function(tabId, tabElement) { document.querySelectorAll('#profile-page .tab-btn').forEach(btn => { btn.classList.remove('active'); btn.removeAttribute('data-tab'); }); tabElement.classList.add('active'); tabElement.dataset.tab = tabId; document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active'); if (tabId === 'accounting') renderAccountingRecords(); if (tabId === 'posts') renderMyPosts(); if (tabId === 'favorites') renderFavoriteRestaurants(); if (tabId === 'friends') renderFriendsList(); }
@@ -397,6 +412,14 @@
         document.getElementById('review-content').value = postToEdit.content || '';
         document.getElementById('review-rating').dataset.rating = postToEdit.rating;
         updateHeartDisplay(postToEdit.rating);
+
+        // --- 新增 START：編輯時載入舊照片 ---
+        const previewContainer = document.getElementById('photo-preview-container');
+        previewContainer.innerHTML = '';
+        if (postToEdit.photos && postToEdit.photos.length > 0) {
+            displayPhotoPreviews(postToEdit.photos);
+        }
+        // --- 新增 END ---
         
         document.getElementById('add-review-header').innerHTML = `<i class="fa-solid fa-pen-to-square"></i>編輯美食評論`;
         document.getElementById('save-review-btn').textContent = "更新評論";
@@ -436,13 +459,23 @@
             </div>`).join('');
     }
     
+    // --- 修改 START：顯示已儲存的照片 ---
     function renderMyPosts() {
         const container = document.getElementById('posts-content');
         if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); return; }
         const posts = getPosts();
         if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`; return; }
         container.innerHTML = posts.map(p => {
-            let ratingHtml = Array(parseInt(p.rating)).fill('<i class="fa-solid fa-heart"></i>').join('');
+            const ratingHtml = Array(parseInt(p.rating)).fill('<i class="fa-solid fa-heart"></i>').join('');
+            
+            // 產生照片的 HTML
+            let photosHtml = '';
+            if (p.photos && p.photos.length > 0) {
+                photosHtml = `<div class="post-photos">
+                    ${p.photos.map(photoSrc => `<img src="${photoSrc}" alt="Post photo">`).join('')}
+                </div>`;
+            }
+
             return `
                 <div class="post-card">
                     <div class="card-actions">
@@ -453,9 +486,11 @@
                     <div class="details">${new Date(p.timestamp).toLocaleString()}</div>
                     <p class="content">${p.content || '（無詳細評論）'}</p>
                     <div class="post-rating">${ratingHtml}</div>
+                    ${photosHtml}
                 </div>`;
         }).join('');
     }
+    // --- 修改 END ---
 
     function renderFavoriteRestaurants() {
         const container = document.getElementById('favorites-content');
@@ -621,70 +656,98 @@
         }
         animationFrameId = requestAnimationFrame(tick);
     }
+
+    // --- 修改 START：優化 QR Code 解析邏輯 ---
     function handleQrCodeResult(qrData) {
         scanBox.style.borderColor = 'var(--success-color)';
         qrStatusText.textContent = '掃描成功！正在解析...';
         try {
             let detailsData = '';
-            if (qrData.length > 77 && qrData.charAt(77) === '*') { detailsData = qrData.substring(77); }
-            else if (qrData.startsWith('**')) { detailsData = qrData; }
-            else {
+            // 判斷是否為明細 QR Code
+            if (qrData.length > 77 && qrData.charAt(77) === '*') {
+                detailsData = qrData.substring(77);
+            } else if (qrData.startsWith('**')) {
+                detailsData = qrData;
+            } else {
                  qrStatusText.textContent = '非明細QR Code，請掃左方較大的碼';
-                 setTimeout(() => { scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; if (qrModal.style.display === 'flex') requestAnimationFrame(tick); }, 2000);
+                 setTimeout(() => {
+                     scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+                     if (qrModal.style.display === 'flex') requestAnimationFrame(tick);
+                 }, 2000);
                  return;
             }
+
+            // 使用更穩健的迴圈進行解析，避免 split 帶來的問題
             const parts = detailsData.split(':');
-            if (parts.length < 6) throw new Error('資料格式不符');
             const totalAmount = parseInt(parts[3], 16);
-            let parsedItems = [];
             const itemCount = parseInt(parts[5]);
+            
+            let parsedItems = [];
             let currentIndex = 6;
             for (let i = 0; i < itemCount; i++) {
-                if (currentIndex + 2 >= parts.length) break;
-                parsedItems.push(`${parts[currentIndex]} x ${parts[currentIndex + 1]}`);
-                currentIndex += 3;
+                if (currentIndex + 2 >= parts.length) break; // 防止索引越界
+                
+                const itemName = parts[currentIndex];
+                const itemQuantity = parseInt(parts[currentIndex + 1]);
+                // const itemPrice = parseInt(parts[currentIndex + 2]); // 單價，目前沒用到
+                
+                parsedItems.push(`${itemName} x ${itemQuantity}`);
+                currentIndex += 3; // 每個品項佔用3個欄位
             }
+            
             document.getElementById('review-meal-items').value = parsedItems.join('\n');
             document.getElementById('review-cost').value = totalAmount;
-            setTimeout(window.closeScanner, 1000);
+            setTimeout(window.closeQrScanner, 1000);
         } catch (error) {
             console.error("解析錯誤:", error);
             qrStatusText.textContent = '解析失敗，請重試';
-            setTimeout(() => { scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; if (qrModal.style.display === 'flex') requestAnimationFrame(tick); }, 2000);
+            setTimeout(() => {
+                scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+                if (qrModal.style.display === 'flex') requestAnimationFrame(tick);
+            }, 2000);
         }
     }
+    // --- 修改 END ---
 
-    function displayPhotoPreviews(files) {
+    // --- 修改 START：允許傳入 Base64 字串來顯示預覽 ---
+    function displayPhotoPreviews(items) {
         const previewContainer = document.getElementById('photo-preview-container');
-        if (!files) return;
+        if (!items) return;
 
-        for (const file of files) {
-            if (!file.type.startsWith('image/')){ continue; }
-
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                const previewItem = document.createElement('div');
-                previewItem.className = 'photo-preview-item';
-
-                const img = document.createElement('img');
-                img.src = e.target.result;
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'delete-photo-btn';
-                deleteBtn.innerHTML = '×';
-                deleteBtn.onclick = function() {
-                    previewItem.remove();
-                };
-
-                previewItem.appendChild(img);
-                previewItem.appendChild(deleteBtn);
-
-                previewContainer.appendChild(previewItem);
+        for (const item of items) {
+            // 如果是檔案物件 (來自 input)
+            if (item instanceof File) {
+                if (!item.type.startsWith('image/')){ continue; }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    createPreviewElement(e.target.result);
+                }
+                reader.readAsDataURL(item);
+            } 
+            // 如果是 Base64 字串 (來自 localStorage)
+            else if (typeof item === 'string' && item.startsWith('data:image')) {
+                createPreviewElement(item);
             }
-            reader.readAsDataURL(file);
+        }
+
+        function createPreviewElement(src) {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'photo-preview-item';
+            
+            const img = document.createElement('img');
+            img.src = src;
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-photo-btn';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.onclick = function() { previewItem.remove(); };
+
+            previewItem.appendChild(img);
+            previewItem.appendChild(deleteBtn);
+            previewContainer.appendChild(previewItem);
         }
     }
+    // --- 修改 END ---
 
 
     // --- App 初始化 & DOM 事件綁定 ---
@@ -710,18 +773,12 @@
         const photoFileInput = document.getElementById('photo-file-input');
         const cameraFileInput = document.getElementById('camera-file-input');
 
-        // 綁定「從相簿選擇」按鈕事件
         btnSelectAlbum.addEventListener('click', () => photoFileInput.click());
-
-        // --- 修正 START ---
-        // 修正：「開啟相機」按鈕的點擊事件，應觸發相機專用的 input
         btnOpenCamera.addEventListener('click', () => cameraFileInput.click());
-        // --- 修正 END ---
 
-        // 監聽檔案輸入的變更事件 (處理選擇的檔案)
         const handleFileSelection = (event) => {
             const files = event.target.files;
-            if (files.length > 0) {
+            if (files && files.length > 0) {
                 displayPhotoPreviews(files);
             }
             event.target.value = null; 
