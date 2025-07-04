@@ -20,19 +20,78 @@
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
   <style>
-    :root { --primary-color: #667eea; --secondary-color: #764ba2; --success-color: #28a745; --danger-color: #dc3545; --background-color: #f8f9fa; --text-color: #333; --text-light: #6c757d; --nav-height: 60px; }
+    :root { 
+      --primary-color: #667eea; 
+      --secondary-color: #764ba2; 
+      --success-color: #28a745; 
+      --danger-color: #dc3545; 
+      --background-color: #f8f9fa; 
+      --text-color: #333; 
+      --text-light: #6c757d; 
+      --nav-height: 60px;
+      /* --- 新增 START：用於修正 vh 在 Safari 的問題 --- */
+      --vh: 1vh; 
+      /* --- 新增 END --- */
+    }
     html, body { height: 100%; margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--background-color); }
-    .app-container { width: 100%; height: 100vh; display: flex; flex-direction: column; }
-    main { flex-grow: 1; overflow: hidden; position: relative; }
-    .page { width: 100%; height: 100%; display: none; flex-direction: column; overflow: hidden; }
-    .page.active { display: flex; }
+    /* --- 修改 START：確保 App 容器高度計算正確 --- */
+    .app-container { 
+      width: 100%; 
+      height: calc(var(--vh, 1vh) * 100); /* 使用動態計算的 vh */
+      display: -webkit-flex; /* Safari 前綴 */
+      display: flex; 
+      -webkit-flex-direction: column;
+      flex-direction: column;
+    }
+    main { 
+      -webkit-flex: 1; /* Safari 前綴 */
+      flex: 1; /* 取代 flex-grow: 1，讓 main 填滿剩餘空間 */
+      overflow: hidden; 
+      position: relative;
+      display: -webkit-flex;
+      display: flex;
+    }
+    .page { 
+      width: 100%; height: 100%; 
+      display: none; 
+      -webkit-flex-direction: column;
+      flex-direction: column; 
+      overflow: hidden; 
+    }
+    /* --- 修改 END --- */
+    .page.active { 
+      display: -webkit-flex; /* Safari 前綴 */
+      display: flex; 
+    }
     .app-nav { height: var(--nav-height); width: 100%; background: #fff; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-around; align-items: center; flex-shrink: 0; }
     .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-light); font-size: 12px; cursor: pointer; transition: color 0.2s; width: 100%; }
     .nav-item i { font-size: 22px; margin-bottom: 4px; }
     .nav-item.active { color: var(--primary-color); }
-    #map-page { flex-direction: column; }
-    #map-panel { height: 65%; position: relative; background: #e5e3df; width: 100%; }
-    #list-panel { height: 35%; border-top: 1px solid #ddd; display: flex; flex-direction: column; background: white; overflow: hidden; width: 100%; }
+    #map-page { 
+      -webkit-flex-direction: column;
+      flex-direction: column; 
+    }
+    /* --- 修改 START：改用 flex 取代百分比高度 --- */
+    #map-panel { 
+      -webkit-flex: 6.5; /* Safari 前綴 */
+      flex: 6.5; /* 佔 65% 空間 */
+      position: relative; 
+      background: #e5e3df; 
+      width: 100%; 
+    }
+    #list-panel { 
+      -webkit-flex: 3.5; /* Safari 前綴 */
+      flex: 3.5; /* 佔 35% 空間 */
+      border-top: 1px solid #ddd; 
+      display: -webkit-flex;
+      display: flex; 
+      -webkit-flex-direction: column;
+      flex-direction: column; 
+      background: white; 
+      overflow: hidden; 
+      width: 100%; 
+    }
+    /* --- 修改 END --- */
     #map { width: 100%; height: 100%; }
     .search-area { padding: 15px; border-bottom: 1px solid #eee; background: var(--background-color); flex-shrink: 0; position: relative; }
     .search-input { width: 100%; padding: 12px 40px 12px 15px; font-size: 16px; border-radius: 25px; border: 1px solid #ccc; box-sizing: border-box; }
@@ -109,38 +168,43 @@
     .qr-scanner-close-btn { position: absolute; top: -15px; right: -15px; color: white; background-color: #dc3545; border-radius: 50%; width: 30px; height: 30px; font-size: 20px; font-weight: bold; cursor: pointer; border: 2px solid white; display:flex; justify-content:center; align-items:center; }
     #scan-box { position: absolute; left: 50%; top: 50%; width: 60%; height: 50%; transform: translate(-50%, -50%); border: 3px solid rgba(255, 255, 255, 0.7); border-radius: 10px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); }
 
-    /* --- 新增：響應式設計 (桌面版) START --- */
     @media (min-width: 768px) {
       body {
-        /* 在桌面版提供一個背景色，讓APP容器更突出 */
         background-color: #e9ebee; 
       }
       .app-container {
-        /* 設定最大寬度並置中，模擬手機APP的感覺 */
         max-width: 1024px; 
         margin: 20px auto;
-        height: calc(100vh - 40px);
+        /* --- 修改 START：確保桌面版高度計算正確 --- */
+        height: calc((var(--vh, 1vh) * 100) - 40px);
+        min-height: 600px; /* 增加一個最小高度，避免視窗過小時變形 */
+        /* --- 修改 END --- */
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        overflow: hidden; /* 確保圓角效果 */
+        overflow: hidden;
       }
 
-      /* 地圖頁面左右佈局 */
       #map-page {
+        -webkit-flex-direction: row;
         flex-direction: row;
       }
+      /* --- 修改 START：確保左右 panel 高度正確 --- */
       #map-panel {
         width: 60%;
         height: 100%;
+        -webkit-flex: 6; /* Safari 前綴 */
+        flex: 6;
       }
       #list-panel {
         width: 40%;
         height: 100%;
-        border-top: none; /* 移除頂部邊框 */
-        border-left: 1px solid #ddd; /* 增加左邊框 */
+        -webkit-flex: 4; /* Safari 前綴 */
+        flex: 4;
+        border-top: none;
+        border-left: 1px solid #ddd;
       }
+      /* --- 修改 END --- */
 
-      /* 內容頁面置中並設定最大寬度 */
       #add-review-page .page-content,
       #challenge-page .page-content,
       #profile-page .page-content,
@@ -151,7 +215,6 @@
         margin: 0 auto;
       }
     }
-    /* --- 新增：響應式設計 (桌面版) END --- */
   </style>
 </head>
 <body>
@@ -390,7 +453,7 @@
         if (!currentUser) { alert('請先登入！'); window.showPage('login-page'); return; }
         const name = document.getElementById('review-restaurant-name').value.trim();
         const rating = document.getElementById('review-rating').dataset.rating;
-        if (!name || rating === "0") { alert("請務必填寫「餐廳名稱」和「喜愛程度」！"); return; }
+        if (!name || rating === "0") { alert("請務必填寫「餐廳名称」和「喜愛程度」！"); return; }
         
         const photoPreviews = document.querySelectorAll('#photo-preview-container .photo-preview-item img');
         const photos = [];
@@ -775,6 +838,16 @@
 
     // --- App 初始化 & DOM 事件綁定 ---
     document.addEventListener('DOMContentLoaded', () => {
+        // --- 新增 START：修正 vh 單位在行動版 Safari 的高度計算問題 ---
+        const setVh = () => {
+          const vh = window.innerHeight * 0.01;
+          document.documentElement.style.setProperty('--vh', `${vh}px`);
+        };
+        // 頁面載入和視窗大小改變時都重新計算
+        setVh();
+        window.addEventListener('resize', setVh);
+        // --- 新增 END ---
+
         auth.onAuthStateChanged(user => { 
             currentUser = user;
             if (user) { setupLoggedInUI(user); } else { setupLoggedOutUI(); } 
