@@ -520,10 +520,7 @@
     function setupAutocomplete() { 
         const input = document.getElementById('search-input'); 
         const clearBtn = document.getElementById('clear-search');
-        // --- 修正 START ---
-        // 在 fields 陣列中加入 'business_status'
         autocomplete = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'tw' }, types: ['establishment', 'geocode'], fields: ['place_id', 'geometry', 'name', 'formatted_address', 'vicinity', 'business_status'] }); 
-        // --- 修正 END ---
         input.addEventListener('input', () => { clearBtn.style.display = input.value ? 'flex' : 'none'; }); 
         autocomplete.addListener('place_changed', () => { const place = autocomplete.getPlace(); if (place.geometry && place.geometry.location) { window.clearSearch(true); handlePlaceSelection(place); } }); 
     }
@@ -537,15 +534,12 @@
         item.className = "list-item"; 
         item.dataset.placeId = place.place_id; 
         let openStatusHtml = ""; 
-        // --- 修正 START ---
-        // 將 place.permanently_closed 改為檢查 place.business_status
         if (place.business_status === "CLOSED_PERMANENTLY") { 
             openStatusHtml = `<span class="open-status closed">永久停業</span>`; 
         } else if (details && details.opening_hours) { 
             const isOpen = details.opening_hours.isOpen(); 
             openStatusHtml = isOpen ? `<span class="open-status open">營業中</span>` : `<span class="open-status closed">休息中</span>`; 
         } 
-        // --- 修正 END ---
         const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`; 
         const detailsText = [ratingHtml, openStatusHtml].filter(Boolean).join(' · '); 
         const addressHtml = `<div class="item-address">${place.vicinity || place.formatted_address || ''}</div>`; 
@@ -559,10 +553,7 @@
     async function initiateRouteAndDetailsFetch(place) { if (!userGpsPosition || !place.geometry || !place.geometry.location) { showPlaceDetailsInWindow(place, null, {}); return; } document.getElementById('clear-search').style.display = 'flex'; clearRestaurantMarkers(); const [drivingResult, walkingResult, placeDetails] = await Promise.all([ getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.DRIVING), getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.WALKING), getPlaceDetailsPromise(place.place_id) ]); const routeInfo = { driving: drivingResult, walking: walkingResult }; if (drivingResult) { directionsRenderer.setDirections(drivingResult.response); map.fitBounds(drivingResult.response.routes[0].bounds); } else { directionsRenderer.setDirections({ routes: [] }); } const destinationMarker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name }); destinationMarker.addListener('click', (e) => { e.stopPropagation(); handlePlaceSelection(place); }); restaurantMarkers.push(destinationMarker); showPlaceDetailsInWindow(place, destinationMarker, routeInfo, placeDetails); showSinglePlaceResult(place, routeInfo, placeDetails); }
     function getRoutePromise(origin, destination, travelMode) { return new Promise(resolve => { const request = { origin, destination, travelMode }; directionsService.route(request, (res, stat) => { if (stat === 'OK') { const leg = res.routes[0].legs[0]; resolve({ distance: leg.distance.text, duration: leg.duration.text, response: res }); } else { resolve(null); } }); }); }
     function getPlaceDetailsPromise(placeId) { 
-        // --- 修正 START ---
-        // 在 fields 陣列中加入 'business_status'
         const request = { placeId: placeId, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address'] }; 
-        // --- 修正 END ---
         return new Promise(resolve => { 
             placesService.getDetails(request, (details, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && details) { resolve(details); } else { resolve(null); } }); 
         }); 
@@ -576,12 +567,9 @@
         if (routeInfo.driving) { content += `<p><i class="fas fa-car"></i><span>${routeInfo.driving.distance} (${routeInfo.driving.duration})</span></p>`; }
         if (routeInfo.walking) { content += `<p><i class="fas fa-walking"></i><span>${routeInfo.walking.distance} (${routeInfo.walking.duration})</span></p>`; }
         if (details && details.formatted_phone_number) { content += `<p><i class="fas fa-phone"></i><span>${details.formatted_phone_number}</span></p>`; }
-        // --- 修正 START ---
-        // 將 details.permanently_closed 改為檢查 details.business_status
         if (details && details.business_status === "CLOSED_PERMANENTLY") {
             content += `<p><i class="fas fa-store-slash"></i><span style="color: var(--danger-color); font-weight: bold;">永久停業</span></p>`;
         } else if (details && details.opening_hours) {
-        // --- 修正 END ---
             const isOpen = details.opening_hours.isOpen();
             const statusText = isOpen ? "營業中" : "休息中";
             const color = isOpen ? "var(--success-color)" : "var(--danger-color)";
@@ -658,7 +646,7 @@
             }
             document.getElementById('review-meal-items').value = parsedItems.join('\n');
             document.getElementById('review-cost').value = totalAmount;
-            setTimeout(window.closeQrScanner, 1000);
+            setTimeout(window.closeScanner, 1000);
         } catch (error) {
             console.error("解析錯誤:", error);
             qrStatusText.textContent = '解析失敗，請重試';
@@ -722,9 +710,15 @@
         const photoFileInput = document.getElementById('photo-file-input');
         const cameraFileInput = document.getElementById('camera-file-input');
 
+        // 綁定「從相簿選擇」按鈕事件
         btnSelectAlbum.addEventListener('click', () => photoFileInput.click());
-        btnOpenCamera.addEventListener('click', () => cameraFileInput.click());
 
+        // --- 修正 START ---
+        // 修正：「開啟相機」按鈕的點擊事件，應觸發相機專用的 input
+        btnOpenCamera.addEventListener('click', () => cameraFileInput.click());
+        // --- 修正 END ---
+
+        // 監聽檔案輸入的變更事件 (處理選擇的檔案)
         const handleFileSelection = (event) => {
             const files = event.target.files;
             if (files.length > 0) {
