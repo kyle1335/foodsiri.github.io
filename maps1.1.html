@@ -29,23 +29,20 @@
       --text-color: #333; 
       --text-light: #6c757d; 
       --nav-height: 60px;
-      /* --- 新增 START：用於修正 vh 在 Safari 的問題 --- */
       --vh: 1vh; 
-      /* --- 新增 END --- */
     }
     html, body { height: 100%; margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--background-color); }
-    /* --- 修改 START：確保 App 容器高度計算正確 --- */
     .app-container { 
       width: 100%; 
-      height: calc(var(--vh, 1vh) * 100); /* 使用動態計算的 vh */
-      display: -webkit-flex; /* Safari 前綴 */
+      height: calc(var(--vh, 1vh) * 100);
+      display: -webkit-flex;
       display: flex; 
       -webkit-flex-direction: column;
       flex-direction: column;
     }
     main { 
-      -webkit-flex: 1; /* Safari 前綴 */
-      flex: 1; /* 取代 flex-grow: 1，讓 main 填滿剩餘空間 */
+      -webkit-flex: 1;
+      flex: 1;
       overflow: hidden; 
       position: relative;
       display: -webkit-flex;
@@ -58,9 +55,8 @@
       flex-direction: column; 
       overflow: hidden; 
     }
-    /* --- 修改 END --- */
     .page.active { 
-      display: -webkit-flex; /* Safari 前綴 */
+      display: -webkit-flex;
       display: flex; 
     }
     .app-nav { height: var(--nav-height); width: 100%; background: #fff; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-around; align-items: center; flex-shrink: 0; }
@@ -71,17 +67,16 @@
       -webkit-flex-direction: column;
       flex-direction: column; 
     }
-    /* --- 修改 START：改用 flex 取代百分比高度 --- */
     #map-panel { 
-      -webkit-flex: 6.5; /* Safari 前綴 */
-      flex: 6.5; /* 佔 65% 空間 */
+      -webkit-flex: 6.5;
+      flex: 6.5;
       position: relative; 
       background: #e5e3df; 
       width: 100%; 
     }
     #list-panel { 
-      -webkit-flex: 3.5; /* Safari 前綴 */
-      flex: 3.5; /* 佔 35% 空間 */
+      -webkit-flex: 3.5;
+      flex: 3.5;
       border-top: 1px solid #ddd; 
       display: -webkit-flex;
       display: flex; 
@@ -91,7 +86,6 @@
       overflow: hidden; 
       width: 100%; 
     }
-    /* --- 修改 END --- */
     #map { width: 100%; height: 100%; }
     .search-area { padding: 15px; border-bottom: 1px solid #eee; background: var(--background-color); flex-shrink: 0; position: relative; }
     .search-input { width: 100%; padding: 12px 40px 12px 15px; font-size: 16px; border-radius: 25px; border: 1px solid #ccc; box-sizing: border-box; }
@@ -136,7 +130,6 @@
     .photo-preview-item { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
     .photo-preview-item img { width: 100%; height: 100%; object-fit: cover; }
     .delete-photo-btn { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; background-color: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; line-height: 20px; }
-    .challenge-card { background: #fff; border-radius: 12px; margin-bottom: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); } .challenge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; } .challenge-title { font-size: 18px; font-weight: 600; } .challenge-btn-join { background-color: var(--success-color); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 14px; border: none; cursor: pointer; } .challenge-btn-join.joined { background-color: var(--text-light); } .challenge-desc { font-size: 14px; color: var(--text-light); margin-bottom: 15px; } .challenge-ranking-title, .challenge-participants-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; } .challenge-ranking-list, .challenge-participants-list { font-size: 14px; color: #555; list-style: none; padding-left: 0; } .challenge-ranking-list li i { color: #ffd700; margin-right: 4px; }
     .profile-tabs { display: flex; gap: 10px; padding: 15px 20px; background: #fff; border-bottom: 1px solid #eee; overflow-x: auto; flex-shrink: 0; } .tab-btn { background: #f0f0f0; border: none; border-radius: 20px; padding: 8px 15px; font-size: 14px; cursor: pointer; white-space: nowrap; } .tab-btn.active { background: var(--primary-color); color: #fff; } .tab-content { display: none; } .tab-content.active { display: block; }
     .record-card, .post-card { position: relative; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); } .record-card .title, .post-card .title { font-weight: 600; margin-bottom: 5px; } .record-card .details, .post-card .details { font-size: 14px; color: var(--text-light); } .record-card .cost { font-weight: bold; color: var(--success-color); float: right; } .post-card .content { margin-top: 10px; font-size: 15px; line-height: 1.6; } .post-card .post-rating { margin-top: 10px; color: #ff4d6d; }
     .post-photos { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
@@ -167,6 +160,57 @@
     #qr-status-text { color: white; font-size: 16px; margin-top: 15px; height: 25px; }
     .qr-scanner-close-btn { position: absolute; top: -15px; right: -15px; color: white; background-color: #dc3545; border-radius: 50%; width: 30px; height: 30px; font-size: 20px; font-weight: bold; cursor: pointer; border: 2px solid white; display:flex; justify-content:center; align-items:center; }
     #scan-box { position: absolute; left: 50%; top: 50%; width: 60%; height: 50%; transform: translate(-50%, -50%); border: 3px solid rgba(255, 255, 255, 0.7); border-radius: 10px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); }
+    
+    /* --- START: 新增的挑戰榜樣式 --- */
+    .challenge-input-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .challenge-input-form input {
+      flex-grow: 1;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .challenge-input-form button {
+      flex-shrink: 0;
+      padding: 0 20px;
+      font-size: 14px;
+      height: 44px; /* 與輸入框等高 */
+      box-sizing: border-box;
+    }
+    .challenge-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .challenge-item.completed .challenge-text {
+      text-decoration: line-through;
+      color: var(--text-light);
+    }
+    .challenge-item:hover {
+      background-color: #f8f9fa;
+    }
+    .challenge-text {
+      font-size: 16px;
+      flex-grow: 1;
+      margin-right: 15px;
+    }
+    .challenge-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    /* --- END: 新增的挑戰榜樣式 --- */
 
     @media (min-width: 768px) {
       body {
@@ -175,36 +219,30 @@
       .app-container {
         max-width: 1024px; 
         margin: 20px auto;
-        /* --- 修改 START：確保桌面版高度計算正確 --- */
         height: calc((var(--vh, 1vh) * 100) - 40px);
-        min-height: 600px; /* 增加一個最小高度，避免視窗過小時變形 */
-        /* --- 修改 END --- */
+        min-height: 600px;
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         overflow: hidden;
       }
-
       #map-page {
         -webkit-flex-direction: row;
         flex-direction: row;
       }
-      /* --- 修改 START：確保左右 panel 高度正確 --- */
       #map-panel {
         width: 60%;
         height: 100%;
-        -webkit-flex: 6; /* Safari 前綴 */
+        -webkit-flex: 6;
         flex: 6;
       }
       #list-panel {
         width: 40%;
         height: 100%;
-        -webkit-flex: 4; /* Safari 前綴 */
+        -webkit-flex: 4;
         flex: 4;
         border-top: none;
         border-left: 1px solid #ddd;
       }
-      /* --- 修改 END --- */
-
       #add-review-page .page-content,
       #challenge-page .page-content,
       #profile-page .page-content,
@@ -272,7 +310,13 @@
       </div>
       <div id="challenge-page" class="page">
         <div class="page-header"><h2><i class="fa-solid fa-trophy"></i>美食挑戰榜</h2><div class="placeholder"></div></div>
-        <div class="page-content" id="challenge-list-container"></div>
+        <div class="page-content">
+            <div class="challenge-input-form">
+              <input type="text" id="challenge-input" placeholder="輸入新的美食挑戰，例如：吃遍十家米其林餐廳">
+              <button class="btn" onclick="addChallenge()">新增挑戰</button>
+            </div>
+            <div id="challenge-list-container"></div>
+        </div>
       </div>
       <div id="profile-page" class="page">
         <div class="page-header">
@@ -493,8 +537,7 @@
         resetReviewForm();
         window.showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]'));
     }
-
-    window.toggleChallenge = function(challengeId) { if (!currentUser) { alert('請先登入才能參加挑戰！'); window.showPage('login-page'); return; } const userChallenges = getUserChallenges(); userChallenges[challengeId] = !userChallenges[challengeId]; saveUserChallenges(userChallenges); renderChallenges(); }
+    
     window.showProfileTab = function(tabId, tabElement) { document.querySelectorAll('#profile-page .tab-btn').forEach(btn => { btn.classList.remove('active'); btn.removeAttribute('data-tab'); }); tabElement.classList.add('active'); tabElement.dataset.tab = tabId; document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active'); if (tabId === 'accounting') renderAccountingRecords(); if (tabId === 'posts') renderMyPosts(); if (tabId === 'favorites') renderFavoriteRestaurants(); if (tabId === 'friends') renderFriendsList(); }
     window.goToReviewPageFromMap = function() { if (infoWindow) { infoWindow.close(); } if (!currentUser) { alert('請先登入才能新增評論！'); window.showPage('login-page'); return; } if (!selectedPlaceForReview) return; const addReviewNavButton = document.querySelector('.nav-item[onclick*="add-review-page"]'); window.showPage('add-review-page', addReviewNavButton); document.getElementById('review-restaurant-name').value = selectedPlaceForReview.name; };
     window.openQrScanner = function() { qrModal.style.display = 'flex'; qrStatusText.textContent = '正在啟動相機...'; scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(s) { stream = s; video.srcObject = stream; video.setAttribute("playsinline", true); video.play(); requestAnimationFrame(tick); }).catch(function(err) { qrStatusText.textContent = '無法啟動相機。請確認已授權。'; console.error("相機錯誤:", err); }); }
@@ -534,6 +577,61 @@
             renderProfilePage(); 
         }
     }
+
+    // --- START: 新增的挑戰管理函式 ---
+    window.addChallenge = function() {
+        const input = document.getElementById('challenge-input');
+        const text = input.value.trim();
+        if (!text) {
+            alert('請輸入挑戰內容！');
+            return;
+        }
+
+        const challenges = getUserCreatedChallenges();
+        const newChallenge = {
+            id: Date.now(),
+            text: text,
+            completed: false
+        };
+        challenges.unshift(newChallenge); // 將新挑戰加到最前面
+        saveUserCreatedChallenges(challenges);
+        
+        input.value = ''; // 清空輸入框
+        renderChallenges(); // 重新渲染列表
+    }
+
+    window.editChallenge = function(id) {
+        let challenges = getUserCreatedChallenges();
+        const challenge = challenges.find(c => c.id === id);
+        if (!challenge) return;
+
+        const newText = prompt('請輸入新的挑戰內容：', challenge.text);
+        if (newText && newText.trim() !== '') {
+            challenge.text = newText.trim();
+            saveUserCreatedChallenges(challenges);
+            renderChallenges();
+        }
+    }
+
+    window.deleteChallenge = function(id) {
+        if (confirm('確定要刪除這個挑戰嗎？')) {
+            let challenges = getUserCreatedChallenges();
+            challenges = challenges.filter(c => c.id !== id);
+            saveUserCreatedChallenges(challenges);
+            renderChallenges();
+        }
+    }
+
+    window.toggleChallengeStatus = function(id) {
+        let challenges = getUserCreatedChallenges();
+        const challenge = challenges.find(c => c.id === id);
+        if (challenge) {
+            challenge.completed = !challenge.completed;
+            saveUserCreatedChallenges(challenges);
+            renderChallenges();
+        }
+    }
+    // --- END: 新增的挑戰管理函式 ---
     
     // --- 內部專用函式 ---
     function setupLoggedInUI(user) { document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block'; const userName = user.displayName || user.email; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`; renderProfilePage(); }
@@ -646,6 +744,21 @@
     function savePosts(posts) { if (!currentUser) return; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(posts)); }
     function getUserChallenges() { if (!currentUser) return {}; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || {}; }
     function saveUserChallenges(challenges) { if (!currentUser) return; const key = `${CHALLENGES_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(challenges)); }
+
+    // --- START: 新增的挑戰列表 localStorage 函式 ---
+    const USER_CHALLENGES_DB_KEY = 'foodieAppUserCreatedChallenges';
+    function getUserCreatedChallenges() {
+        if (!currentUser) return [];
+        const key = `${USER_CHALLENGES_DB_KEY}_${currentUser.uid}`;
+        return JSON.parse(localStorage.getItem(key)) || [];
+    }
+    function saveUserCreatedChallenges(challenges) {
+        if (!currentUser) return;
+        const key = `${USER_CHALLENGES_DB_KEY}_${currentUser.uid}`;
+        localStorage.setItem(key, JSON.stringify(challenges));
+    }
+    // --- END: 新增的挑戰列表 localStorage 函式 ---
+
     function createUserMarker(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
     function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener("click", (e) => { if (e.placeId) { e.stop(); } window.clearSearch(); }); }
     function setupAutocomplete() { 
@@ -728,8 +841,37 @@
     function handleRatingHover(e) { updateHeartDisplay(e.target.dataset.value); }
     function handleRatingMouseout() { updateHeartDisplay(document.getElementById('review-rating').dataset.rating); }
     function updateHeartDisplay(rating) { document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => { heart.classList.toggle('active', heart.dataset.value <= rating); }); }
-    function renderChallenges() { const container = document.getElementById('challenge-list-container'); if (!currentUser) { container.innerHTML = '<p class="placeholder-text">登入後即可查看並參加美食挑戰！</p>'; return; } const userChallenges = getUserChallenges(); container.innerHTML = ''; challengesData.forEach(c => { const isJoined = userChallenges[c.id]; const card = document.createElement('div'); card.className = 'challenge-card'; card.innerHTML = `<div class="challenge-header"><div class="challenge-title">${c.title}</div><button class="challenge-btn-join ${isJoined ? 'joined' : ''}" onclick="window.toggleChallenge('${c.id}')">${isJoined ? '已參加' : '參加'}</button></div><p class="challenge-desc">${c.desc}</p><div><div class="challenge-ranking-title">🏆 排行榜：</div><ul class="challenge-ranking-list" style="flex-direction:column; gap: 5px;">${c.rank}</ul></div><div style="margin-top:15px;"><div class="challenge-participants-title">👥 參與者：</div><div class="challenge-participants-list">${c.participants} ${isJoined ? ', <b>您</b>' : ''}</div></div>`; container.appendChild(card); }); }
     
+    // --- START: 替換 renderChallenges 函式 ---
+    function renderChallenges() {
+        const container = document.getElementById('challenge-list-container');
+        const form = document.querySelector('.challenge-input-form');
+        if (!currentUser) {
+            container.innerHTML = '<p class="placeholder-text">登入後即可新增與編輯您的個人美食挑戰！</p>';
+            if(form) form.style.display = 'none'; // 隱藏輸入框
+            return;
+        }
+        
+        if(form) form.style.display = 'flex'; // 顯示輸入框
+        const challenges = getUserCreatedChallenges();
+        
+        if (challenges.length === 0) {
+            container.innerHTML = '<p class="placeholder-text">您還沒有新增任何挑戰，快來建立第一個吧！</p>';
+            return;
+        }
+
+        container.innerHTML = challenges.map(c => `
+            <div class="challenge-item ${c.completed ? 'completed' : ''}">
+                <span class="challenge-text" onclick="toggleChallengeStatus(${c.id})">${c.text}</span>
+                <div class="challenge-actions">
+                    <button class="action-btn btn-edit" onclick="editChallenge(${c.id})">編輯</button>
+                    <button class="action-btn btn-delete" onclick="deleteChallenge(${c.id})">刪除</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    // --- END: 替換 renderChallenges 函式 ---
+
     function resetReviewForm() {
         editingPostId = null;
         document.getElementById('add-review-header').innerHTML = `<i class="fa-solid fa-pencil"></i>新增美食評論`;
@@ -740,7 +882,6 @@
         document.getElementById('photo-preview-container').innerHTML = '';
     }
     
-    // --- START: QR Code 掃描邏輯 (已修正) ---
     function tick() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
             qrStatusText.textContent = '掃描中... 請將發票左方QR Code對準掃描框';
@@ -754,116 +895,84 @@
 
             if (code) {
                 handleQrCodeResult(code.data);
-                return; // 找到後就停止此次 tick
+                return;
             }
         }
         animationFrameId = requestAnimationFrame(tick);
     }
 
     function handleQrCodeResult(qrData) {
-        // 停止後續的掃描動畫幀
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
             animationFrameId = null;
         }
-        
         qrStatusText.textContent = '掃描成功！正在解析...';
         scanBox.style.borderColor = 'var(--success-color)';
-
         try {
-            // 1. 基本驗證：確保 qrData 是有效的字串
             if (!qrData || typeof qrData !== 'string' || qrData.length < 77) {
                 throw new Error('QR Code 格式不符，長度不足。');
             }
-
-            // 2. 判斷是否為交易明細 QR Code (左邊的)
             let detailsData = '';
             const separatorIndex = qrData.indexOf('*');
-
             if (separatorIndex !== -1 && separatorIndex >= 77) {
-                 // 標準格式，包含 '*' 分隔符
                 detailsData = qrData.substring(separatorIndex);
             } else if (qrData.startsWith('**')) {
-                // 某些情況下，可能直接以 '**' 開頭
                 detailsData = qrData;
             } else {
-                // 如果都不是，則判定為右邊的 QR Code
                 qrStatusText.textContent = '非明細QR Code，請掃左方較大的碼';
-                // 2秒後恢復掃描
                 setTimeout(() => {
                     scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
                     if (qrModal.style.display === 'flex') requestAnimationFrame(tick);
                 }, 2000);
                 return;
             }
-
-            // 3. 解析總金額 (從 QR Code 標頭部分)
             const totalAmountHex = qrData.substring(27, 37);
             const totalAmount = parseInt(totalAmountHex, 16);
             if (isNaN(totalAmount)) {
                 throw new Error('無法解析總金額。');
             }
-
-            // 4. 解析交易明細
             const parts = detailsData.split(':');
             if (parts.length < 2) {
                  throw new Error('交易明細格式不完整。');
             }
-
             const itemCount = parseInt(parts[1]);
             if (isNaN(itemCount) || itemCount <= 0) {
                 throw new Error('無法解析品項數量。');
             }
-
             let parsedItems = [];
-            // 第一個品項從索引 3 開始，每個品項佔 3 個欄位 (名稱, 數量, 單價)
             let currentIndex = 3; 
-
             for (let i = 0; i < itemCount; i++) {
-                // 邊界檢查：確保陣列有足夠的元素可供讀取
                 if (currentIndex + 1 >= parts.length) {
                     console.warn('明細項目數量與實際解析到的不符，已提前結束。');
-                    break; // 提前跳出迴圈，避免錯誤
+                    break;
                 }
-                
                 const itemName = parts[currentIndex];
-                const itemQuantity = parts[currentIndex + 1]; // 數量可能是浮點數，暫時不轉換
-                
-                // 確保品項名稱不是空的
+                const itemQuantity = parts[currentIndex + 1];
                 if (itemName) {
                     parsedItems.push(`${itemName} x ${itemQuantity}`);
                 }
-                
-                currentIndex += 3; // 移動到下一個品項的名稱
+                currentIndex += 3;
             }
-            
             if (parsedItems.length === 0) {
                 throw new Error('成功掃描，但未解析到任何品項。');
             }
-
-            // 5. 將結果填入表單
             document.getElementById('review-meal-items').value = parsedItems.join('\n');
             document.getElementById('review-cost').value = totalAmount;
-
             qrStatusText.textContent = '解析完成！';
             setTimeout(window.closeQrScanner, 1200);
-
         } catch (error) {
             console.error("發票解析錯誤:", error);
             qrStatusText.textContent = `解析失敗：${error.message || '請確認QR Code是否清晰完整。'}`;
-            // 顯示錯誤 2.5 秒後，恢復掃描狀態
             setTimeout(() => {
                 scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
                 if (qrModal.style.display === 'flex') requestAnimationFrame(tick);
             }, 2500);
         }
     }
-    // --- END: QR Code 掃描邏輯 ---
 
     function displayPhotoPreviews(items) {
         const previewContainer = document.getElementById('photo-preview-container');
         if (!items) return;
-
         for (const item of items) {
             if (item instanceof File) {
                 if (!item.type.startsWith('image/')){ continue; }
@@ -877,38 +986,28 @@
                 createPreviewElement(item);
             }
         }
-
         function createPreviewElement(src) {
             const previewItem = document.createElement('div');
             previewItem.className = 'photo-preview-item';
-            
             const img = document.createElement('img');
             img.src = src;
-
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-photo-btn';
             deleteBtn.innerHTML = '×';
             deleteBtn.onclick = function() { previewItem.remove(); };
-
             previewItem.appendChild(img);
             previewItem.appendChild(deleteBtn);
             previewContainer.appendChild(previewItem);
         }
     }
 
-
-    // --- App 初始化 & DOM 事件綁定 ---
     document.addEventListener('DOMContentLoaded', () => {
-        // --- 新增 START：修正 vh 單位在行動版 Safari 的高度計算問題 ---
         const setVh = () => {
           const vh = window.innerHeight * 0.01;
           document.documentElement.style.setProperty('--vh', `${vh}px`);
         };
-        // 頁面載入和視窗大小改變時都重新計算
         setVh();
         window.addEventListener('resize', setVh);
-        // --- 新增 END ---
-
         auth.onAuthStateChanged(user => { 
             currentUser = user;
             if (user) { setupLoggedInUI(user); } else { setupLoggedOutUI(); } 
@@ -924,15 +1023,12 @@
         canvas = canvasElement.getContext('2d');
         qrStatusText = document.getElementById('qr-status-text');
         scanBox = document.getElementById('scan-box');
-        
         const btnSelectAlbum = document.getElementById('btn-select-from-album');
         const btnOpenCamera = document.getElementById('btn-open-camera');
         const photoFileInput = document.getElementById('photo-file-input');
         const cameraFileInput = document.getElementById('camera-file-input');
-
         btnSelectAlbum.addEventListener('click', () => photoFileInput.click());
         btnOpenCamera.addEventListener('click', () => cameraFileInput.click());
-
         const handleFileSelection = (event) => {
             const files = event.target.files;
             if (files && files.length > 0) {
@@ -940,10 +1036,8 @@
             }
             event.target.value = null; 
         };
-
         photoFileInput.addEventListener('change', handleFileSelection);
         cameraFileInput.addEventListener('change', handleFileSelection);
-
         window.showPage('map-page', document.querySelector('.nav-item')); 
     });
 </script>
