@@ -160,7 +160,7 @@
     #qr-scanner-modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); flex-direction: column; justify-content: center; align-items: center; }
     .qr-scanner-content { position: relative; background-color: #111; padding: 20px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 10px; text-align: center; }
     #qr-scanner-video { width: 100%; border-radius: 8px; }
-    #qr-status-text { color: white; font-size: 16px; margin-top: 15px; height: 25px; }
+    #qr-status-text { color: white; font-size: 16px; margin-top: 15px; height: 40px; line-height: 1.4; }
     .qr-scanner-close-btn { position: absolute; top: -15px; right: -15px; color: white; background-color: #dc3545; border-radius: 50%; width: 30px; height: 30px; font-size: 20px; font-weight: bold; cursor: pointer; border: 2px solid white; display:flex; justify-content:center; align-items:center; }
     #scan-box { position: absolute; left: 50%; top: 50%; width: 60%; height: 50%; transform: translate(-50%, -50%); border: 3px solid rgba(255, 255, 255, 0.7); border-radius: 10px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); }
     
@@ -415,7 +415,7 @@
         <video id="qr-scanner-video" playsinline></video>
         <div id="scan-box"></div>
         <canvas id="qr-canvas" style="display: none;"></canvas>
-        <p id="qr-status-text">請將發票左方QR Code對準掃描框</p>
+        <p id="qr-status-text">請將發票 QR Code 對準掃描框</p>
     </div>
   </div>
 
@@ -572,7 +572,7 @@
     
     window.showProfileTab = function(tabId, tabElement) { document.querySelectorAll('#profile-page .tab-btn').forEach(btn => { btn.classList.remove('active'); }); tabElement.classList.add('active'); document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active'); if (tabId === 'accounting') renderAccountingRecords(); if (tabId === 'posts') renderMyPosts(); if (tabId === 'favorites') renderFavoriteRestaurants(); if (tabId === 'friends') renderFriendsList(); }
     window.goToReviewPageFromMap = function() { if (infoWindow) { infoWindow.close(); } if (!currentUser) { alert('請先登入才能新增評論！'); window.showPage('login-page'); return; } if (!selectedPlaceForReview) return; const addReviewNavButton = document.querySelector('.nav-item[onclick*="add-review-page"]'); window.showPage('add-review-page', addReviewNavButton); document.getElementById('review-restaurant-name').value = selectedPlaceForReview.name; };
-    window.openQrScanner = function() { qrModal.style.display = 'flex'; qrStatusText.textContent = '正在啟動相機...'; scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(s) { stream = s; video.srcObject = stream; video.setAttribute("playsinline", true); video.play(); requestAnimationFrame(tick); }).catch(function(err) { qrStatusText.textContent = '無法啟動相機。請確認已授權。'; console.error("相機錯誤:", err); }); }
+    window.openQrScanner = function() { qrModal.style.display = 'flex'; qrStatusText.textContent = '請將發票左方(總金額)或右方(明細) QR Code 對準掃描框'; scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(s) { stream = s; video.srcObject = stream; video.setAttribute("playsinline", true); video.play(); requestAnimationFrame(tick); }).catch(function(err) { qrStatusText.textContent = '無法啟動相機。請確認已授權。'; console.error("相機錯誤:", err); }); }
     window.closeQrScanner = function() { qrModal.style.display = 'none'; if (stream) { stream.getTracks().forEach(track => track.stop()); } if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; } }
 
     window.editPost = function(postId) {
@@ -732,13 +732,11 @@
     function renderMyPosts() {
         const container = document.getElementById('posts-list-container');
         if (!currentUser) { 
-            // Reset the whole tab content if logged out
             const postsContent = document.getElementById('posts-content');
             postsContent.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); 
             return; 
         }
 
-        // Ensure the sort dropdown exists if user is logged in
         if (!document.getElementById('post-sort-order')) {
              document.getElementById('posts-content').innerHTML = `
                 <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; padding: 0;">
@@ -1074,7 +1072,7 @@
     
     function tick() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            qrStatusText.textContent = '掃描中... 請將發票左方QR Code對準掃描框';
+            qrStatusText.textContent = '掃描中...';
             canvasElement.height = video.videoHeight;
             canvasElement.width = video.videoWidth;
             canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
@@ -1090,75 +1088,103 @@
         }
         animationFrameId = requestAnimationFrame(tick);
     }
+    
+    // --- START: New Invoice Parsing Functions ---
+    function parseLeftQRCode(data) {
+        if (typeof data !== 'string' || data.length < 77) return null;
+        try {
+            const totalAmountHex = data.substring(29, 37);
+            const totalAmount = parseInt(totalAmountHex, 16);
+            if (isNaN(totalAmount)) return null;
+            return { totalAmount };
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function parseRightQRCode(data) {
+        if (typeof data !== 'string' || !data.startsWith('**') && data.indexOf('*:') === -1) return null;
+        
+        let detailsData = data;
+        if (data.startsWith('**')) {
+            detailsData = data.substring(2);
+        }
+
+        try {
+            const parts = detailsData.split(':');
+            if (parts.length < 2) return null;
+
+            const itemCount = parseInt(parts[1]);
+            if (isNaN(itemCount) || itemCount <= 0) return null;
+
+            let parsedItems = [];
+            let currentIndex = 3; 
+            for (let i = 0; i < itemCount; i++) {
+                if (currentIndex + 2 >= parts.length) break; 
+                
+                const itemName = parts[currentIndex];
+                const itemQuantity = parts[currentIndex + 1];
+                
+                if (itemName && itemQuantity) {
+                    parsedItems.push(`${itemName} x ${itemQuantity}`);
+                }
+                currentIndex += 3;
+            }
+
+            return parsedItems.length > 0 ? { items: parsedItems } : null;
+        } catch (e) {
+            return null;
+        }
+    }
 
     function handleQrCodeResult(qrData) {
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
             animationFrameId = null;
         }
-        qrStatusText.textContent = '掃描成功！正在解析...';
-        scanBox.style.borderColor = 'var(--success-color)';
-        try {
-            if (!qrData || typeof qrData !== 'string' || qrData.length < 77) {
-                throw new Error('QR Code 格式不符，長度不足。');
-            }
-            let detailsData = '';
-            const separatorIndex = qrData.indexOf('*');
-            if (separatorIndex !== -1 && separatorIndex >= 77) {
-                detailsData = qrData.substring(separatorIndex);
-            } else if (qrData.startsWith('**')) {
-                detailsData = qrData;
-            } else {
-                qrStatusText.textContent = '非明細QR Code，請掃左方較大的碼';
-                setTimeout(() => {
-                    scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
-                    if (qrModal.style.display === 'flex') requestAnimationFrame(tick);
-                }, 2000);
-                return;
-            }
-            const totalAmountHex = qrData.substring(27, 37);
-            const totalAmount = parseInt(totalAmountHex, 16);
-            if (isNaN(totalAmount)) {
-                throw new Error('無法解析總金額。');
-            }
-            const parts = detailsData.split(':');
-            if (parts.length < 2) {
-                 throw new Error('交易明細格式不完整。');
-            }
-            const itemCount = parseInt(parts[1]);
-            if (isNaN(itemCount) || itemCount <= 0) {
-                throw new Error('無法解析品項數量。');
-            }
-            let parsedItems = [];
-            let currentIndex = 3; 
-            for (let i = 0; i < itemCount; i++) {
-                if (currentIndex + 1 >= parts.length) {
-                    console.warn('明細項目數量與實際解析到的不符，已提前結束。');
-                    break;
-                }
-                const itemName = parts[currentIndex];
-                const itemQuantity = parts[currentIndex + 1];
-                if (itemName) {
-                    parsedItems.push(`${itemName} x ${itemQuantity}`);
-                }
-                currentIndex += 3;
-            }
-            if (parsedItems.length === 0) {
-                throw new Error('成功掃描，但未解析到任何品項。');
-            }
-            document.getElementById('review-meal-items').value = parsedItems.join('\n');
-            document.getElementById('review-cost').value = totalAmount;
-            qrStatusText.textContent = '解析完成！';
-            setTimeout(window.closeQrScanner, 1200);
-        } catch (error) {
-            console.error("發票解析錯誤:", error);
-            qrStatusText.textContent = `解析失敗：${error.message || '請確認QR Code是否清晰完整。'}`;
+        
+        const leftQRResult = parseLeftQRCode(qrData);
+        const rightQRResult = parseRightQRCode(qrData);
+
+        if (!leftQRResult && !rightQRResult) {
+            qrStatusText.textContent = '無法辨識的發票 QR Code 格式。';
+            scanBox.style.borderColor = 'var(--danger-color)';
             setTimeout(() => {
                 scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
                 if (qrModal.style.display === 'flex') requestAnimationFrame(tick);
             }, 2500);
+            return;
         }
+
+        scanBox.style.borderColor = 'var(--success-color)';
+        let feedback = [];
+
+        if (leftQRResult) {
+            document.getElementById('review-cost').value = leftQRResult.totalAmount;
+            feedback.push(`總金額 $${leftQRResult.totalAmount} 已填入！`);
+        }
+
+        if (rightQRResult) {
+            const currentItems = document.getElementById('review-meal-items').value;
+            const newItems = rightQRResult.items.join('\n');
+            document.getElementById('review-meal-items').value = currentItems ? `${currentItems}\n${newItems}` : newItems;
+            feedback.push(`${rightQRResult.items.length}筆商品明細已加入！`);
+        }
+
+        const feedbackMessage = feedback.join('\n');
+        qrStatusText.textContent = feedbackMessage;
+        
+        setTimeout(() => {
+            if (confirm(feedbackMessage + '\n\n是否要繼續掃描下一個 QR Code？')) {
+                qrStatusText.textContent = '請對準下一個 QR Code...';
+                scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+                requestAnimationFrame(tick);
+            } else {
+                closeQrScanner();
+            }
+        }, 500);
     }
+    // --- END: New Invoice Parsing Functions ---
 
     function displayPhotoPreviews(items) {
         const previewContainer = document.getElementById('photo-preview-container');
