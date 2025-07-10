@@ -457,7 +457,8 @@
         { id: 'friend01', name: '美食探險家', email: 'explorer@food.com' },
         { id: 'friend02', name: '吃貨小夥伴', email: 'partner@food.com' },
         { id: 'friend03', name: '深夜食堂常客', email: 'nightowl@food.com' },
-        { id: 'friend04', name: '甜點魔人', email: 'dessert@food.com' }
+        { id: 'friend04', name: '甜點魔人', email: 'dessert@food.com' },
+        { id: 'admin01', name: 'Admin User', email: 'admin@mail.com' } // Added user for testing
     ];
 
     // --- QR Code 掃描器相關變數 ---
@@ -640,6 +641,7 @@
 
     // --- Friend List Functions ---
     window.searchFriend = function() {
+        if (!currentUser) return;
         const input = document.getElementById('friend-search-input');
         const searchTerm = input.value.trim().toLowerCase();
         if (!searchTerm) return;
@@ -647,6 +649,12 @@
         const foundUser = mockUserDB.find(user => user.id.toLowerCase() === searchTerm || user.email.toLowerCase() === searchTerm);
         
         if (foundUser) {
+            // Check if user is trying to add themselves
+            if (foundUser.email === currentUser.email) {
+                alert('您無法將自己加為好友。');
+                return;
+            }
+            
             const friends = getFriends();
             if (friends.some(f => f.id === foundUser.id)) {
                 alert('你們已經是好友了！');
@@ -747,19 +755,13 @@
         container.innerHTML = html || `<p class="placeholder-text">尚無消費紀錄。</p>`;
     }
     
-    // --- START: Corrected renderMyPosts function ---
     function renderMyPosts() {
         const postsContent = document.getElementById('posts-content');
-        const sortContainer = postsContent.querySelector('.sort-container');
-        const listContainer = postsContent.querySelector('#posts-list-container');
-
         if (!currentUser) {
             postsContent.innerHTML = loggedOutPlaceholder('以查看您的貼文。');
             return;
         }
-
-        // If the sort container isn't there (e.g., after logout/login), rebuild the tab's inner structure
-        if (!sortContainer) {
+        if (!postsContent.querySelector('.sort-container')) {
             postsContent.innerHTML = `
                 <div class="sort-container" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; padding: 0;">
                     <label for="post-sort-order" style="font-size: 14px; color: var(--text-light); margin-right: 8px;">排序:</label>
@@ -770,19 +772,18 @@
                 </div>
                 <div id="posts-list-container"></div>`;
         }
-
-        const freshListContainer = document.getElementById('posts-list-container');
+        
+        const listContainer = document.getElementById('posts-list-container');
         let posts = getPosts();
-
         if (posts.length === 0) {
-            freshListContainer.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`;
+            listContainer.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`;
             return;
         }
-
+        
         const sortOrder = document.getElementById('post-sort-order').value;
         posts.sort((a, b) => sortOrder === 'newest' ? new Date(b.timestamp) - new Date(a.timestamp) : new Date(a.timestamp) - new Date(b.timestamp));
 
-        freshListContainer.innerHTML = posts.map(p => {
+        listContainer.innerHTML = posts.map(p => {
             const ratingHtml = Array(parseInt(p.rating)).fill('<i class="fa-solid fa-heart"></i>').join('');
             let photosHtml = '';
             if (p.photos && p.photos.length > 0) {
@@ -802,13 +803,12 @@
                 </div>`;
         }).join('');
     }
-    // --- END: Corrected renderMyPosts function ---
 
     function renderFavoriteRestaurants() {
         const container = document.getElementById('favorites-content');
         if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的最愛餐廳。'); return; }
         const favorites = getFavorites();
-        if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有評分高的餐廳喔！</p>`; return; }
+        if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有加入任何最愛餐廳。<br>可以從地圖上點擊餐廳的<i class="fa-regular fa-heart" style="color:#ddd"></i>來加入喔！</p>`; return; }
         
         container.innerHTML = '<h3>我的最愛餐廳</h3>' + favorites.map(f => `
             <div class="record-card">
@@ -819,20 +819,14 @@
             </div>`).join('');
     }
 
-    // --- START: Corrected renderFriendsList function ---
     function renderFriendsList() {
         const friendsContent = document.getElementById('friends-content');
-        const searchArea = friendsContent.querySelector('.search-area');
-        const listContainer = friendsContent.querySelector('#friends-list-container');
-
-        if (!currentUser) {
-            friendsContent.innerHTML = loggedOutPlaceholder('以查看好友名單。');
+        if (!currentUser) { 
+            friendsContent.innerHTML = loggedOutPlaceholder('以查看好友名單。'); 
             return;
         }
-
-        // If the search area isn't there (e.g., after logout/login), rebuild the tab's inner structure
-        if (!searchArea) {
-             friendsContent.innerHTML = `
+        if (!friendsContent.querySelector('.search-area')) {
+            friendsContent.innerHTML = `
                 <div class="search-area" style="padding: 0 0 20px 0; border-bottom: none; background: transparent;">
                     <p style="font-size: 14px; color: var(--text-light); margin-bottom: 10px;">透過 ID 或 Email 搜尋好友：</p>
                     <div style="display: flex; gap: 10px; align-items: center;">
@@ -842,14 +836,14 @@
                 </div>
                 <div id="friends-list-container"></div>`;
         }
-
-        const freshListContainer = document.getElementById('friends-list-container');
+        
+        const listContainer = document.getElementById('friends-list-container');
         const friends = getFriends();
 
         if (friends.length === 0) {
-            freshListContainer.innerHTML = `<p class="placeholder-text">您還沒有加入任何好友。</p>`;
+            listContainer.innerHTML = `<p class="placeholder-text">您還沒有加入任何好友。</p>`;
         } else {
-            freshListContainer.innerHTML = friends.map(f => `
+            listContainer.innerHTML = friends.map(f => `
                 <div class="record-card">
                     <div class="card-actions">
                         <button class="action-btn btn-delete" onclick="deleteFriend('${f.id}')">刪除</button>
@@ -859,7 +853,6 @@
                 </div>`).join('');
         }
     }
-    // --- END: Corrected renderFriendsList function ---
     
     // --- LocalStorage Helper Functions ---
     function getPosts() { if (!currentUser) return []; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
