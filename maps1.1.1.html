@@ -712,7 +712,7 @@
             const dayPosts = groupedByDate[date];
             
             mealTypeOrder.forEach(mealType => {
-                const mealPosts = dayPosts.filter(p => p.mealType === mealType);
+                const mealPosts = dayPosts.filter(p => (p.mealType || 'other') === mealType);
                 if (mealPosts.length > 0) {
                     html += `<h4 class="accounting-meal-header">${mealTypeNames[mealType]}</h4>`;
                     html += mealPosts.map(p => `
@@ -731,10 +731,31 @@
     
     function renderMyPosts() {
         const container = document.getElementById('posts-list-container');
-        if (!currentUser) { container.parentElement.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); return; }
+        if (!currentUser) { 
+            // Reset the whole tab content if logged out
+            const postsContent = document.getElementById('posts-content');
+            postsContent.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); 
+            return; 
+        }
+
+        // Ensure the sort dropdown exists if user is logged in
+        if (!document.getElementById('post-sort-order')) {
+             document.getElementById('posts-content').innerHTML = `
+                <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; padding: 0;">
+                    <label for="post-sort-order" style="font-size: 14px; color: var(--text-light); margin-right: 8px;">排序:</label>
+                    <select id="post-sort-order" onchange="renderMyPosts()" style="border-radius: 15px; border: 1px solid #ddd; padding: 5px 10px; font-size: 14px; background-color: white;">
+                        <option value="newest">由新到舊</option>
+                        <option value="oldest">由舊到新</option>
+                    </select>
+                </div>
+                <div id="posts-list-container"></div>`;
+        }
         
         let posts = getPosts();
-        if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`; return; }
+        if (posts.length === 0) {
+            document.getElementById('posts-list-container').innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`;
+            return;
+        }
         
         const sortOrder = document.getElementById('post-sort-order').value;
         if (sortOrder === 'newest') {
@@ -743,7 +764,7 @@
             posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         }
 
-        container.innerHTML = posts.map(p => {
+        document.getElementById('posts-list-container').innerHTML = posts.map(p => {
             const ratingHtml = Array(parseInt(p.rating)).fill('<i class="fa-solid fa-heart"></i>').join('');
             
             let photosHtml = '';
@@ -772,7 +793,7 @@
         const container = document.getElementById('favorites-content');
         if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的最愛餐廳。'); return; }
         const favorites = getFavorites();
-        if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有加入任何最愛餐廳。<br>可以從地圖上點擊餐廳的<i class="fa-regular fa-heart"></i>來加入喔！</p>`; return; }
+        if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有加入任何最愛餐廳。<br>可以從地圖上點擊餐廳的<i class="fa-regular fa-heart" style="color:#ddd"></i>來加入喔！</p>`; return; }
         
         container.innerHTML = '<h3>我的最愛餐廳</h3>' + favorites.map(f => `
             <div class="record-card">
@@ -786,17 +807,30 @@
     function renderFriendsList() {
         const container = document.getElementById('friends-list-container');
         if (!currentUser) { 
-            document.getElementById('friends-content').innerHTML = loggedOutPlaceholder('以查看好友名單。'); 
+            const friendsContent = document.getElementById('friends-content');
+            friendsContent.innerHTML = loggedOutPlaceholder('以查看好友名單。'); 
             return;
+        }
+
+        if (!document.getElementById('friend-search-input')) {
+            document.getElementById('friends-content').innerHTML = `
+                <div class="search-area" style="padding: 0 0 20px 0; border-bottom: none; background: transparent;">
+                    <p style="font-size: 14px; color: var(--text-light); margin-bottom: 10px;">透過 ID 或 Email 搜尋好友：</p>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="friend-search-input" class="search-input" placeholder="輸入好友ID或Email..." style="border-radius: 8px; padding-left: 15px;">
+                        <button class="btn" style="padding: 0 20px; flex-shrink: 0;" onclick="searchFriend()">搜尋</button>
+                    </div>
+                </div>
+                <div id="friends-list-container"></div>`;
         }
         
         const friends = getFriends();
         if (friends.length === 0) {
-            container.innerHTML = `<p class="placeholder-text">您還沒有加入任何好友。</p>`;
+            document.getElementById('friends-list-container').innerHTML = `<p class="placeholder-text">您還沒有加入任何好友。</p>`;
             return;
         }
 
-        container.innerHTML = friends.map(f => `
+        document.getElementById('friends-list-container').innerHTML = friends.map(f => `
             <div class="record-card">
                 <div class="card-actions">
                     <button class="action-btn btn-delete" onclick="deleteFriend('${f.id}')">刪除</button>
