@@ -105,9 +105,11 @@
     .location-btn { position: absolute; bottom: 20px; right: 20px; background: #fff; color: var(--primary-color); border: none; width: 50px; height: 50px; border-radius: 25px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); cursor: pointer; z-index: 10; font-size: 24px; display: flex; justify-content: center; align-items: center; }
     .gm-style-iw-d { overflow: auto !important; }
     .info-window-content { font-family: inherit; padding: 5px; max-width: 280px; }
-    .info-window-content h4 { font-size: 16px; margin: 0 0 8px 0; font-weight: 600; }
+    .info-window-content h4 { font-size: 16px; margin: 0 0 8px 0; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
     .info-window-content p { font-size: 14px; margin: 0 0 5px 0; color: #555; display: flex; align-items: center; }
     .info-window-content i { margin-right: 8px; color: var(--primary-color); width: 16px; text-align: center; flex-shrink: 0; }
+    .favorite-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 0 5px; color: #ddd; }
+    .favorite-btn.is-favorite { color: var(--danger-color); }
     .page-header { padding: 15px 20px; background-color: #fff; border-bottom: 1px solid #eee; text-align: center; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
     .page-header h2 { margin: 0; font-size: 18px; color: var(--text-color); display: flex; align-items: center; justify-content: center; flex-grow: 1; }
     .page-header h2 i { margin-right: 10px; color: var(--primary-color); }
@@ -121,7 +123,7 @@
     #picker-wheel { width: 280px; height: 280px; border: 10px solid #ddd; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1); }
     #picker-arrow { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #dc3545; position: absolute; top: -35px; left: 50%; transform: translateX(-50%); z-index: 2; }
     #picker-result { font-size: 20px; font-weight: bold; color: var(--primary-color); text-align: center; height: 60px; padding: 0 10px; }
-    .form-group { margin-bottom: 20px; position: relative; } .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-color); } .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; } .form-group textarea { min-height: 120px; resize: vertical; } .rating-hearts { display: flex; gap: 10px; font-size: 30px; color: #ddd; cursor: pointer; } .rating-hearts .fa-heart:hover, .rating-hearts .fa-heart.active { color: #ff4d6d; } 
+    .form-group { margin-bottom: 20px; position: relative; } .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-color); } .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; } .form-group select { background-color: white; -webkit-appearance: none; } .form-group textarea { min-height: 120px; resize: vertical; } .rating-hearts { display: flex; gap: 10px; font-size: 30px; color: #ddd; cursor: pointer; } .rating-hearts .fa-heart:hover, .rating-hearts .fa-heart.active { color: #ff4d6d; } 
     .photo-upload-container { background: #f0f0f0; border: 2px dashed #ccc; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
     .photo-upload-buttons { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
     .btn-upload { background: #fff; color: var(--text-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; display: inline-flex; align-items: center; }
@@ -186,6 +188,11 @@
       flex-shrink: 0;
     }
 
+    /* Accounting Styles */
+    .accounting-date-group { margin-bottom: 20px; }
+    .accounting-date-header { font-size: 16px; font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 10px; }
+    .accounting-meal-header { font-size: 14px; font-weight: 500; color: var(--text-light); margin: 15px 0 5px 0; }
+    
     @media (min-width: 768px) {
       body {
         background-color: #e9ebee; 
@@ -265,6 +272,15 @@
 或點擊右上角掃描發票自動帶入"></textarea>
             </div>
             <div class="form-group"><label for="review-cost">花費金額 (NT$)</label><input type="number" id="review-cost" placeholder="大約花了多少錢？"></div>
+             <div class="form-group">
+                <label for="review-meal-type">用餐類型</label>
+                <select id="review-meal-type">
+                    <option value="other">其他</option>
+                    <option value="breakfast">早餐</option>
+                    <option value="lunch">午餐</option>
+                    <option value="dinner">晚餐</option>
+                </select>
+            </div>
             <div class="form-group"><label>喜愛程度</label><div class="rating-hearts" id="review-rating" data-rating="0"><i class="fa-solid fa-heart" data-value="1"></i><i class="fa-solid fa-heart" data-value="2"></i><i class="fa-solid fa-heart" data-value="3"></i><i class="fa-solid fa-heart" data-value="4"></i><i class="fa-solid fa-heart" data-value="5"></i></div></div>
             <div class="form-group"><label for="review-content">評論內容 (會成為貼文)</label><textarea id="review-content" placeholder="分享你的心得、推薦或建議..."></textarea></div>
             <div class="form-group">
@@ -317,11 +333,29 @@
             <button class="tab-btn" onclick="showProfileTab('favorites', this)">最愛餐廳</button>
             <button class="tab-btn" onclick="showProfileTab('friends', this)">好友名單</button>
         </div>
-        <div class="page-content" style="padding-top:0;">
+        <div class="page-content" style="padding-top:10px;">
             <div id="accounting-content" class="tab-content active"></div>
-            <div id="posts-content" class="tab-content"></div>
+            <div id="posts-content" class="tab-content">
+                <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; padding: 0;">
+                    <label for="post-sort-order" style="font-size: 14px; color: var(--text-light); margin-right: 8px;">排序:</label>
+                    <select id="post-sort-order" onchange="renderMyPosts()" style="border-radius: 15px; border: 1px solid #ddd; padding: 5px 10px; font-size: 14px; background-color: white;">
+                        <option value="newest">由新到舊</option>
+                        <option value="oldest">由舊到新</option>
+                    </select>
+                </div>
+                <div id="posts-list-container"></div>
+            </div>
             <div id="favorites-content" class="tab-content"></div>
-            <div id="friends-content" class="tab-content"></div>
+            <div id="friends-content" class="tab-content">
+                <div class="search-area" style="padding: 0 0 20px 0; border-bottom: none; background: transparent;">
+                    <p style="font-size: 14px; color: var(--text-light); margin-bottom: 10px;">透過 ID 或 Email 搜尋好友：</p>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="friend-search-input" class="search-input" placeholder="輸入好友ID或Email..." style="border-radius: 8px; padding-left: 15px;">
+                        <button class="btn" style="padding: 0 20px; flex-shrink: 0;" onclick="searchFriend()">搜尋</button>
+                    </div>
+                </div>
+                <div id="friends-list-container"></div>
+            </div>
         </div>
       </div>
       <div id="login-page" class="page">
@@ -392,11 +426,21 @@
     let isMapReady = false; 
     const POSTS_DB_KEY = 'foodieAppPosts'; 
     const CHALLENGE_BOARDS_DB_KEY = 'foodieAppChallengeBoards';
+    const FAVORITES_DB_KEY = 'foodieAppFavorites';
+    const FRIENDS_DB_KEY = 'foodieAppFriends';
     let pageHistory = [];
     let auth; 
     let selectedPlaceForReview = null; 
     let editingPostId = null; 
     let viewingChallengeId = null;
+
+    // --- Mock User Database for Friend Search ---
+    const mockUserDB = [
+        { id: 'friend01', name: '美食探險家', email: 'explorer@food.com' },
+        { id: 'friend02', name: '吃貨小夥伴', email: 'partner@food.com' },
+        { id: 'friend03', name: '深夜食堂常客', email: 'nightowl@food.com' },
+        { id: 'friend04', name: '甜點魔人', email: 'dessert@food.com' }
+    ];
 
     // --- QR Code 掃描器相關變數 ---
     let qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
@@ -497,7 +541,8 @@
         const postData = {
             name, 
             items: document.getElementById('review-meal-items').value.trim(), 
-            cost: Number(document.getElementById('review-cost').value) || 0, 
+            cost: Number(document.getElementById('review-cost').value) || 0,
+            mealType: document.getElementById('review-meal-type').value,
             rating, 
             content: document.getElementById('review-content').value.trim(),
             photos
@@ -525,7 +570,7 @@
         window.showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]'));
     }
     
-    window.showProfileTab = function(tabId, tabElement) { document.querySelectorAll('#profile-page .tab-btn').forEach(btn => { btn.classList.remove('active'); btn.removeAttribute('data-tab'); }); tabElement.classList.add('active'); tabElement.dataset.tab = tabId; document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active'); if (tabId === 'accounting') renderAccountingRecords(); if (tabId === 'posts') renderMyPosts(); if (tabId === 'favorites') renderFavoriteRestaurants(); if (tabId === 'friends') renderFriendsList(); }
+    window.showProfileTab = function(tabId, tabElement) { document.querySelectorAll('#profile-page .tab-btn').forEach(btn => { btn.classList.remove('active'); }); tabElement.classList.add('active'); document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active'); if (tabId === 'accounting') renderAccountingRecords(); if (tabId === 'posts') renderMyPosts(); if (tabId === 'favorites') renderFavoriteRestaurants(); if (tabId === 'friends') renderFriendsList(); }
     window.goToReviewPageFromMap = function() { if (infoWindow) { infoWindow.close(); } if (!currentUser) { alert('請先登入才能新增評論！'); window.showPage('login-page'); return; } if (!selectedPlaceForReview) return; const addReviewNavButton = document.querySelector('.nav-item[onclick*="add-review-page"]'); window.showPage('add-review-page', addReviewNavButton); document.getElementById('review-restaurant-name').value = selectedPlaceForReview.name; };
     window.openQrScanner = function() { qrModal.style.display = 'flex'; qrStatusText.textContent = '正在啟動相機...'; scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(s) { stream = s; video.srcObject = stream; video.setAttribute("playsinline", true); video.play(); requestAnimationFrame(tick); }).catch(function(err) { qrStatusText.textContent = '無法啟動相機。請確認已授權。'; console.error("相機錯誤:", err); }); }
     window.closeQrScanner = function() { qrModal.style.display = 'none'; if (stream) { stream.getTracks().forEach(track => track.stop()); } if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; } }
@@ -540,6 +585,7 @@
         document.getElementById('review-restaurant-name').value = postToEdit.name;
         document.getElementById('review-meal-items').value = postToEdit.items || '';
         document.getElementById('review-cost').value = postToEdit.cost || '';
+        document.getElementById('review-meal-type').value = postToEdit.mealType || 'other';
         document.getElementById('review-content').value = postToEdit.content || '';
         document.getElementById('review-rating').dataset.rating = postToEdit.rating;
         updateHeartDisplay(postToEdit.rating);
@@ -564,114 +610,79 @@
             renderProfilePage(); 
         }
     }
+    
+    // --- Challenge Board Functions ---
+    window.createChallengeBoard = function() { const titleInput = document.getElementById('new-challenge-title'); const subtitleInput = document.getElementById('new-challenge-subtitle'); const title = titleInput.value.trim(); const subtitle = subtitleInput.value.trim(); if (!title) { alert('請務必輸入挑戰主標題！'); return; } const boards = getChallengeBoards(); const newBoard = { id: Date.now(), creatorId: currentUser.uid, title: title, subtitle: subtitle, participants: [{ userId: currentUser.uid, name: currentUser.displayName || '我', score: 0 }] }; boards.unshift(newBoard); saveChallengeBoards(boards); titleInput.value = ''; subtitleInput.value = ''; renderChallengeBoardList(); }
+    window.viewChallengeBoard = function(boardId) { viewingChallengeId = boardId; renderChallengePage(); }
+    window.goBackToBoardList = function() { viewingChallengeId = null; renderChallengePage(); }
+    window.addScore = function(boardId, userId) { const boards = getChallengeBoards(); const board = boards.find(b => b.id === boardId); if (board) { const participant = board.participants.find(p => p.userId === userId); if (participant) { participant.score += 1; saveChallengeBoards(boards); renderChallengeBoardDetail(boardId); } } }
+    window.removeScore = function(boardId, userId) { const boards = getChallengeBoards(); const board = boards.find(b => b.id === boardId); if (board) { const participant = board.participants.find(p => p.userId === userId); if (participant && participant.score > 0) { participant.score -= 1; saveChallengeBoards(boards); renderChallengeBoardDetail(boardId); } } }
+    window.inviteFriendToChallenge = function(boardId) { const friendName = prompt('請輸入要邀請的好友名稱：'); if (friendName && friendName.trim() !== '') { const boards = getChallengeBoards(); const board = boards.find(b => b.id === boardId); if (board) { if (board.participants.some(p => p.name === friendName.trim())) { alert('這位好友已經在挑戰中了！'); return; } const newParticipant = { userId: `friend_${Date.now()}`, name: friendName.trim(), score: 0 }; board.participants.push(newParticipant); saveChallengeBoards(boards); renderChallengeBoardDetail(boardId); } } }
+    window.deleteChallengeBoard = function(boardId) { if (confirm('確定要刪除整個挑戰榜嗎？此動作無法復原。')) { let boards = getChallengeBoards(); boards = boards.filter(b => b.id !== boardId); saveChallengeBoards(boards); window.goBackToBoardList(); } }
 
-    // --- START: New Challenge Board Functions ---
-    window.createChallengeBoard = function() {
-        const titleInput = document.getElementById('new-challenge-title');
-        const subtitleInput = document.getElementById('new-challenge-subtitle');
-        const title = titleInput.value.trim();
-        const subtitle = subtitleInput.value.trim();
+    // --- Friend List Functions ---
+    window.searchFriend = function() {
+        const input = document.getElementById('friend-search-input');
+        const searchTerm = input.value.trim().toLowerCase();
+        if (!searchTerm) return;
 
-        if (!title) {
-            alert('請務必輸入挑戰主標題！');
-            return;
+        const foundUser = mockUserDB.find(user => user.id.toLowerCase() === searchTerm || user.email.toLowerCase() === searchTerm);
+        
+        if (foundUser) {
+            const friends = getFriends();
+            if (friends.some(f => f.id === foundUser.id)) {
+                alert('你們已經是好友了！');
+            } else {
+                if (confirm(`找到用戶「${foundUser.name}」，要將他加入好友嗎？`)) {
+                    friends.push(foundUser);
+                    saveFriends(friends);
+                    renderFriendsList();
+                }
+            }
+        } else {
+            alert('找不到該用戶。');
+        }
+        input.value = '';
+    };
+    window.deleteFriend = (id) => {
+        if (confirm("確定要刪除這位好友嗎？")) {
+            let friends = getFriends();
+            friends = friends.filter(f => f.id !== id);
+            saveFriends(friends);
+            renderFriendsList();
+        }
+    };
+
+    // --- Favorite Functions ---
+    window.toggleFavorite = function(place, element) {
+        if (!currentUser) { alert('請先登入才能使用此功能！'); return; }
+        let favorites = getFavorites();
+        const isFav = isFavorite(place.place_id);
+        
+        if (isFav) {
+            favorites = favorites.filter(fav => fav.place_id !== place.place_id);
+        } else {
+            favorites.push({ place_id: place.place_id, name: place.name });
         }
         
-        const boards = getChallengeBoards();
-        const newBoard = {
-            id: Date.now(),
-            creatorId: currentUser.uid,
-            title: title,
-            subtitle: subtitle,
-            participants: [
-                {
-                    userId: currentUser.uid,
-                    name: currentUser.displayName || '我',
-                    score: 0
-                }
-            ]
-        };
-
-        boards.unshift(newBoard);
-        saveChallengeBoards(boards);
-
-        titleInput.value = '';
-        subtitleInput.value = '';
-        renderChallengeBoardList();
-    }
-
-    window.viewChallengeBoard = function(boardId) {
-        viewingChallengeId = boardId;
-        renderChallengePage();
-    }
-
-    window.goBackToBoardList = function() {
-        viewingChallengeId = null;
-        renderChallengePage();
-    }
-
-    window.addScore = function(boardId, userId) {
-        const boards = getChallengeBoards();
-        const board = boards.find(b => b.id === boardId);
-        if (board) {
-            const participant = board.participants.find(p => p.userId === userId);
-            if (participant) {
-                participant.score += 1;
-                saveChallengeBoards(boards);
-                renderChallengeBoardDetail(boardId);
-            }
+        saveFavorites(favorites);
+        
+        // Update heart icon in InfoWindow
+        if (element) {
+            element.classList.toggle('is-favorite', !isFav);
+            element.querySelector('i').className = !isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        }
+        
+        // If on favorites page, re-render
+        if(document.getElementById('favorites-content').classList.contains('active')) {
+            renderFavoriteRestaurants();
         }
     }
 
-    window.removeScore = function(boardId, userId) {
-        const boards = getChallengeBoards();
-        const board = boards.find(b => b.id === boardId);
-        if (board) {
-            const participant = board.participants.find(p => p.userId === userId);
-            if (participant && participant.score > 0) {
-                participant.score -= 1;
-                saveChallengeBoards(boards);
-                renderChallengeBoardDetail(boardId);
-            }
-        }
-    }
-
-    window.inviteFriendToChallenge = function(boardId) {
-        const friendName = prompt('請輸入要邀請的好友名稱：');
-        if (friendName && friendName.trim() !== '') {
-            const boards = getChallengeBoards();
-            const board = boards.find(b => b.id === boardId);
-            if (board) {
-                if (board.participants.some(p => p.name === friendName.trim())) {
-                    alert('這位好友已經在挑戰中了！');
-                    return;
-                }
-                const newParticipant = {
-                    userId: `friend_${Date.now()}`, // Simulated unique ID for friend
-                    name: friendName.trim(),
-                    score: 0
-                };
-                board.participants.push(newParticipant);
-                saveChallengeBoards(boards);
-                renderChallengeBoardDetail(boardId);
-            }
-        }
-    }
-
-    window.deleteChallengeBoard = function(boardId) {
-        if (confirm('確定要刪除整個挑戰榜嗎？此動作無法復原。')) {
-            let boards = getChallengeBoards();
-            boards = boards.filter(b => b.id !== boardId);
-            saveChallengeBoards(boards);
-            window.goBackToBoardList();
-        }
-    }
-    // --- END: New Challenge Board Functions ---
-    
     // --- 內部專用函式 ---
-    function setupLoggedInUI(user) { document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block'; const userName = user.displayName || user.email; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`; renderProfilePage(); }
+    function setupLoggedInUI(user) { document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block'; const userName = user.displayName || user.email.split('@')[0]; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`; renderProfilePage(); }
     function setupLoggedOutUI() { document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; renderProfilePage(); renderChallengePage(); document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; if(document.getElementById('picker-result')) { document.getElementById('picker-result').textContent = '?'; } }
-    function renderProfilePage() { const activeTabBtn = document.querySelector('#profile-page .tab-btn.active'); if(activeTabBtn) { window.showProfileTab(activeTabBtn.onclick.toString().match(/'([^']+)'/)[1], activeTabBtn); } else { window.showProfileTab('accounting', document.querySelector('#profile-page .tab-btn')); } }
+    function renderProfilePage() { const activeTabBtn = document.querySelector('#profile-page .tab-btn.active'); if(activeTabBtn) { window.showProfileTab(activeTabBtn.getAttribute('onclick').match(/'([^']+)'/)[1], activeTabBtn); } else { window.showProfileTab('accounting', document.querySelector('#profile-page .tab-btn')); } }
     const loggedOutPlaceholder = (message) => `<p class="placeholder-text">請先<a href="#" onclick="window.showPage('login-page')">登入</a>${message}</p>`;
     
     function renderAccountingRecords() {
@@ -679,23 +690,59 @@
         if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的消費紀錄。'); return; }
         const posts = getPosts().filter(p => p.cost > 0);
         if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">尚無消費紀錄。</p>`; return; }
-        container.innerHTML = '<h3>消費紀錄</h3>' + posts.map(p => `
-            <div class="record-card">
-                <div class="card-actions">
-                    <button class="action-btn btn-edit" onclick="editPost(${p.id})">編輯</button>
-                    <button class="action-btn btn-delete" onclick="deletePost(${p.id})">刪除</button>
-                </div>
-                <span class="cost">$${p.cost}</span>
-                <div class="title">${p.name}</div>
-                <div class="details">${new Date(p.timestamp).toLocaleDateString()}</div>
-            </div>`).join('');
+        
+        const mealTypeNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', other: '其他' };
+        const mealTypeOrder = ['breakfast', 'lunch', 'dinner', 'other'];
+
+        const groupedByDate = posts.reduce((acc, post) => {
+            const date = new Date(post.timestamp).toLocaleDateString();
+            if (!acc[date]) {
+                acc[date] = [];
+            }
+            acc[date].push(post);
+            return acc;
+        }, {});
+
+        const sortedDates = Object.keys(groupedByDate).sort((a, b) => new Date(b) - new Date(a));
+        
+        let html = '';
+        sortedDates.forEach(date => {
+            html += `<div class="accounting-date-group">
+                        <div class="accounting-date-header">${date}</div>`;
+            const dayPosts = groupedByDate[date];
+            
+            mealTypeOrder.forEach(mealType => {
+                const mealPosts = dayPosts.filter(p => p.mealType === mealType);
+                if (mealPosts.length > 0) {
+                    html += `<h4 class="accounting-meal-header">${mealTypeNames[mealType]}</h4>`;
+                    html += mealPosts.map(p => `
+                        <div class="record-card">
+                            <span class="cost">$${p.cost}</span>
+                            <div class="title">${p.name}</div>
+                            <div class="details">${p.items || '無品項紀錄'}</div>
+                        </div>`).join('');
+                }
+            });
+            html += `</div>`;
+        });
+
+        container.innerHTML = html || `<p class="placeholder-text">尚無消費紀錄。</p>`;
     }
     
     function renderMyPosts() {
-        const container = document.getElementById('posts-content');
-        if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); return; }
-        const posts = getPosts();
+        const container = document.getElementById('posts-list-container');
+        if (!currentUser) { container.parentElement.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); return; }
+        
+        let posts = getPosts();
         if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`; return; }
+        
+        const sortOrder = document.getElementById('post-sort-order').value;
+        if (sortOrder === 'newest') {
+            posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        } else {
+            posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        }
+
         container.innerHTML = posts.map(p => {
             const ratingHtml = Array(parseInt(p.rating)).fill('<i class="fa-solid fa-heart"></i>').join('');
             
@@ -714,7 +761,7 @@
                     </div>
                     <div class="title">${p.name}</div>
                     <div class="details">${new Date(p.timestamp).toLocaleString()}</div>
-                    <p class="content">${p.content || '（無詳細評論）'}</p>
+                    <p class="content" style="white-space: pre-wrap;">${p.content || '（無詳細評論）'}</p>
                     <div class="post-rating">${ratingHtml}</div>
                     ${photosHtml}
                 </div>`;
@@ -724,73 +771,52 @@
     function renderFavoriteRestaurants() {
         const container = document.getElementById('favorites-content');
         if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的最愛餐廳。'); return; }
-        const favorites = getPosts().filter(p => p.rating >= 4).reduce((acc, cur) => { if (!acc.some(item => item.name === cur.name)) acc.push(cur); return acc; }, []).sort((a, b) => b.rating - a.rating);
-        if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有評分高的餐廳喔！</p>`; return; }
-        container.innerHTML = '<h3>最愛餐廳 (評分4顆心以上)</h3>' + favorites.map(p => `
+        const favorites = getFavorites();
+        if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有加入任何最愛餐廳。<br>可以從地圖上點擊餐廳的<i class="fa-regular fa-heart"></i>來加入喔！</p>`; return; }
+        
+        container.innerHTML = '<h3>我的最愛餐廳</h3>' + favorites.map(f => `
             <div class="record-card">
                 <div class="card-actions">
-                    <button class="action-btn btn-delete" onclick="deletePost(${p.id})">刪除紀錄</button>
+                    <button class="action-btn btn-delete" onclick="toggleFavorite({place_id: '${f.place_id}'}, null)">移除</button>
                 </div>
-                <div class="title">${p.name}</div>
-                 <div class="details">評分: ${p.rating} <i class="fa-solid fa-heart" style="color:#ff4d6d"></i></div>
+                <div class="title"><i class="fa-solid fa-utensils" style="margin-right:8px; color: var(--primary-color)"></i>${f.name}</div>
             </div>`).join('');
     }
 
-    let friendsData = [
-        {id: 1, name: '美食探險家'},
-        {id: 2, name: '吃貨小夥伴'},
-        {id: 3, name: '深夜食堂常客'}
-    ];
-    window.renameFriend = (id) => {
-        const newName = prompt("請輸入新的好友名稱：");
-        if (newName && newName.trim() !== '') {
-            const friend = friendsData.find(f => f.id === id);
-            if (friend) {
-                friend.name = newName.trim();
-                renderFriendsList();
-            }
-        }
-    };
-    window.deleteFriend = (id) => {
-        if (confirm("確定要刪除這位好友嗎？")) {
-            friendsData = friendsData.filter(f => f.id !== id);
-            renderFriendsList();
-        }
-    };
-
     function renderFriendsList() {
-        const container = document.getElementById('friends-content');
-        if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看好友名單。'); return; }
-        if (friendsData.length === 0) {
+        const container = document.getElementById('friends-list-container');
+        if (!currentUser) { 
+            document.getElementById('friends-content').innerHTML = loggedOutPlaceholder('以查看好友名單。'); 
+            return;
+        }
+        
+        const friends = getFriends();
+        if (friends.length === 0) {
             container.innerHTML = `<p class="placeholder-text">您還沒有加入任何好友。</p>`;
             return;
         }
-        container.innerHTML = '<h3>好友名單 (功能模擬)</h3>' + friendsData.map(f => `
+
+        container.innerHTML = friends.map(f => `
             <div class="record-card">
                 <div class="card-actions">
-                    <button class="action-btn btn-edit" onclick="renameFriend(${f.id})">命名</button>
-                    <button class="action-btn btn-delete" onclick="deleteFriend(${f.id})">刪除</button>
+                    <button class="action-btn btn-delete" onclick="deleteFriend('${f.id}')">刪除</button>
                 </div>
                 <div class="title"><i class="fa-solid fa-user-group" style="margin-right:8px; color: var(--text-light)"></i>${f.name}</div>
+                <div class="details">ID: ${f.id}</div>
             </div>`).join('');
     }
     
+    // --- LocalStorage Helper Functions ---
     function getPosts() { if (!currentUser) return []; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
     function savePosts(posts) { if (!currentUser) return; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(posts)); }
-    
-    // --- START: New Challenge Board localStorage Functions ---
-    function getChallengeBoards() {
-        if (!currentUser) return [];
-        const key = `${CHALLENGE_BOARDS_DB_KEY}_${currentUser.uid}`;
-        return JSON.parse(localStorage.getItem(key)) || [];
-    }
-    function saveChallengeBoards(boards) {
-        if (!currentUser) return;
-        const key = `${CHALLENGE_BOARDS_DB_KEY}_${currentUser.uid}`;
-        localStorage.setItem(key, JSON.stringify(boards));
-    }
-    // --- END: New Challenge Board localStorage Functions ---
-    
+    function getChallengeBoards() { if (!currentUser) return []; const key = `${CHALLENGE_BOARDS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
+    function saveChallengeBoards(boards) { if (!currentUser) return; const key = `${CHALLENGE_BOARDS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(boards)); }
+    function getFavorites() { if (!currentUser) return []; const key = `${FAVORITES_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
+    function saveFavorites(favorites) { if (!currentUser) return; const key = `${FAVORITES_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(favorites)); }
+    function isFavorite(place_id) { if (!currentUser) return false; return getFavorites().some(f => f.place_id === place_id); }
+    function getFriends() { if (!currentUser) return []; const key = `${FRIENDS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
+    function saveFriends(friends) { if (!currentUser) return; const key = `${FRIENDS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(friends)); }
+
     function createUserMarker(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
     function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener("click", (e) => { if (e.placeId) { e.stop(); } window.clearSearch(); }); }
     function setupAutocomplete() { 
@@ -829,14 +855,26 @@
     async function initiateRouteAndDetailsFetch(place) { if (!userGpsPosition || !place.geometry || !place.geometry.location) { showPlaceDetailsInWindow(place, null, {}); return; } document.getElementById('clear-search').style.display = 'flex'; clearRestaurantMarkers(); const [drivingResult, walkingResult, placeDetails] = await Promise.all([ getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.DRIVING), getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.WALKING), getPlaceDetailsPromise(place.place_id) ]); const routeInfo = { driving: drivingResult, walking: walkingResult }; if (drivingResult) { directionsRenderer.setDirections(drivingResult.response); map.fitBounds(drivingResult.response.routes[0].bounds); } else { directionsRenderer.setDirections({ routes: [] }); } const destinationMarker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name }); destinationMarker.addListener('click', (e) => { e.stopPropagation(); handlePlaceSelection(place); }); restaurantMarkers.push(destinationMarker); showPlaceDetailsInWindow(place, destinationMarker, routeInfo, placeDetails); showSinglePlaceResult(place, routeInfo, placeDetails); }
     function getRoutePromise(origin, destination, travelMode) { return new Promise(resolve => { const request = { origin, destination, travelMode }; directionsService.route(request, (res, stat) => { if (stat === 'OK') { const leg = res.routes[0].legs[0]; resolve({ distance: leg.distance.text, duration: leg.duration.text, response: res }); } else { resolve(null); } }); }); }
     function getPlaceDetailsPromise(placeId) { 
-        const request = { placeId: placeId, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address'] }; 
+        const request = { placeId: placeId, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address', 'place_id'] }; 
         return new Promise(resolve => { 
             placesService.getDetails(request, (details, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && details) { resolve(details); } else { resolve(null); } }); 
         }); 
     }
     function showSinglePlaceResult(place, routeInfo, details) { const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = ""; addRestaurantToList(place, routeInfo, details); highlightListItem(place.place_id); }
     function showPlaceDetailsInWindow(place, marker, routeInfo = {}, details = null) {
-        let content = `<div class="info-window-content"><h4>${place.name}</h4>`;
+        const isFav = isFavorite(place.place_id);
+        const favIconClass = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        const favBtnClass = isFav ? 'is-favorite' : '';
+        const placeDataStr = JSON.stringify({ name: place.name, place_id: place.place_id }).replace(/"/g, "'");
+
+        let content = `<div class="info-window-content">
+            <h4>
+                <span>${place.name}</span>
+                <button class="favorite-btn ${favBtnClass}" onclick="toggleFavorite(${placeDataStr}, this)">
+                    <i class="${favIconClass}"></i>
+                </button>
+            </h4>`;
+
         const finalDetails = details || place; 
         const address = finalDetails.formatted_address || finalDetails.vicinity;
         if (address) content += `<p><i class="fas fa-map-marker-alt"></i><span>${address}</span></p>`;
@@ -850,12 +888,6 @@
             const statusText = isOpen ? "營業中" : "休息中";
             const color = isOpen ? "var(--success-color)" : "var(--danger-color)";
             content += `<p><i class="fas fa-clock"></i><span style="color: ${color}; font-weight: bold;">${statusText}</span></p>`;
-            if (details.opening_hours.weekday_text) {
-                const weeklyHoursHtml = details.opening_hours.weekday_text.map(day => 
-                    `<div style="padding-left: 24px; font-size: 13px; color: #555; line-height: 1.5;">${day}</div>`
-                ).join('');
-                content += weeklyHoursHtml;
-            }
         } else {
             content += `<p><i class="fas fa-clock"></i><span>營業時間資訊不明</span></p>`;
         }
@@ -874,7 +906,7 @@
     function handleRatingMouseout() { updateHeartDisplay(document.getElementById('review-rating').dataset.rating); }
     function updateHeartDisplay(rating) { document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => { heart.classList.toggle('active', heart.dataset.value <= rating); }); }
     
-    // --- START: New Challenge Page Rendering Logic ---
+    // --- Challenge Page Rendering Logic ---
     function renderChallengePage() {
         if (!currentUser) {
             const content = document.getElementById('challenge-page-content');
@@ -994,13 +1026,13 @@
             </div>
         `;
     }
-    // --- END: New Challenge Page Rendering Logic ---
 
     function resetReviewForm() {
         editingPostId = null;
         document.getElementById('add-review-header').innerHTML = `<i class="fa-solid fa-pencil"></i>新增美食評論`;
         document.getElementById('save-review-btn').textContent = "儲存評論與貼文";
         ['review-restaurant-name', 'review-meal-items', 'review-cost', 'review-content'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('review-meal-type').value = 'other';
         document.getElementById('review-rating').dataset.rating = 0;
         updateHeartDisplay(0);
         document.getElementById('photo-preview-container').innerHTML = '';
