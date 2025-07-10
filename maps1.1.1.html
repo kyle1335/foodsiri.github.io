@@ -354,7 +354,7 @@
         <div class="page-content" style="padding-top:10px;">
             <div id="accounting-content" class="tab-content active"></div>
             <div id="posts-content" class="tab-content">
-                <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; padding: 0;">
+                <div class="sort-container" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; padding: 0;">
                     <label for="post-sort-order" style="font-size: 14px; color: var(--text-light); margin-right: 8px;">排序:</label>
                     <select id="post-sort-order" onchange="renderMyPosts()" style="border-radius: 15px; border: 1px solid #ddd; padding: 5px 10px; font-size: 14px; background-color: white;">
                         <option value="newest">由新到舊</option>
@@ -747,17 +747,21 @@
         container.innerHTML = html || `<p class="placeholder-text">尚無消費紀錄。</p>`;
     }
     
+    // --- START: Corrected renderMyPosts function ---
     function renderMyPosts() {
-        const container = document.getElementById('posts-list-container');
-        if (!currentUser) { 
-            const postsContent = document.getElementById('posts-content');
-            postsContent.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); 
-            return; 
+        const postsContent = document.getElementById('posts-content');
+        const sortContainer = postsContent.querySelector('.sort-container');
+        const listContainer = postsContent.querySelector('#posts-list-container');
+
+        if (!currentUser) {
+            postsContent.innerHTML = loggedOutPlaceholder('以查看您的貼文。');
+            return;
         }
 
-        if (!document.getElementById('post-sort-order')) {
-             document.getElementById('posts-content').innerHTML = `
-                <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; padding: 0;">
+        // If the sort container isn't there (e.g., after logout/login), rebuild the tab's inner structure
+        if (!sortContainer) {
+            postsContent.innerHTML = `
+                <div class="sort-container" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; padding: 0;">
                     <label for="post-sort-order" style="font-size: 14px; color: var(--text-light); margin-right: 8px;">排序:</label>
                     <select id="post-sort-order" onchange="renderMyPosts()" style="border-radius: 15px; border: 1px solid #ddd; padding: 5px 10px; font-size: 14px; background-color: white;">
                         <option value="newest">由新到舊</option>
@@ -766,30 +770,24 @@
                 </div>
                 <div id="posts-list-container"></div>`;
         }
-        
+
+        const freshListContainer = document.getElementById('posts-list-container');
         let posts = getPosts();
+
         if (posts.length === 0) {
-            document.getElementById('posts-list-container').innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`;
+            freshListContainer.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`;
             return;
         }
-        
-        const sortOrder = document.getElementById('post-sort-order').value;
-        if (sortOrder === 'newest') {
-            posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        } else {
-            posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        }
 
-        document.getElementById('posts-list-container').innerHTML = posts.map(p => {
+        const sortOrder = document.getElementById('post-sort-order').value;
+        posts.sort((a, b) => sortOrder === 'newest' ? new Date(b.timestamp) - new Date(a.timestamp) : new Date(a.timestamp) - new Date(b.timestamp));
+
+        freshListContainer.innerHTML = posts.map(p => {
             const ratingHtml = Array(parseInt(p.rating)).fill('<i class="fa-solid fa-heart"></i>').join('');
-            
             let photosHtml = '';
             if (p.photos && p.photos.length > 0) {
-                photosHtml = `<div class="post-photos">
-                    ${p.photos.map(photoSrc => `<img src="${photoSrc}" alt="Post photo">`).join('')}
-                </div>`;
+                photosHtml = `<div class="post-photos">${p.photos.map(photoSrc => `<img src="${photoSrc}" alt="Post photo">`).join('')}</div>`;
             }
-
             return `
                 <div class="post-card">
                     <div class="card-actions">
@@ -804,12 +802,13 @@
                 </div>`;
         }).join('');
     }
+    // --- END: Corrected renderMyPosts function ---
 
     function renderFavoriteRestaurants() {
         const container = document.getElementById('favorites-content');
         if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的最愛餐廳。'); return; }
         const favorites = getFavorites();
-        if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有加入任何最愛餐廳。<br>可以從地圖上點擊餐廳的<i class="fa-regular fa-heart" style="color:#ddd"></i>來加入喔！</p>`; return; }
+        if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有評分高的餐廳喔！</p>`; return; }
         
         container.innerHTML = '<h3>我的最愛餐廳</h3>' + favorites.map(f => `
             <div class="record-card">
@@ -820,16 +819,20 @@
             </div>`).join('');
     }
 
+    // --- START: Corrected renderFriendsList function ---
     function renderFriendsList() {
-        const container = document.getElementById('friends-list-container');
-        if (!currentUser) { 
-            const friendsContent = document.getElementById('friends-content');
-            friendsContent.innerHTML = loggedOutPlaceholder('以查看好友名單。'); 
+        const friendsContent = document.getElementById('friends-content');
+        const searchArea = friendsContent.querySelector('.search-area');
+        const listContainer = friendsContent.querySelector('#friends-list-container');
+
+        if (!currentUser) {
+            friendsContent.innerHTML = loggedOutPlaceholder('以查看好友名單。');
             return;
         }
 
-        if (!document.getElementById('friend-search-input')) {
-            document.getElementById('friends-content').innerHTML = `
+        // If the search area isn't there (e.g., after logout/login), rebuild the tab's inner structure
+        if (!searchArea) {
+             friendsContent.innerHTML = `
                 <div class="search-area" style="padding: 0 0 20px 0; border-bottom: none; background: transparent;">
                     <p style="font-size: 14px; color: var(--text-light); margin-bottom: 10px;">透過 ID 或 Email 搜尋好友：</p>
                     <div style="display: flex; gap: 10px; align-items: center;">
@@ -839,22 +842,24 @@
                 </div>
                 <div id="friends-list-container"></div>`;
         }
-        
-        const friends = getFriends();
-        if (friends.length === 0) {
-            document.getElementById('friends-list-container').innerHTML = `<p class="placeholder-text">您還沒有加入任何好友。</p>`;
-            return;
-        }
 
-        document.getElementById('friends-list-container').innerHTML = friends.map(f => `
-            <div class="record-card">
-                <div class="card-actions">
-                    <button class="action-btn btn-delete" onclick="deleteFriend('${f.id}')">刪除</button>
-                </div>
-                <div class="title"><i class="fa-solid fa-user-group" style="margin-right:8px; color: var(--text-light)"></i>${f.name}</div>
-                <div class="details">ID: ${f.id}</div>
-            </div>`).join('');
+        const freshListContainer = document.getElementById('friends-list-container');
+        const friends = getFriends();
+
+        if (friends.length === 0) {
+            freshListContainer.innerHTML = `<p class="placeholder-text">您還沒有加入任何好友。</p>`;
+        } else {
+            freshListContainer.innerHTML = friends.map(f => `
+                <div class="record-card">
+                    <div class="card-actions">
+                        <button class="action-btn btn-delete" onclick="deleteFriend('${f.id}')">刪除</button>
+                    </div>
+                    <div class="title"><i class="fa-solid fa-user-group" style="margin-right:8px; color: var(--text-light)"></i>${f.name}</div>
+                    <div class="details">ID: ${f.id}</div>
+                </div>`).join('');
+        }
     }
+    // --- END: Corrected renderFriendsList function ---
     
     // --- LocalStorage Helper Functions ---
     function getPosts() { if (!currentUser) return []; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
