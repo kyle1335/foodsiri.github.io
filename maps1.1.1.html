@@ -541,7 +541,37 @@
     window.handleSignOut = function() { auth.signOut().catch(error => console.error("登出錯誤:", error)); }
     window.centerOnUserGPS = function() { if (map && userGpsPosition) { map.panTo(userGpsPosition); } }
     window.clearSearch = function(suppressSearch = false) { directionsRenderer.setDirections({ routes: [] }); infoWindow.close(); const input = document.getElementById('search-input'); input.value = ''; document.getElementById('clear-search').style.display = 'none'; highlightListItem(null); if (!suppressSearch) { searchNearbyRestaurants(map.getCenter()); } }
-    window.startRandomPick = function() { if (!currentUser) { alert('請先登入才能使用您的美食清單進行抽籤！'); window.showPage('login-page'); return; } const allPosts = getPosts(); const restaurants = [...new Set(allPosts.map(p => p.name))]; if (restaurants.length === 0) { alert("口袋名單是空的，無法抽籤！"); return; } const wheel = document.getElementById('picker-wheel'); const resultDiv = document.getElementById('picker-result'); const pickButton = document.getElementById('random-pick-btn'); pickButton.disabled = true; resultDiv.textContent = '...'; const randomSpins = Math.floor(Math.random() * 5) + 5; const randomStopAngle = Math.floor(Math.random() * 360); wheel.style.transform = `rotate(${randomSpins * 360 + randomStopAngle}deg)`; setTimeout(() => { const randomIndex = Math.floor(Math.random() * restaurants.length); const winner = restaurants[randomIndex]; resultDiv.textContent = winner; resultDiv.style.color = '#28a745'; pickButton.disabled = false; }, 4000); }
+    
+    // --- MODIFIED START: Function uses favorites list for random picking ---
+    window.startRandomPick = function() {
+        if (!currentUser) {
+            alert('請先登入才能使用您的最愛清單進行抽籤！');
+            window.showPage('login-page');
+            return;
+        }
+        const favorites = getFavorites();
+        const restaurants = favorites.map(f => f.name);
+        if (restaurants.length === 0) {
+            alert("您的最愛清單是空的，無法抽籤！\n請到地圖上將餐廳加入最愛。");
+            return;
+        }
+        const wheel = document.getElementById('picker-wheel');
+        const resultDiv = document.getElementById('picker-result');
+        const pickButton = document.getElementById('random-pick-btn');
+        pickButton.disabled = true;
+        resultDiv.textContent = '...';
+        const randomSpins = Math.floor(Math.random() * 5) + 5;
+        const randomStopAngle = Math.floor(Math.random() * 360);
+        wheel.style.transform = `rotate(${randomSpins * 360 + randomStopAngle}deg)`;
+        setTimeout(() => {
+            const randomIndex = Math.floor(Math.random() * restaurants.length);
+            const winner = restaurants[randomIndex];
+            resultDiv.textContent = winner;
+            resultDiv.style.color = '#28a745';
+            pickButton.disabled = false;
+        }, 4000);
+    }
+    // --- MODIFIED END ---
     
     window.saveReview = async function() {
         if (!currentUser) { alert('請先登入！'); window.showPage('login-page'); return; }
@@ -707,7 +737,7 @@
 
     // --- 內部專用函式 ---
     function setupLoggedInUI(user) { document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block'; const userName = user.displayName || user.email.split('@')[0]; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`; renderProfilePage(); }
-    function setupLoggedOutUI() { document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; renderProfilePage(); renderChallengePage(); document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; if(document.getElementById('picker-result')) { document.getElementById('picker-result').textContent = '?'; } }
+    function setupLoggedOutUI() { document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; renderProfilePage(); renderChallengePage(); updateRandomPageStatus(); if(document.getElementById('picker-result')) { document.getElementById('picker-result').textContent = '?'; } }
     function renderProfilePage() { const activeTabBtn = document.querySelector('#profile-page .tab-btn.active'); if(activeTabBtn) { window.showProfileTab(activeTabBtn.getAttribute('onclick').match(/'([^']+)'/)[1], activeTabBtn); } else { window.showProfileTab('accounting', document.querySelector('#profile-page .tab-btn')); } }
     const loggedOutPlaceholder = (message) => `<p class="placeholder-text">請先<a href="#" onclick="window.showPage('login-page')">登入</a>${message}</p>`;
     
@@ -948,7 +978,27 @@
     }
     function highlightListItem(placeId, scroll) { document.querySelectorAll(".list-item.is-selected").forEach((el) => el.classList.remove("is-selected")); if(placeId) { const listItem = document.querySelector(`.list-item[data-place-id="${placeId}"]`); if (listItem) { listItem.classList.add("is-selected"); if (scroll) { listItem.scrollIntoView({ behavior: "smooth", block: "center" }); } } } }
     function clearRestaurantMarkers() { restaurantMarkers.forEach((marker) => marker.setMap(null)); restaurantMarkers = []; }
-    function updateRandomPageStatus() { if (!currentUser) { document.getElementById('random-status-text').textContent = '登入後，系統會從您的美食紀錄中隨機抽選！'; document.getElementById('picker-result').textContent = '?'; return; } const allPosts = getPosts(); const restaurants = [...new Set(allPosts.map(p => p.name))]; const statusText = document.getElementById('random-status-text'); const pickerResult = document.getElementById('picker-result'); pickerResult.textContent = "?"; pickerResult.style.color = 'var(--primary-color)'; if (restaurants.length === 0) { statusText.textContent = "您還沒有新增任何餐廳喔！請到「新增」頁面加入吧！"; } else { statusText.textContent = `目前有 ${restaurants.length} 家獨特的餐廳在您的口袋名單中。`; } }
+    
+    // --- MODIFIED START: Function updates status based on favorites list ---
+    function updateRandomPageStatus() {
+        if (!currentUser) {
+            document.getElementById('random-status-text').textContent = '登入後，系統會從您的「最愛餐廳」中隨機抽選！';
+            document.getElementById('picker-result').textContent = '?';
+            return;
+        }
+        const favorites = getFavorites();
+        const statusText = document.getElementById('random-status-text');
+        const pickerResult = document.getElementById('picker-result');
+        pickerResult.textContent = "?";
+        pickerResult.style.color = 'var(--primary-color)';
+        if (favorites.length === 0) {
+            statusText.innerHTML = "您還沒有加入任何最愛餐廳！<br>請到地圖上點擊♡來加入吧！";
+        } else {
+            statusText.textContent = `目前有 ${favorites.length} 家餐廳在您的最愛清單中。`;
+        }
+    }
+    // --- MODIFIED END ---
+
     function handleRatingClick(e) { const rating = e.target.dataset.value; document.getElementById('review-rating').dataset.rating = rating; updateHeartDisplay(rating); }
     function handleRatingHover(e) { updateHeartDisplay(e.target.dataset.value); }
     function handleRatingMouseout() { updateHeartDisplay(document.getElementById('review-rating').dataset.rating); }
