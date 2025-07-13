@@ -151,15 +151,22 @@
       transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1);
       overflow: hidden; 
     }
+    /* --- MODIFIED: Adjusted text slice styles --- */
     .slice-text {
         position: absolute;
         top: 50%;
         left: 50%;
-        width: 150px; 
+        width: 90px; /* Narrower width to encourage wrapping */
+        height: 60px; /* Provide vertical space */
+        margin-left: -45px; /* Half of width to center horizontally */
+        margin-top: -30px; /* Half of height to center vertically */
+        display: flex;
+        align-items: center;
+        justify-content: center;
         transform-origin: center center;
         color: white;
         font-weight: 600;
-        font-size: 13px;
+        font-size: 12px; /* Slightly smaller font */
         text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
         text-align: center;
         pointer-events: none; 
@@ -196,7 +203,7 @@
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
     #random-status-text {
-        min-height: 40px; /* Reserve space for the result text */
+        min-height: 40px; 
         font-size: 16px;
         font-weight: 500;
         color: var(--text-color);
@@ -608,7 +615,6 @@
     window.centerOnUserGPS = function() { if (map && userGpsPosition) { map.panTo(userGpsPosition); } }
     window.clearSearch = function(suppressSearch = false) { directionsRenderer.setDirections({ routes: [] }); infoWindow.close(); const input = document.getElementById('search-input'); input.value = ''; document.getElementById('clear-search').style.display = 'none'; highlightListItem(null); if (!suppressSearch) { searchNearbyRestaurants(map.getCenter()); } }
     
-    // --- MODIFIED: Changed result display logic ---
     window.startRandomPick = function() {
         if (!currentUser) {
             alert('請先登入才能使用您的最愛清單進行抽籤！');
@@ -622,14 +628,14 @@
         }
 
         const wheel = document.getElementById('picker-wheel');
-        const resultDiv = document.getElementById('picker-result'); // The central circle
-        const statusText = document.getElementById('random-status-text'); // The text below
+        const resultDiv = document.getElementById('picker-result');
+        const statusText = document.getElementById('random-status-text');
         const pickButton = document.getElementById('random-pick-btn');
         
         pickButton.disabled = true;
         resultDiv.textContent = '...';
         resultDiv.style.color = 'var(--text-light)';
-        statusText.style.visibility = 'hidden'; // Hide status text during spin
+        statusText.style.visibility = 'hidden';
 
         const numOptions = favorites.length;
         const sliceAngle = 360 / numOptions;
@@ -652,11 +658,9 @@
         wheel.style.transform = `rotate(${finalAngle}deg)`;
 
         setTimeout(() => {
-            // Reset the central circle
             resultDiv.textContent = '?';
             resultDiv.style.color = 'var(--primary-color)';
 
-            // Display result below the button
             statusText.innerHTML = `您抽中「<strong>${winner.name}</strong>」！`;
             statusText.classList.remove('placeholder-text');
             statusText.style.visibility = 'visible';
@@ -1068,7 +1072,7 @@
     function highlightListItem(placeId, scroll) { document.querySelectorAll(".list-item.is-selected").forEach((el) => el.classList.remove("is-selected")); if(placeId) { const listItem = document.querySelector(`.list-item[data-place-id="${placeId}"]`); if (listItem) { listItem.classList.add("is-selected"); if (scroll) { listItem.scrollIntoView({ behavior: "smooth", block: "center" }); } } } }
     function clearRestaurantMarkers() { restaurantMarkers.forEach((marker) => marker.setMap(null)); restaurantMarkers = []; }
     
-    // --- NEW: Function to draw the picker wheel ---
+    // --- MODIFIED: drawPickerWheel function to fix text layout ---
     function drawPickerWheel(restaurants) {
         const wheel = document.getElementById('picker-wheel');
         wheel.innerHTML = '<div id="picker-result">?</div>'; 
@@ -1097,7 +1101,8 @@
             textEl.textContent = restaurant.name;
 
             const textAngle = currentAngle + (sliceAngle / 2);
-            textEl.style.transform = `rotate(${textAngle}deg) translateY(-95px) rotate(-${textAngle}deg)`;
+            // Adjusted translateY to bring text closer to the center
+            textEl.style.transform = `rotate(${textAngle}deg) translateY(-80px) rotate(-${textAngle}deg)`;
             
             wheel.appendChild(textEl);
 
@@ -1108,7 +1113,6 @@
         wheel.style.background = gradientString;
     }
 
-    // --- MODIFIED: Function updates status and draws the wheel ---
     function updateRandomPageStatus() {
         const statusText = document.getElementById('random-status-text');
         const pickerResult = document.getElementById('picker-result');
@@ -1131,7 +1135,10 @@
         
         if (favorites.length === 0) {
             statusText.innerHTML = "您還沒有加入任何最愛餐廳！<br>請到地圖上點擊♡來加入吧！";
-        } else {
+        } else if (favorites.length < 2) {
+            statusText.textContent = `目前有 ${favorites.length} 家餐廳。至少需要2家才能開始抽籤喔！`;
+        }
+        else {
             statusText.textContent = `目前有 ${favorites.length} 家餐廳在您的最愛清單中。`;
         }
     }
