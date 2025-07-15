@@ -562,17 +562,15 @@
     var viewingChallengeId = null;
     var activeFilter = { type: 'sort', value: 'distance' }; 
 
-    // --- START: 修改顏色對應表，並建立關鍵字對照表 ---
     const categoryKeywords = {
         '日式料理': { color: '#e57373', keywords: ['japanese', 'sushi', 'ramen', '丼', '居酒屋', '食堂', '拉麵', '壽司', '日式'] },
         '火鍋':     { color: '#ff9800', keywords: ['hot_pot', '火鍋', '鍋物', '涮涮鍋'] },
         '咖啡廳':   { color: '#795548', keywords: ['cafe', 'coffee_shop', '咖啡'] },
         '義大利麵': { color: '#66bb6a', keywords: ['italian', 'pasta', 'pizza', '義式', '披薩'] },
         '早午餐':   { color: '#ffee58', keywords: ['brunch', 'breakfast', '早午餐'] },
-        '小吃':     { color: '#78909c', keywords: ['snack', '小吃', '快餐'] }
+        '小吃':     { color: '#78909c', keywords: ['snack', '小吃', '快餐', '麵線', '水餃'] }
     };
-    const defaultMarkerColor = '#EA4335'; // 預設紅色
-    // --- END: 修改顏色對應表 ---
+    const defaultMarkerColor = '#EA4335';
 
     // --- Mock User Database for Friend Search ---
     const mockUserDB = [
@@ -599,7 +597,6 @@
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth(); 
 
-    // --- START: 新增分類顏色判斷函式 ---
     function getCategoryColor(place) {
         if (!place) return defaultMarkerColor;
         const placeName = place.name.toLowerCase();
@@ -608,16 +605,13 @@
         for (const category in categoryKeywords) {
             const data = categoryKeywords[category];
             for (const keyword of data.keywords) {
-                // 檢查餐廳名稱或 API 類型是否包含關鍵字
                 if (placeName.includes(keyword) || placeTypes.includes(keyword)) {
                     return data.color;
                 }
             }
         }
-        // 如果都沒匹配到，回傳預設顏色
         return defaultMarkerColor;
     }
-    // --- END: 新增分類顏色判斷函式 ---
 
     // --- Google Map 初始化回呼函式 ---
     function initMap() {
@@ -1129,10 +1123,12 @@
 
     function processAndDisplayResults(places, center) { const listContainer = document.getElementById("list-content-area"); const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) })); placesWithDistance.sort((a, b) => a.distance - b.distance); listContainer.innerHTML = ""; placesWithDistance.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place); }); }
     
-    // --- START: 修改 addRestaurantMarker，不再依賴 activeFilter ---
+    // --- START: 修正 addRestaurantMarker 邏輯 ---
     function addRestaurantMarker(place) {
-        // 直接呼叫判斷函式來決定顏色
-        const markerColor = getCategoryColor(place);
+        // 依賴 activeFilter 來決定顏色，這是最穩定的方式
+        const markerColor = (activeFilter.type === 'keyword' && categoryKeywords[activeFilter.value]) 
+                            ? categoryKeywords[activeFilter.value].color 
+                            : getCategoryColor(place); // 當是 "距離" 模式時，嘗試猜測顏色
 
         const marker = new google.maps.Marker({
             position: place.geometry.location,
@@ -1157,7 +1153,7 @@
         marker.place_id = place.place_id;
         restaurantMarkers.push(marker);
     }
-    // --- END: 修改 addRestaurantMarker ---
+    // --- END: 修正 addRestaurantMarker ---
 
     function addRestaurantToList(place, routeInfo = null, details = null) { 
         const listContainer = document.getElementById("list-content-area"); 
@@ -1182,15 +1178,8 @@
     }
     
     function handlePlaceSelection(place) {
-        let markerColor = null;
         const marker = restaurantMarkers.find((m) => m.place_id === place.place_id);
-        
-        if (marker && marker.markerColor) {
-            markerColor = marker.markerColor;
-        } else {
-            // 如果是從搜尋來的，沒有現成marker，也要猜一次顏色
-            markerColor = getCategoryColor(place);
-        }
+        const markerColor = marker ? marker.markerColor : getCategoryColor(place);
 
         if (marker) {
             map.panTo(marker.getPosition());
@@ -1221,8 +1210,7 @@
             directionsRenderer.setDirections({ routes: [] });
         }
         
-        // --- START: 修改 initiateRouteAndDetailsFetch 中的 marker 建立邏輯 ---
-        // 確保 placeDetails 的 types 也被傳入判斷，因為它可能比 place 的更詳細
+        // 結合 place 和 placeDetails 的資訊來獲得最準確的顏色
         const finalPlaceDataForColor = { ...place, types: (placeDetails && placeDetails.types) || place.types || [] };
         const markerColor = color || getCategoryColor(finalPlaceDataForColor);
 
@@ -1232,14 +1220,13 @@
             title: place.name,
             icon: {
                 path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
-                fillColor: markerColor, // 直接使用判斷好的顏色
+                fillColor: markerColor, 
                 fillOpacity: 1,
                 strokeWeight: 0,
                 scale: 1.5,
                 anchor: new google.maps.Point(12, 24)
             }
         });
-        // --- END: 修改 initiateRouteAndDetailsFetch 中的 marker 建立邏輯 ---
         
         destinationMarker.addListener('click', (e) => {
             e.stopPropagation();
@@ -1252,14 +1239,12 @@
     
     function getRoutePromise(origin, destination, travelMode) { return new Promise(resolve => { const request = { origin, destination, travelMode }; directionsService.route(request, (res, stat) => { if (stat === 'OK') { const leg = res.routes[0].legs[0]; resolve({ distance: leg.distance.text, duration: leg.duration.text, response: res }); } else { resolve(null); } }); }); }
     
-    // --- START: 修改 getPlaceDetailsPromise，請求 types 欄位 ---
     function getPlaceDetailsPromise(placeId) { 
         const request = { placeId: placeId, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address', 'place_id', 'types'] }; 
         return new Promise(resolve => { 
             placesService.getDetails(request, (details, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && details) { resolve(details); } else { resolve(null); } }); 
         }); 
     }
-    // --- END: 修改 getPlaceDetailsPromise ---
 
     function showSinglePlaceResult(place, routeInfo, placeDetails) { const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = ""; addRestaurantToList(place, routeInfo, placeDetails); highlightListItem(place.place_id); }
     function showPlaceDetailsInWindow(place, marker, routeInfo = {}, details = null) {
