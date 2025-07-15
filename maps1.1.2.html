@@ -576,7 +576,34 @@
     function tick() { if (video.readyState === video.HAVE_ENOUGH_DATA) { qrStatusText.textContent = '掃描中...'; canvasElement.height = video.videoHeight; canvasElement.width = video.videoWidth; canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height); var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height); var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert", }); if (code) { handleQrCodeResult(code.data); return; } } animationFrameId = requestAnimationFrame(tick); }
     function parseLeftQRCode(data) { if (typeof data !== 'string' || data.length < 77) return null; try { const totalAmountHex = data.substring(29, 37); const totalAmount = parseInt(totalAmountHex, 16); if (isNaN(totalAmount)) return null; return { totalAmount }; } catch (e) { return null; } }
     function parseRightQRCode(data) { if (typeof data !== 'string' || !data.startsWith('**') && data.indexOf('*:') === -1) return null; let detailsData = data; if (data.startsWith('**')) { detailsData = data.substring(2); } try { const parts = detailsData.split(':'); if (parts.length < 2) return null; const itemCount = parseInt(parts[1]); if (isNaN(itemCount) || itemCount <= 0) return null; let parsedItems = []; let currentIndex = 3; for (let i = 0; i < itemCount; i++) { if (currentIndex + 2 >= parts.length) break; const itemName = parts[currentIndex]; const itemQuantity = parts[currentIndex + 1]; if (itemName && itemQuantity) { parsedItems.push(`${itemName} x ${itemQuantity}`); } currentIndex += 3; } return parsedItems.length > 0 ? { items: parsedItems } : null; } catch (e) { return null; } }
-    function handleQrCodeResult(qrData) { if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; } const leftQRResult = parseLeftQRCode(qrData); const rightQRResult = parseRightQRCode(qrData); if (!leftQRResult && !rightQRResult) { qrStatusText.textContent = '無法辨識的發票 QR Code 格式。'; scanBox.style.borderColor = 'var(--danger-color)'; setTimeout(() => { scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; if (qrModal.style.display === 'flex') requestAnimationFrame(tick); }, 2500); return; } scanBox.style.borderColor = 'var(--success-color)'; let feedback = []; if (leftQRResult) { document.getElementById('review-cost').value = leftQRResult.totalAmount; feedback.push(`總金額 $${leftQRResult.totalAmount} 已填入！`); } if (rightQRResult) { const currentItems = document.getElementById('review-meal-items').value; const newItems = rightQRResult.items.join('\n'); document.getElementById('review-meal-items').value = currentItems ? `${currentItems}\n${newItems}` : newItems; feedback.push(`${rightQRResult.items.length}筆商品明細已加入！`); } const feedbackMessage = feedback.join('\n'); qrStatusText.textContent = feedbackMessage; setTimeout(() => { if (confirm(feedbackMessage + '\n\n是否要繼續掃描下一個 QR Code？')) { qrStatusText.textContent = '請對準下一個 QR Code...'; scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; requestAnimationFrame(tick); } else { closeQrScanner(); } }, 500); }
+    function handleQrCodeResult(qrData) { if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; } const leftQRResult = parseLeftQRCode(qrData); const rightQRResult = parseRightQRCode(qrData); if (!leftQRResult && !rightQRResult) { qrStatusText.textContent = '無法辨識的 QR Code 格式。'; if(scanBox) scanBox.style.borderColor = 'var(--danger-color)'; setTimeout(() => { if(scanBox) scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; if (qrModal.style.display === 'flex') requestAnimationFrame(tick); }, 2500); return; } if(scanBox) scanBox.style.borderColor = 'var(--success-color)'; let feedback = []; if (leftQRResult) { document.getElementById('review-cost').value = leftQRResult.totalAmount; feedback.push(`總金額 $${leftQRResult.totalAmount} 已填入！`); } if (rightQRResult) { const currentItems = document.getElementById('review-meal-items').value; const newItems = rightQRResult.items.join('\n'); document.getElementById('review-meal-items').value = currentItems ? `${currentItems}\n${newItems}` : newItems; feedback.push(`${rightQRResult.items.length}筆商品明細已加入！`); } const feedbackMessage = feedback.join('\n'); qrStatusText.textContent = feedbackMessage; setTimeout(() => { if (confirm(feedbackMessage + '\n\n是否要繼續掃描下一個 QR Code？')) { qrStatusText.textContent = '請對準下一個 QR Code...'; if(scanBox) scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; requestAnimationFrame(tick); } else { closeQrScanner(); } }, 500); }
+    
+    // ===== START: 新增的函式 =====
+    function scanImageFileForQrCode(file) {
+        if (!file.type.startsWith('image/')) { return; }
+        let reader = new FileReader();
+        reader.onload = function (e) {
+            const img = new Image();
+            img.onload = function () {
+                const canvas = document.getElementById('qr-canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                context.drawImage(img, 0, 0, img.width, img.height);
+                const imageData = context.getImageData(0, 0, img.width, img.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                if (code) {
+                    alert("從圖片中成功掃描到 QR Code！");
+                    window.showPage('add-review-page');
+                    handleQrCodeResult(code.data);
+                }
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+    // ===== END: 新增的函式 =====
+    
     function displayPhotoPreviews(items) { const previewContainer = document.getElementById('photo-preview-container'); if (!items) return; for (const item of items) { if (item instanceof File) { if (!item.type.startsWith('image/')){ continue; } const reader = new FileReader(); reader.onload = function(e) { createPreviewElement(e.target.result); } reader.readAsDataURL(item); } else if (typeof item === 'string' && item.startsWith('data:image')) { createPreviewElement(item); } } function createPreviewElement(src) { const previewItem = document.createElement('div'); previewItem.className = 'photo-preview-item'; const img = document.createElement('img'); img.src = src; const deleteBtn = document.createElement('button'); deleteBtn.className = 'delete-photo-btn'; deleteBtn.innerHTML = '×'; deleteBtn.onclick = function() { previewItem.remove(); }; previewItem.appendChild(img); previewItem.appendChild(deleteBtn); previewContainer.appendChild(previewItem); } }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -597,7 +624,21 @@
         const cameraFileInput = document.getElementById('camera-file-input');
         btnSelectAlbum.addEventListener('click', () => photoFileInput.click());
         btnOpenCamera.addEventListener('click', () => cameraFileInput.click());
-        const handleFileSelection = (event) => { const files = event.target.files; if (files && files.length > 0) { displayPhotoPreviews(files); } event.target.value = null; };
+        
+        // ===== MODIFIED: 繫結事件處理 =====
+        const handleFileSelection = (event) => { 
+            const files = event.target.files; 
+            if (files && files.length > 0) { 
+                // 功能1: 顯示所有圖片的預覽圖
+                displayPhotoPreviews(files); 
+                
+                // 功能2: 嘗試掃描第一張圖的 QR Code
+                scanImageFileForQrCode(files[0]);
+            } 
+            event.target.value = null; 
+        };
+        // ===== END: MODIFIED =====
+
         photoFileInput.addEventListener('change', handleFileSelection);
         cameraFileInput.addEventListener('change', handleFileSelection);
         window.showPage('map-page', document.querySelector('.nav-item')); 
