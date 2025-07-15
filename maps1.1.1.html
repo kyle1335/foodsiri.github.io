@@ -6,7 +6,7 @@
   <title>FoodieApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
 
-  <!-- External libraries are loaded first -->
+  <!-- External libraries are loaded first in the head -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
@@ -51,22 +51,18 @@
       box-sizing: border-box;
     }
     main { 
-      -webkit-flex: 1;
       flex: 1;
       overflow: hidden; 
       position: relative;
-      display: -webkit-flex;
       display: flex;
     }
     .page { 
       width: 100%; height: 100%; 
       display: none; 
-      -webkit-flex-direction: column;
       flex-direction: column; 
       overflow: hidden; 
     }
     .page.active { 
-      display: -webkit-flex;
       display: flex; 
     }
     .app-nav { height: var(--nav-height); width: 100%; background: #fff; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-around; align-items: center; flex-shrink: 0; }
@@ -74,23 +70,18 @@
     .nav-item i { font-size: 22px; margin-bottom: 4px; }
     .nav-item.active { color: var(--primary-color); }
     #map-page { 
-      -webkit-flex-direction: column;
       flex-direction: column; 
     }
     #map-panel { 
-      -webkit-flex: 6.5;
       flex: 6.5;
       position: relative; 
       background: #e5e3df; 
       width: 100%; 
     }
     #list-panel { 
-      -webkit-flex: 3.5;
       flex: 3.5;
       border-top: 1px solid #ddd; 
-      display: -webkit-flex;
       display: flex; 
-      -webkit-flex-direction: column;
       flex-direction: column; 
       background: white; 
       overflow: hidden; 
@@ -280,19 +271,16 @@
         border: 1px solid #ccc;
       }
       #map-page {
-        -webkit-flex-direction: row;
         flex-direction: row;
       }
       #map-panel {
         width: 60%;
         height: 100%;
-        -webkit-flex: 6;
         flex: 6;
       }
       #list-panel {
         width: 40%;
         height: 100%;
-        -webkit-flex: 4;
         flex: 4;
         border-top: none;
         border-left: 1px solid #ddd;
@@ -487,21 +475,20 @@
     </div>
   </div>
 
-  <!-- All custom JavaScript logic is now at the bottom of the body -->
   <script>
     // --- 全域變數定義 ---
-    let currentUser = null; 
-    let map, userGpsPosition, userMarker, restaurantMarkers, debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
-    let isMapReady = false; 
+    var currentUser = null; 
+    var map, userGpsPosition, userMarker, restaurantMarkers, debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
+    var isMapReady = false; 
     const POSTS_DB_KEY = 'foodieAppPosts'; 
     const CHALLENGE_BOARDS_DB_KEY = 'foodieAppChallengeBoards';
     const FAVORITES_DB_KEY = 'foodieAppFavorites';
     const FRIENDS_DB_KEY = 'foodieAppFriends';
-    let pageHistory = [];
-    let auth; 
-    let selectedPlaceForReview = null; 
-    let editingPostId = null; 
-    let viewingChallengeId = null;
+    var pageHistory = [];
+    var auth; 
+    var selectedPlaceForReview = null; 
+    var editingPostId = null; 
+    var viewingChallengeId = null;
 
     // --- Mock User Database for Friend Search ---
     const mockUserDB = [
@@ -513,7 +500,7 @@
     ];
 
     // --- QR Code 掃描器相關變數 ---
-    let qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
+    var qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
 
     // --- Firebase 初始化 ---
     const firebaseConfig = {
@@ -529,7 +516,6 @@
     auth = firebase.auth(); 
 
     // --- Google Map 初始化回呼函式 ---
-    // The function is now defined before it's called by the script at the bottom.
     function initMap() {
         isMapReady = true;
         userGpsPosition = { lat: 25.0479, lng: 121.5171 };
@@ -1028,7 +1014,8 @@
             placesService.getDetails(request, (details, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && details) { resolve(details); } else { resolve(null); } }); 
         }); 
     }
-    function showSinglePlaceResult(place, routeInfo, details) { const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = ""; addRestaurantToList(place, routeInfo, details); highlightListItem(place.place_id); }
+    // FIXED: Corrected variable name from details to placeDetails
+    function showSinglePlaceResult(place, routeInfo, placeDetails) { const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = ""; addRestaurantToList(place, routeInfo, placeDetails); highlightListItem(place.place_id); }
     function showPlaceDetailsInWindow(place, marker, routeInfo = {}, details = null) {
         const isFav = isFavorite(place.place_id);
         const favIconClass = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
@@ -1460,7 +1447,6 @@
     });
   </script>
   
-  <!-- The Google Maps script is now loaded last, using defer to ensure the page is parsed first -->
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
     defer
