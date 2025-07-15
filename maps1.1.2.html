@@ -867,13 +867,71 @@
 
     function createUserMarker(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
     function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener("click", (e) => { if (e.placeId) { e.stop(); } window.clearSearch(); }); }
+    
+    // ===== START: MODIFIED FUNCTION =====
     function setupAutocomplete() { 
         const input = document.getElementById('search-input'); 
         const clearBtn = document.getElementById('clear-search');
         autocomplete = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'tw' }, types: ['establishment', 'geocode'], fields: ['place_id', 'geometry', 'name', 'formatted_address', 'vicinity', 'business_status'] }); 
-        input.addEventListener('input', () => { clearBtn.style.display = input.value ? 'flex' : 'none'; }); 
-        autocomplete.addListener('place_changed', () => { const place = autocomplete.getPlace(); if (place.geometry && place.geometry.location) { window.clearSearch(true); handlePlaceSelection(place); } }); 
+        
+        // 修改此處的事件監聽器以增加過濾功能
+        input.addEventListener('input', () => { 
+            clearBtn.style.display = input.value ? 'flex' : 'none'; 
+
+            // --- START: 新增的列表過濾邏輯 ---
+            const searchTerm = input.value.toLowerCase().trim();
+            const listContainer = document.getElementById("list-content-area");
+            const listItems = listContainer.querySelectorAll('.list-item');
+            let hasVisibleItems = false;
+
+            // 隱藏可能正在顯示的狀態文字 (例如 "正在搜尋...")
+            const statusText = listContainer.querySelector('.list-status-text:not(.no-results-message)');
+            if (statusText) {
+                statusText.style.display = 'none';
+            }
+
+            listItems.forEach(item => {
+                const itemName = item.querySelector('.item-name').textContent.toLowerCase();
+                const itemAddress = item.querySelector('.item-address').textContent.toLowerCase();
+                
+                // 如果餐廳名稱或地址包含搜尋字詞，就顯示它，否則隱藏
+                if (itemName.includes(searchTerm) || itemAddress.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                    hasVisibleItems = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // 處理找不到結果的情況
+            let notFoundMsg = listContainer.querySelector('.no-results-message');
+            if (!hasVisibleItems && searchTerm) {
+                // 如果 "找不到結果" 的訊息元素不存在，就建立一個
+                if (!notFoundMsg) {
+                    notFoundMsg = document.createElement('p');
+                    notFoundMsg.className = 'list-status-text no-results-message';
+                    listContainer.appendChild(notFoundMsg);
+                }
+                notFoundMsg.textContent = `找不到符合「${input.value}」的結果`;
+                notFoundMsg.style.display = 'block';
+            } else if (notFoundMsg) {
+                // 如果有結果或搜尋框是空的，就隱藏訊息
+                notFoundMsg.style.display = 'none';
+            }
+            // --- END: 新增的列表過濾邏輯 ---
+        }); 
+        
+        // 這部分保持不變，處理從Google建議中選擇一個地點的情況
+        autocomplete.addListener('place_changed', () => { 
+            const place = autocomplete.getPlace(); 
+            if (place.geometry && place.geometry.location) { 
+                window.clearSearch(true); 
+                handlePlaceSelection(place); 
+            } 
+        }); 
     }
+    // ===== END: MODIFIED FUNCTION =====
+
     function updateUserGPS() { if (!isMapReady) return; document.getElementById("list-content-area").innerHTML = `<p class="list-status-text">正在獲取您的位置...</p>`; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; createUserMarker(userGpsPosition); window.centerOnUserGPS(); }, () => searchNearbyRestaurants(map.getCenter()) ); } else { searchNearbyRestaurants(map.getCenter()); } }
     function searchNearbyRestaurants(location) { if (!isMapReady) return; const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = `<p class="list-status-text">正在搜尋附近餐廳...</p>`; clearRestaurantMarkers(); const request = { location: location, radius: 1500, type: 'restaurant' }; placesService.nearbySearch(request, (results, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && results) { processAndDisplayResults(results, location); } else { listContainer.innerHTML = `<p class="list-status-text">此區域找不到餐廳</p>`; } }); }
     function processAndDisplayResults(places, center) { const listContainer = document.getElementById("list-content-area"); const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) })); placesWithDistance.sort((a, b) => a.distance - b.distance); listContainer.innerHTML = ""; placesWithDistance.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place); }); }
