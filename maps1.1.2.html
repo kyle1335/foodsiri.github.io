@@ -121,7 +121,6 @@
       transition: all 0.2s ease-in-out;
     }
     
-    /* 預設的"距離"標籤樣式 */
     .filter-tag[data-filter-value="distance"]:hover {
       background-color: #e8eaf6;
     }
@@ -131,18 +130,15 @@
         border-color: var(--primary-color);
     }
 
-    /* 通用 hover 效果 */
     .filter-tag:not([data-filter-value="distance"]):hover {
         filter: brightness(0.95);
     }
 
-    /* 所有標籤選中時的通用視覺效果 */
     .filter-tag.active {
       transform: scale(1.05);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     
-    /* 分類顏色定義 (未選中狀態) */
     .filter-tag[data-filter-value="日式料理"] { background-color: #ffebee; border-color: #ffcdd2; color: #c62828; }
     .filter-tag[data-filter-value="火鍋"]     { background-color: #fff3e0; border-color: #ffe0b2; color: #ef6c00; }
     .filter-tag[data-filter-value="咖啡廳"]   { background-color: #efebe9; border-color: #d7ccc8; color: #5d4037; }
@@ -150,7 +146,6 @@
     .filter-tag[data-filter-value="早午餐"]   { background-color: #fffde7; border-color: #fff9c4; color: #f57f17; }
     .filter-tag[data-filter-value="小吃"]     { background-color: #eceff1; border-color: #cfd8dc; color: #37474f; }
 
-    /* 分類顏色定義 (選中 .active 狀態) - 提高優先級 */
     .filter-tag[data-filter-value="日式料理"].active { background-color: #e57373; border-color: #e57373; color: white; }
     .filter-tag[data-filter-value="火鍋"].active     { background-color: #ff9800; border-color: #fb8c00; color: white; }
     .filter-tag[data-filter-value="咖啡廳"].active   { background-color: #795548; border-color: #6d4c41; color: white; }
@@ -567,7 +562,6 @@
     var viewingChallengeId = null;
     var activeFilter = { type: 'sort', value: 'distance' }; 
 
-    // --- START: 新增分類與顏色的對應表 ---
     const categoryColors = {
       '日式料理': '#e57373',
       '火鍋': '#ff9800',
@@ -575,9 +569,8 @@
       '義大利麵': '#66bb6a',
       '早午餐': '#ffee58',
       '小吃': '#78909c',
-      'default': '#EA4335' // 預設紅色
+      'default': '#EA4335' 
     };
-    // --- END: 新增分類與顏色的對應表 ---
 
     // --- Mock User Database for Friend Search ---
     const mockUserDB = [
@@ -1114,9 +1107,7 @@
 
     function processAndDisplayResults(places, center) { const listContainer = document.getElementById("list-content-area"); const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) })); placesWithDistance.sort((a, b) => a.distance - b.distance); listContainer.innerHTML = ""; placesWithDistance.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place); }); }
     
-    // --- START: 修改 addRestaurantMarker 函式以使用動態顏色 ---
     function addRestaurantMarker(place) {
-        // 根據目前的篩選器決定標籤顏色
         const markerColor = (activeFilter.type === 'keyword' && categoryColors[activeFilter.value]) 
                             ? categoryColors[activeFilter.value] 
                             : categoryColors['default'];
@@ -1127,13 +1118,18 @@
             title: place.name,
             icon: {
                 path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
-                fillColor: markerColor, // 使用動態決定的顏色
+                fillColor: markerColor, 
                 fillOpacity: 1,
                 strokeWeight: 0,
                 scale: 1.5,
                 anchor: new google.maps.Point(12, 24)
             }
         });
+        
+        // --- START: 儲存顏色資訊到 marker 物件上 ---
+        marker.markerColor = markerColor; 
+        // --- END: 儲存顏色資訊到 marker 物件上 ---
+
         marker.addListener('click', (e) => {
             e.domEvent.stopPropagation();
             handlePlaceSelection(place);
@@ -1141,7 +1137,6 @@
         marker.place_id = place.place_id;
         restaurantMarkers.push(marker);
     }
-    // --- END: 修改 addRestaurantMarker 函式 ---
 
     function addRestaurantToList(place, routeInfo = null, details = null) { 
         const listContainer = document.getElementById("list-content-area"); 
@@ -1164,30 +1159,77 @@
         item.onclick = (e) => { e.stopPropagation(); handlePlaceSelection(place); }; 
         listContainer.appendChild(item); 
     }
-    function handlePlaceSelection(place) { const marker = restaurantMarkers.find((m) => m.place_id === place.place_id); if (marker) { map.panTo(marker.getPosition()); } else { map.panTo(place.geometry.location); } highlightListItem(place.place_id, true); initiateRouteAndDetailsFetch(place); }
-    async function initiateRouteAndDetailsFetch(place) { if (!userGpsPosition || !place.geometry || !place.geometry.location) { showPlaceDetailsInWindow(place, null, {}); return; } document.getElementById('clear-search').style.display = 'flex'; clearRestaurantMarkers(); const [drivingResult, walkingResult, placeDetails] = await Promise.all([ getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.DRIVING), getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.WALKING), getPlaceDetailsPromise(place.place_id) ]); const routeInfo = { driving: drivingResult, walking: walkingResult }; if (drivingResult) { directionsRenderer.setDirections(drivingResult.response); map.fitBounds(drivingResult.response.routes[0].bounds); } else { directionsRenderer.setDirections({ routes: [] }); } 
+    
+    // --- START: 修改 handlePlaceSelection 函式，傳遞顏色資訊 ---
+    function handlePlaceSelection(place) {
+        let markerColor = null;
+        const marker = restaurantMarkers.find((m) => m.place_id === place.place_id);
         
-        // --- START: 修改單點搜尋時的 Marker 顏色 ---
-        const markerColor = (activeFilter.type === 'keyword' && categoryColors[activeFilter.value]) 
+        if (marker && marker.markerColor) {
+            // 如果從現有標籤中找到了，就使用它儲存的顏色
+            markerColor = marker.markerColor;
+        } else {
+            // 否則，根據當前篩選器或搜尋框來決定
+            markerColor = (activeFilter.type === 'keyword' && categoryColors[activeFilter.value]) 
                             ? categoryColors[activeFilter.value] 
                             : categoryColors['default'];
+        }
+
+        if (marker) {
+            map.panTo(marker.getPosition());
+        } else {
+            map.panTo(place.geometry.location);
+        }
+        highlightListItem(place.place_id, true);
+        initiateRouteAndDetailsFetch(place, markerColor); // 將顏色傳遞下去
+    }
+    // --- END: 修改 handlePlaceSelection 函式 ---
+
+    // --- START: 修改 initiateRouteAndDetailsFetch 函式，接收顏色參數 ---
+    async function initiateRouteAndDetailsFetch(place, color) {
+        if (!userGpsPosition || !place.geometry || !place.geometry.location) {
+            showPlaceDetailsInWindow(place, null, {});
+            return;
+        }
+        document.getElementById('clear-search').style.display = 'flex';
+        clearRestaurantMarkers();
+        const [drivingResult, walkingResult, placeDetails] = await Promise.all([
+            getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.DRIVING),
+            getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.WALKING),
+            getPlaceDetailsPromise(place.place_id)
+        ]);
+        const routeInfo = { driving: drivingResult, walking: walkingResult };
+        if (drivingResult) {
+            directionsRenderer.setDirections(drivingResult.response);
+            map.fitBounds(drivingResult.response.routes[0].bounds);
+        } else {
+            directionsRenderer.setDirections({ routes: [] });
+        }
+        
         const destinationMarker = new google.maps.Marker({
             position: place.geometry.location,
             map: map,
             title: place.name,
             icon: {
                 path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
-                fillColor: markerColor,
+                fillColor: color || categoryColors['default'], // 使用傳入的顏色，若無則用預設
                 fillOpacity: 1,
                 strokeWeight: 0,
                 scale: 1.5,
                 anchor: new google.maps.Point(12, 24)
             }
         });
-        // --- END: 修改單點搜尋時的 Marker 顏色 ---
         
-        destinationMarker.addListener('click', (e) => { e.stopPropagation(); handlePlaceSelection(place); }); restaurantMarkers.push(destinationMarker); showPlaceDetailsInWindow(place, destinationMarker, routeInfo, placeDetails); showSinglePlaceResult(place, routeInfo, placeDetails); 
+        destinationMarker.addListener('click', (e) => {
+            e.stopPropagation();
+            handlePlaceSelection(place);
+        });
+        restaurantMarkers.push(destinationMarker);
+        showPlaceDetailsInWindow(place, destinationMarker, routeInfo, placeDetails);
+        showSinglePlaceResult(place, routeInfo, placeDetails);
     }
+    // --- END: 修改 initiateRouteAndDetailsFetch 函式 ---
+    
     function getRoutePromise(origin, destination, travelMode) { return new Promise(resolve => { const request = { origin, destination, travelMode }; directionsService.route(request, (res, stat) => { if (stat === 'OK') { const leg = res.routes[0].legs[0]; resolve({ distance: leg.distance.text, duration: leg.duration.text, response: res }); } else { resolve(null); } }); }); }
     function getPlaceDetailsPromise(placeId) { 
         const request = { placeId: placeId, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address', 'place_id'] }; 
