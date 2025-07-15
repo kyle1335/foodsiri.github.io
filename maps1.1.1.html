@@ -6,6 +6,36 @@
   <title>FoodieApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   
+  <!-- NEW: Moved initMap function here to solve timing/race condition issue -->
+  <script>
+    function initMap() {
+        isMapReady = true;
+        userGpsPosition = { lat: 25.0479, lng: 121.5171 };
+        restaurantMarkers = [];
+        map = new google.maps.Map(document.getElementById("map"), {
+            center: userGpsPosition,
+            zoom: 15,
+            disableDefaultUI: true,
+            zoomControl: true
+        });
+        placesService = new google.maps.places.PlacesService(map);
+        infoWindow = new google.maps.InfoWindow();
+        directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer({
+            map: map,
+            suppressMarkers: true,
+            polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 }
+        });
+        
+        // These functions are defined below, but we can call them here
+        // because the main script will have loaded by the time initMap is executed.
+        createUserMarker(userGpsPosition);
+        setupMapListeners();
+        setupAutocomplete();
+        updateUserGPS();
+    };
+  </script>
+
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
     async
@@ -31,7 +61,6 @@
       --nav-height: 60px;
       --vh: 1vh; 
     }
-    /* --- START: New Body and Container Styles for Mobile Simulation --- */
     html {
         height: 100%;
     }
@@ -39,19 +68,19 @@
         height: 100%; 
         margin: 0; 
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-        background-color: #e9ebee; /* Neutral background for the page */
+        background-color: #e9ebee;
         display: flex;
         justify-content: center;
         align-items: center;
         overflow: hidden;
     }
     .app-container { 
-      width: 390px;  /* iPhone 13 Pro width */
-      height: 844px; /* iPhone 13 Pro height */
-      max-height: 95vh; /* Ensure it fits on shorter screens */
+      width: 390px;
+      height: 844px;
+      max-height: 95vh;
       display: flex;
       flex-direction: column;
-      background-color: var(--background-color); /* The app's own background */
+      background-color: var(--background-color);
       box-shadow: 0 15px 45px rgba(0, 0, 0, 0.25);
       border-radius: 40px;
       border: 10px solid #111;
@@ -59,7 +88,6 @@
       overflow: hidden;
       box-sizing: border-box;
     }
-    /* --- END: New Body and Container Styles --- */
     main { 
       -webkit-flex: 1;
       flex: 1;
@@ -151,22 +179,21 @@
       transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1);
       overflow: hidden; 
     }
-    /* --- MODIFIED: Adjusted text slice styles --- */
     .slice-text {
         position: absolute;
         top: 50%;
         left: 50%;
-        width: 90px; /* Narrower width to encourage wrapping */
-        height: 60px; /* Provide vertical space */
-        margin-left: -45px; /* Half of width to center horizontally */
-        margin-top: -30px; /* Half of height to center vertically */
+        width: 90px; 
+        height: 60px; 
+        margin-left: -45px;
+        margin-top: -30px;
         display: flex;
         align-items: center;
         justify-content: center;
         transform-origin: center center;
         color: white;
         font-weight: 600;
-        font-size: 12px; /* Slightly smaller font */
+        font-size: 12px;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
         text-align: center;
         pointer-events: none; 
@@ -284,7 +311,6 @@
     .accounting-date-header { font-size: 16px; font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 10px; }
     .accounting-meal-header { font-size: 14px; font-weight: 500; color: var(--text-light); margin: 15px 0 5px 0; }
     
-    /* --- START: Media Query for Desktop/Large Screens --- */
     @media (min-width: 1200px) {
       .app-container {
         width: 100%;
@@ -322,7 +348,6 @@
         margin: 0 auto;
       }
     }
-    /* --- END: Media Query --- */
   </style>
 </head>
 <body>
@@ -392,7 +417,6 @@
       <div id="challenge-page" class="page">
         <div class="page-header"><h2><i class="fa-solid fa-trophy"></i>美食挑戰榜</h2><div class="placeholder"></div></div>
         <div class="page-content" id="challenge-page-content">
-            <!-- This view shows the list of all challenge boards -->
             <div id="challenge-list-view">
                 <div class="form-group" style="background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                     <h4><i class="fa-solid fa-plus-circle" style="margin-right: 8px;"></i>建立新的挑戰</h4>
@@ -400,15 +424,9 @@
                     <input type="text" id="new-challenge-subtitle" placeholder="次標題，例如：一個月內誰吃最多家！">
                     <button class="btn" style="margin-top: 10px;" onclick="createChallengeBoard()">建立挑戰榜</button>
                 </div>
-                <div id="challenge-boards-container" style="margin-top: 20px;">
-                    <!-- Challenge boards will be rendered here -->
-                </div>
+                <div id="challenge-boards-container" style="margin-top: 20px;"></div>
             </div>
-
-            <!-- This view shows the details of a single challenge board -->
-            <div id="challenge-detail-view" style="display: none;">
-                <!-- Challenge details will be rendered here -->
-            </div>
+            <div id="challenge-detail-view" style="display: none;"></div>
         </div>
       </div>
       <div id="profile-page" class="page">
@@ -550,31 +568,6 @@
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth(); 
 
-    // --- Google Map 初始化回呼函式 ---
-    window.initMap = function () {
-        isMapReady = true;
-        userGpsPosition = { lat: 25.0479, lng: 121.5171 };
-        restaurantMarkers = [];
-        map = new google.maps.Map(document.getElementById("map"), {
-            center: userGpsPosition,
-            zoom: 15,
-            disableDefaultUI: true,
-            zoomControl: true
-        });
-        placesService = new google.maps.places.PlacesService(map);
-        infoWindow = new google.maps.InfoWindow();
-        directionsService = new google.maps.DirectionsService();
-        directionsRenderer = new google.maps.DirectionsRenderer({
-            map: map,
-            suppressMarkers: true,
-            polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 }
-        });
-        createUserMarker(userGpsPosition);
-        setupMapListeners();
-        setupAutocomplete();
-        updateUserGPS();
-    };
-
     // --- 全域可呼叫函式 (掛載到 window) ---
     window.showPage = function(pageId, navElement = null) {
         if (pageId === 'add-review-page' && !editingPostId) {
@@ -609,7 +602,26 @@
         }
     };
     window.handleRegister = function() { const name = document.getElementById('register-name-input').value.trim(); const email = document.getElementById('register-email-input').value; const password = document.getElementById('register-password-input').value; const errorDiv = document.getElementById('register-error'); errorDiv.textContent = ''; if (!name || !email || !password) { errorDiv.textContent = '所有欄位都必須填寫！'; return; } auth.createUserWithEmailAndPassword(email, password).then(userCredential => userCredential.user.updateProfile({ displayName: name })).then(() => { window.goBack(); }).catch(error => { switch(error.code) { case 'auth/email-already-in-use': errorDiv.textContent = '此電子郵件已被註冊。'; break; case 'auth/invalid-email': errorDiv.textContent = '電子郵件格式不正確。'; break; case 'auth/weak-password': errorDiv.textContent = '密碼強度不足 (至少6位數)。'; break; default: errorDiv.textContent = '註冊失敗，請稍後再試。'; } }); }
-    window.handleSignIn = function() { const email = document.getElementById('login-email-input').value; const password = document.getElementById('login-password-input').value; const errorDiv = document.getElementById('login-error'); errorDiv.textContent = ''; auth.signInWithEmailAndPassword(email, password).then(() => { window.goBack(); }).catch(error => { errorDiv.textContent = '登入失敗，請檢查信箱或密碼。'; }); }
+    
+    // MODIFIED: Added client-side validation
+    window.handleSignIn = function() {
+        const email = document.getElementById('login-email-input').value;
+        const password = document.getElementById('login-password-input').value;
+        const errorDiv = document.getElementById('login-error');
+        errorDiv.textContent = '';
+
+        if (!email || !password) {
+            errorDiv.textContent = '請輸入電子郵件和密碼。';
+            return;
+        }
+
+        auth.signInWithEmailAndPassword(email, password).then(() => {
+            window.goBack();
+        }).catch(error => {
+            errorDiv.textContent = '登入失敗，請檢查信箱或密碼。';
+        });
+    }
+
     window.handleGoogleSignIn = function() { const provider = new firebase.auth.GoogleAuthProvider(); auth.signInWithPopup(provider).then(() => { window.goBack(); }).catch(error => { const errorDiv = document.getElementById('login-error'); errorDiv.textContent = 'Google 登入失敗，請稍後再試。'; }); }
     window.handleSignOut = function() { auth.signOut().catch(error => console.error("登出錯誤:", error)); }
     window.centerOnUserGPS = function() { if (map && userGpsPosition) { map.panTo(userGpsPosition); } }
@@ -1072,7 +1084,6 @@
     function highlightListItem(placeId, scroll) { document.querySelectorAll(".list-item.is-selected").forEach((el) => el.classList.remove("is-selected")); if(placeId) { const listItem = document.querySelector(`.list-item[data-place-id="${placeId}"]`); if (listItem) { listItem.classList.add("is-selected"); if (scroll) { listItem.scrollIntoView({ behavior: "smooth", block: "center" }); } } } }
     function clearRestaurantMarkers() { restaurantMarkers.forEach((marker) => marker.setMap(null)); restaurantMarkers = []; }
     
-    // --- MODIFIED: drawPickerWheel function to fix text layout ---
     function drawPickerWheel(restaurants) {
         const wheel = document.getElementById('picker-wheel');
         wheel.innerHTML = '<div id="picker-result">?</div>'; 
@@ -1084,7 +1095,7 @@
         }
 
         const sliceAngle = 360 / numOptions;
-        const colors = ['#667eea', '#764ba2', '#f6d365', '#fda085', '#84fab0', '#8fd3f4', '#fccb90', '#d4c4fb'];
+        const colors = ['#667eea', '#f6d365', '#fda085', '#764ba2', '#84fab0', '#8fd3f4', '#fccb90', '#d4c4fb'];
         
         let gradientString = 'conic-gradient(';
         let currentAngle = 0;
@@ -1101,7 +1112,6 @@
             textEl.textContent = restaurant.name;
 
             const textAngle = currentAngle + (sliceAngle / 2);
-            // Adjusted translateY to bring text closer to the center
             textEl.style.transform = `rotate(${textAngle}deg) translateY(-80px) rotate(-${textAngle}deg)`;
             
             wheel.appendChild(textEl);
@@ -1148,7 +1158,6 @@
     function handleRatingMouseout() { updateHeartDisplay(document.getElementById('review-rating').dataset.rating); }
     function updateHeartDisplay(rating) { document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => { heart.classList.toggle('active', heart.dataset.value <= rating); }); }
     
-    // --- Challenge Page Rendering Logic ---
     function renderChallengePage() {
         if (!currentUser) {
             const content = document.getElementById('challenge-page-content');
@@ -1299,7 +1308,6 @@
         animationFrameId = requestAnimationFrame(tick);
     }
     
-    // --- Invoice Parsing Functions ---
     function parseLeftQRCode(data) {
         if (typeof data !== 'string' || data.length < 77) return null;
         try {
