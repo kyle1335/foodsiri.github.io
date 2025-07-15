@@ -121,6 +121,7 @@
       transition: all 0.2s ease-in-out;
     }
     
+    /* 預設的"距離"標籤樣式 */
     .filter-tag[data-filter-value="distance"]:hover {
       background-color: #e8eaf6;
     }
@@ -130,27 +131,49 @@
         border-color: var(--primary-color);
     }
 
+    /* 通用 hover 效果 */
     .filter-tag:not([data-filter-value="distance"]):hover {
         filter: brightness(0.95);
     }
 
+    /* 所有標籤選中時的通用視覺效果 */
     .filter-tag.active {
       transform: scale(1.05);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     
-    .filter-tag[data-filter-value="日式料理"] { background-color: #ffebee; border-color: #ffcdd2; color: #c62828; }
+    /* 分類顏色定義 (未選中狀態) */
+    .filter-tag[data-filter-value="台式"]     { background-color: #e3f2fd; border-color: #bbdefb; color: #1565c0; }
+    .filter-tag[data-filter-value="日式"]     { background-color: #ffebee; border-color: #ffcdd2; color: #c62828; }
+    .filter-tag[data-filter-value="居酒屋"]   { background-color: #f3e5f5; border-color: #e1bee7; color: #6a1b9a; }
+    .filter-tag[data-filter-value="酒吧"]     { background-color: #ede7f6; border-color: #d1c4e9; color: #4527a0; }
+    .filter-tag[data-filter-value="熱炒"]     { background-color: #fff8e1; border-color: #ffecb3; color: #ffa000; }
     .filter-tag[data-filter-value="火鍋"]     { background-color: #fff3e0; border-color: #ffe0b2; color: #ef6c00; }
+    .filter-tag[data-filter-value="美式"]     { background-color: #e1f5fe; border-color: #b3e5fc; color: #0277bd; }
+    .filter-tag[data-filter-value="中式"]     { background-color: #fbe9e7; border-color: #ffccbc; color: #d84315; }
+    .filter-tag[data-filter-value="義式"]     { background-color: #e8f5e9; border-color: #c8e6c9; color: #2e7d32; }
+    .filter-tag[data-filter-value="泰式"]     { background-color: #e0f2f1; border-color: #b2dfdb; color: #00695c; }
+    .filter-tag[data-filter-value="越式"]     { background-color: #f1f8e9; border-color: #dcedc8; color: #558b2f; }
     .filter-tag[data-filter-value="咖啡廳"]   { background-color: #efebe9; border-color: #d7ccc8; color: #5d4037; }
-    .filter-tag[data-filter-value="義大利麵"] { background-color: #e8f5e9; border-color: #c8e6c9; color: #2e7d32; }
     .filter-tag[data-filter-value="早午餐"]   { background-color: #fffde7; border-color: #fff9c4; color: #f57f17; }
+    .filter-tag[data-filter-value="手搖飲"]   { background-color: #e0f7fa; border-color: #b2ebf2; color: #00838f; }
     .filter-tag[data-filter-value="小吃"]     { background-color: #eceff1; border-color: #cfd8dc; color: #37474f; }
 
-    .filter-tag[data-filter-value="日式料理"].active { background-color: #e57373; border-color: #e57373; color: white; }
+    /* 分類顏色定義 (選中 .active 狀態) */
+    .filter-tag[data-filter-value="台式"].active     { background-color: #42a5f5; border-color: #42a5f5; color: white; }
+    .filter-tag[data-filter-value="日式"].active     { background-color: #e57373; border-color: #e57373; color: white; }
+    .filter-tag[data-filter-value="居酒屋"].active   { background-color: #ab47bc; border-color: #ab47bc; color: white; }
+    .filter-tag[data-filter-value="酒吧"].active     { background-color: #7e57c2; border-color: #7e57c2; color: white; }
+    .filter-tag[data-filter-value="熱炒"].active     { background-color: #ffca28; border-color: #ffca28; color: #333; }
     .filter-tag[data-filter-value="火鍋"].active     { background-color: #ff9800; border-color: #fb8c00; color: white; }
+    .filter-tag[data-filter-value="美式"].active     { background-color: #29b6f6; border-color: #29b6f6; color: white; }
+    .filter-tag[data-filter-value="中式"].active     { background-color: #ff7043; border-color: #ff7043; color: white; }
+    .filter-tag[data-filter-value="義式"].active     { background-color: #66bb6a; border-color: #66bb6a; color: white; }
+    .filter-tag[data-filter-value="泰式"].active     { background-color: #26a69a; border-color: #26a69a; color: white; }
+    .filter-tag[data-filter-value="越式"].active     { background-color: #9ccc65; border-color: #9ccc65; color: #333; }
     .filter-tag[data-filter-value="咖啡廳"].active   { background-color: #795548; border-color: #6d4c41; color: white; }
-    .filter-tag[data-filter-value="義大利麵"].active { background-color: #66bb6a; border-color: #66bb6a; color: white; }
     .filter-tag[data-filter-value="早午餐"].active   { background-color: #ffee58; border-color: #fdd835; color: #333; }
+    .filter-tag[data-filter-value="手搖飲"].active   { background-color: #26c6da; border-color: #26c6da; color: white; }
     .filter-tag[data-filter-value="小吃"].active     { background-color: #78909c; border-color: #78909c; color: white; }
 
     .list-content { overflow-y: auto; flex-grow: 1; }
@@ -374,11 +397,20 @@
           </div>
           <div class="filter-tags-container">
             <button class="filter-tag active" data-filter-type="sort" data-filter-value="distance" onclick="applyFilter(this)">距離</button>
-            <button class="filter-tag" data-filter-type="keyword" data-filter-value="日式料理" onclick="applyFilter(this)">日式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="台式" onclick="applyFilter(this)">台式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="日式" onclick="applyFilter(this)">日式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="居酒屋" onclick="applyFilter(this)">居酒屋</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="酒吧" onclick="applyFilter(this)">酒吧</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="熱炒" onclick="applyFilter(this)">熱炒</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="火鍋" onclick="applyFilter(this)">火鍋</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="美式" onclick="applyFilter(this)">美式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="中式" onclick="applyFilter(this)">中式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="義式" onclick="applyFilter(this)">義式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="泰式" onclick="applyFilter(this)">泰式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="越式" onclick="applyFilter(this)">越式</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="咖啡廳" onclick="applyFilter(this)">咖啡廳</button>
-            <button class="filter-tag" data-filter-type="keyword" data-filter-value="義大利麵" onclick="applyFilter(this)">義式</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="早午餐" onclick="applyFilter(this)">早午餐</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="手搖飲" onclick="applyFilter(this)">手搖飲</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="小吃" onclick="applyFilter(this)">小吃</button>
           </div>
           <div class="list-content" id="list-content-area"><p class="list-status-text">正在初始化地圖...</p></div>
@@ -563,14 +595,28 @@
     var activeFilter = { type: 'sort', value: 'distance' }; 
 
     const categoryKeywords = {
-        '日式料理': { color: '#e57373', keywords: ['japanese', 'sushi', 'ramen', '丼', '居酒屋', '食堂', '拉麵', '壽司', '日式'] },
+        '台式':     { color: '#42a5f5', keywords: ['taiwanese', '台式', '熱炒店'] },
+        '日式':     { color: '#e57373', keywords: ['japanese', 'sushi', 'ramen', '丼', '食堂', '拉麵', '壽司', '日式'] },
+        '居酒屋':   { color: '#ab47bc', keywords: ['izakaya', '居酒屋'] },
+        '酒吧':     { color: '#7e57c2', keywords: ['bar', 'pub', '酒館', '酒吧'] },
+        '熱炒':     { color: '#ffca28', keywords: ['熱炒'] },
         '火鍋':     { color: '#ff9800', keywords: ['hot_pot', '火鍋', '鍋物', '涮涮鍋'] },
+        '美式':     { color: '#29b6f6', keywords: ['american', 'hamburger', '美式', '漢堡'] },
+        '中式':     { color: '#ff7043', keywords: ['chinese', '中式', '麵館', '餃'] },
+        '義式':     { color: '#66bb6a', keywords: ['italian', 'pasta', 'pizza', '義式', '披薩'] },
+        '泰式':     { color: '#26a69a', keywords: ['thai', '泰式'] },
+        '越式':     { color: '#9ccc65', keywords: ['vietnamese', '越式', '越南'] },
         '咖啡廳':   { color: '#795548', keywords: ['cafe', 'coffee_shop', '咖啡'] },
-        '義大利麵': { color: '#66bb6a', keywords: ['italian', 'pasta', 'pizza', '義式', '披薩'] },
         '早午餐':   { color: '#ffee58', keywords: ['brunch', 'breakfast', '早午餐'] },
-        '小吃':     { color: '#78909c', keywords: ['snack', '小吃', '快餐', '麵線', '水餃'] }
+        '手搖飲':   { color: '#26c6da', keywords: ['bubble_tea_shop', '手搖', '飲料'] },
+        '小吃':     { color: '#78909c', keywords: ['snack', '小吃', '快餐', '麵線'] }
     };
+    
+    // --- START: 新增備用顏色池與索引 ---
+    const miscColors = ['#4fc3f7', '#7986cb', '#ba68c8', '#aed581', '#ff8a65', '#90a4ae'];
+    let miscColorIndex = 0;
     const defaultMarkerColor = '#EA4335';
+    // --- END: 新增備用顏色池與索引 ---
 
     // --- Mock User Database for Friend Search ---
     const mockUserDB = [
@@ -597,21 +643,27 @@
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth(); 
 
+    // --- START: 修改 getCategoryColor 函式以使用備用顏色池 ---
     function getCategoryColor(place) {
         if (!place) return defaultMarkerColor;
         const placeName = place.name.toLowerCase();
         const placeTypes = place.types || [];
 
-        for (const category in categoryKeywords) {
-            const data = categoryKeywords[category];
+        for (const categoryName in categoryKeywords) {
+            const data = categoryKeywords[categoryName];
             for (const keyword of data.keywords) {
-                if (placeName.includes(keyword) || placeTypes.includes(keyword)) {
+                if (placeName.includes(keyword) || placeTypes.includes(keyword.replace('_', ' '))) {
                     return data.color;
                 }
             }
         }
-        return defaultMarkerColor;
+        
+        // 如果都沒匹配到，從備用顏色池中取一個顏色
+        const color = miscColors[miscColorIndex];
+        miscColorIndex = (miscColorIndex + 1) % miscColors.length; // 循環使用顏色
+        return color;
     }
+    // --- END: 修改 getCategoryColor 函式 ---
 
     // --- Google Map 初始化回呼函式 ---
     function initMap() {
@@ -1100,6 +1152,7 @@
         const listContainer = document.getElementById("list-content-area");
         listContainer.innerHTML = `<p class="list-status-text">正在搜尋附近餐廳...</p>`;
         clearRestaurantMarkers();
+        miscColorIndex = 0; // --- START: 重置備用顏色索引 ---
 
         const request = {
             location: location,
@@ -1121,14 +1174,33 @@
         });
     }
 
-    function processAndDisplayResults(places, center) { const listContainer = document.getElementById("list-content-area"); const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) })); placesWithDistance.sort((a, b) => a.distance - b.distance); listContainer.innerHTML = ""; placesWithDistance.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place); }); }
+    // --- START: 修改 processAndDisplayResults 以處理距離篩選 ---
+    function processAndDisplayResults(places, center) {
+        const listContainer = document.getElementById("list-content-area");
+        let placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) }));
+        
+        // 如果是距離篩選模式，只保留 500 公尺內的餐廳
+        if (activeFilter.type === 'sort' && activeFilter.value === 'distance') {
+            placesWithDistance = placesWithDistance.filter(p => p.distance <= 500);
+        }
+
+        placesWithDistance.sort((a, b) => a.distance - b.distance);
+        
+        if (placesWithDistance.length === 0) {
+            listContainer.innerHTML = `<p class="list-status-text">找不到符合條件的餐廳</p>`;
+            return;
+        }
+
+        listContainer.innerHTML = "";
+        placesWithDistance.forEach((place) => {
+            addRestaurantMarker(place);
+            addRestaurantToList(place);
+        });
+    }
+    // --- END: 修改 processAndDisplayResults ---
     
-    // --- START: 修正 addRestaurantMarker 邏輯 ---
     function addRestaurantMarker(place) {
-        // 依賴 activeFilter 來決定顏色，這是最穩定的方式
-        const markerColor = (activeFilter.type === 'keyword' && categoryKeywords[activeFilter.value]) 
-                            ? categoryKeywords[activeFilter.value].color 
-                            : getCategoryColor(place); // 當是 "距離" 模式時，嘗試猜測顏色
+        const markerColor = getCategoryColor(place);
 
         const marker = new google.maps.Marker({
             position: place.geometry.location,
@@ -1153,7 +1225,6 @@
         marker.place_id = place.place_id;
         restaurantMarkers.push(marker);
     }
-    // --- END: 修正 addRestaurantMarker ---
 
     function addRestaurantToList(place, routeInfo = null, details = null) { 
         const listContainer = document.getElementById("list-content-area"); 
@@ -1210,7 +1281,6 @@
             directionsRenderer.setDirections({ routes: [] });
         }
         
-        // 結合 place 和 placeDetails 的資訊來獲得最準確的顏色
         const finalPlaceDataForColor = { ...place, types: (placeDetails && placeDetails.types) || place.types || [] };
         const markerColor = color || getCategoryColor(finalPlaceDataForColor);
 
