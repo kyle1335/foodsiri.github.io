@@ -94,6 +94,7 @@
     
     .filter-tags-container {
       display: flex;
+      justify-content: flex-start;
       gap: 8px;
       padding: 0 15px 15px 15px;
       background: white;
@@ -105,18 +106,16 @@
       display: none; 
     }
     .filter-tag {
-      /* --- START: 已更新為置中樣式 --- */
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      /* --- END: 已更新為置中樣式 --- */
-
       padding: 6px 14px;
       border: 1px solid #ccc;
       border-radius: 20px;
       background-color: #f0f0f0;
       color: var(--text-color);
       font-size: 14px;
+      font-weight: 500;
       cursor: pointer;
       white-space: nowrap; 
       transition: all 0.2s ease-in-out;
@@ -124,12 +123,62 @@
     .filter-tag:hover {
       background-color: #e0e0e0;
     }
-    .filter-tag.active {
-      background-color: var(--primary-color);
-      color: white;
-      border-color: var(--primary-color);
-      font-weight: 500;
+    /* --- START: 新增彩色標籤樣式 --- */
+    /* 預設的"距離"標籤樣式 (選中時) */
+    .filter-tag[data-filter-value="distance"].active {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
     }
+
+    /* 日式 */
+    .filter-tag[data-filter-value="日式料理"] {
+        background-color: #ffebee;
+        border-color: #ffcdd2;
+        color: #c62828;
+    }
+    /* 火鍋 */
+    .filter-tag[data-filter-value="火鍋"] {
+        background-color: #ff9800;
+        border-color: #fb8c00;
+        color: white;
+    }
+    /* 咖啡廳 */
+    .filter-tag[data-filter-value="咖啡廳"] {
+        background-color: #795548;
+        border-color: #6d4c41;
+        color: white;
+    }
+    /* 義式 */
+    .filter-tag[data-filter-value="義大利麵"] {
+        background-color: #e8f5e9;
+        border-color: #c8e6c9;
+        color: #2e7d32;
+    }
+    /* 早午餐 */
+    .filter-tag[data-filter-value="早午餐"] {
+        background-color: #fffde7;
+        border-color: #fff9c4;
+        color: #f57f17;
+    }
+    /* 小吃 */
+    .filter-tag[data-filter-value="小吃"] {
+        background-color: #f5f5f5;
+        border-color: #e0e0e0;
+        color: #424242;
+    }
+
+    /* 所有關鍵字標籤的 hover 效果 */
+    .filter-tag[data-filter-type="keyword"]:hover {
+        filter: brightness(0.95);
+    }
+    
+    /* 所有標籤選中時的通用樣式 */
+    .filter-tag.active {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    /* --- END: 新增彩色標籤樣式 --- */
 
     .list-content { overflow-y: auto; flex-grow: 1; }
     .list-item { display: flex; align-items: flex-start; gap: 15px; padding: 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background-color 0.2s; }
