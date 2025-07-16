@@ -99,11 +99,28 @@
       background: white;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch; 
-      scrollbar-width: none; 
+      /* MODIFICATION: The 'scrollbar-width: none;' is removed to show scrollbar on Firefox */
     }
+    
+    /* MODIFICATION START: Added styles for a visible scrollbar */
     .filter-tags-container::-webkit-scrollbar {
-      display: none; 
+      height: 8px; /* 設定滾動條的高度 */
     }
+
+    .filter-tags-container::-webkit-scrollbar-track {
+      background: #f1f1f1; /* 滾動條軌道的顏色 */
+    }
+
+    .filter-tags-container::-webkit-scrollbar-thumb {
+      background: #ccc; /* 滾動條本身的顏色 */
+      border-radius: 4px; /* 圓角 */
+    }
+
+    .filter-tags-container::-webkit-scrollbar-thumb:hover {
+      background: #aaa; /* 滑鼠懸停時的顏色 */
+    }
+    /* MODIFICATION END */
+
     .filter-tag {
       display: inline-flex;
       align-items: center;
@@ -395,7 +412,6 @@
             <button class="clear-search-btn" id="clear-search" onclick="clearSearch()">×</button>
           </div>
           <div class="filter-tags-container">
-            <!-- MODIFICATION: Removed the '距離' button -->
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="台式" onclick="applyFilter(this)">台式</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="日式" onclick="applyFilter(this)">日式</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="居酒屋" onclick="applyFilter(this)">居酒屋</button>
