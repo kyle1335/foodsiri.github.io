@@ -395,7 +395,7 @@
             <button class="clear-search-btn" id="clear-search" onclick="clearSearch()">×</button>
           </div>
           <div class="filter-tags-container">
-            <!-- MODIFICATION: Removed the '距離' button. No button is active by default. -->
+            <button class="filter-tag active" data-filter-type="sort" data-filter-value="distance" onclick="applyFilter(this)">距離</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="台式" onclick="applyFilter(this)">台式</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="日式" onclick="applyFilter(this)">日式</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="居酒屋" onclick="applyFilter(this)">居酒屋</button>
@@ -591,7 +591,7 @@
     var selectedPlaceForReview = null; 
     var editingPostId = null; 
     var viewingChallengeId = null;
-    var activeFilter = null; // MODIFICATION: No filter active by default
+    var activeFilter = { type: 'sort', value: 'distance' }; 
 
     const categoryKeywords = {
         '台式':     { color: '#42a5f5', keywords: ['taiwanese', '台式', '熱炒店'] },
@@ -690,22 +690,14 @@
         updateUserGPS();
     };
 
-    // MODIFICATION: applyFilter now supports toggling filters on/off
     window.applyFilter = function(element) {
         const filterType = element.dataset.filterType;
         const filterValue = element.dataset.filterValue;
 
-        // NEW: Check if the clicked filter is already active
-        if (element.classList.contains('active')) {
-            // It is active, so deactivate it and set filter to null
-            activeFilter = null;
-            element.classList.remove('active');
-        } else {
-            // It's not active, so activate it and deactivate others
-            activeFilter = { type: filterType, value: filterValue };
-            document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active'));
-            element.classList.add('active');
-        }
+        activeFilter = { type: filterType, value: filterValue };
+        
+        document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active'));
+        element.classList.add('active');
         
         if (map) {
             clearSearch(true); 
@@ -1154,13 +1146,12 @@
     }
     function updateUserGPS() { if (!isMapReady) return; document.getElementById("list-content-area").innerHTML = `<p class="list-status-text">正在獲取您的位置...</p>`; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; createUserMarker(userGpsPosition); window.centerOnUserGPS(); }, () => searchNearbyRestaurants(map.getCenter()) ); } else { searchNearbyRestaurants(map.getCenter()); } }
     
-    // MODIFICATION: searchNearbyRestaurants handles null activeFilter
     function searchNearbyRestaurants(location) {
         if (!isMapReady) return;
         const listContainer = document.getElementById("list-content-area");
         listContainer.innerHTML = `<p class="list-status-text">正在搜尋附近餐廳...</p>`;
         clearRestaurantMarkers();
-        miscColorIndex = 0; 
+        miscColorIndex = 0; // --- START: 重置備用顏色索引 ---
 
         const request = {
             location: location,
@@ -1168,7 +1159,7 @@
             type: 'restaurant'
         };
 
-        if (activeFilter && activeFilter.type === 'keyword' && activeFilter.value) {
+        if (activeFilter.type === 'keyword' && activeFilter.value) {
             request.keyword = activeFilter.value;
             listContainer.innerHTML = `<p class="list-status-text">正在搜尋「${activeFilter.value}」...</p>`;
         }
@@ -1182,12 +1173,16 @@
         });
     }
 
-    // MODIFICATION: processAndDisplayResults no longer filters by distance
+    // --- START: 修改 processAndDisplayResults 以處理距離篩選 ---
     function processAndDisplayResults(places, center) {
         const listContainer = document.getElementById("list-content-area");
         let placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) }));
         
-        // The results are always sorted by distance, regardless of filter.
+        // 如果是距離篩選模式，只保留 500 公尺內的餐廳
+        if (activeFilter.type === 'sort' && activeFilter.value === 'distance') {
+            placesWithDistance = placesWithDistance.filter(p => p.distance <= 500);
+        }
+
         placesWithDistance.sort((a, b) => a.distance - b.distance);
         
         if (placesWithDistance.length === 0) {
@@ -1201,6 +1196,7 @@
             addRestaurantToList(place);
         });
     }
+    // --- END: 修改 processAndDisplayResults ---
     
     function addRestaurantMarker(place) {
         const markerColor = getCategoryColor(place);
@@ -1315,7 +1311,7 @@
     function getPlaceDetailsPromise(placeId) { 
         const request = { placeId: placeId, fields: ['name', 'rating', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address', 'place_id', 'types'] }; 
         return new Promise(resolve => { 
-            placesService.getDetails(request, (details, status) => { if (status === google.maps.places.GoogleMapsServiceStatus.OK && details) { resolve(details); } else { resolve(null); } }); 
+            placesService.getDetails(request, (details, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && details) { resolve(details); } else { resolve(null); } }); 
         }); 
     }
 
