@@ -36,9 +36,12 @@
         overflow: hidden;
     }
     .app-container { 
-      width: 390px;
-      height: 844px;
-      max-height: 95vh;
+      /* --- MODIFICATION START --- */
+      width: 100%;
+      height: 100%;
+      max-width: 390px;
+      max-height: 844px;
+      /* --- MODIFICATION END --- */
       display: flex;
       flex-direction: column;
       background-color: var(--background-color);
@@ -99,27 +102,24 @@
       background: white;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch; 
-      /* MODIFICATION: The 'scrollbar-width: none;' is removed to show scrollbar on Firefox */
     }
     
-    /* MODIFICATION START: Added styles for a visible scrollbar */
     .filter-tags-container::-webkit-scrollbar {
-      height: 8px; /* 設定滾動條的高度 */
+      height: 8px;
     }
 
     .filter-tags-container::-webkit-scrollbar-track {
-      background: #f1f1f1; /* 滾動條軌道的顏色 */
+      background: #f1f1f1;
     }
 
     .filter-tags-container::-webkit-scrollbar-thumb {
-      background: #ccc; /* 滾動條本身的顏色 */
-      border-radius: 4px; /* 圓角 */
+      background: #ccc;
+      border-radius: 4px;
     }
 
     .filter-tags-container::-webkit-scrollbar-thumb:hover {
-      background: #aaa; /* 滑鼠懸停時的顏色 */
+      background: #aaa;
     }
-    /* MODIFICATION END */
 
     .filter-tag {
       display: inline-flex;
@@ -137,7 +137,6 @@
       transition: all 0.2s ease-in-out;
     }
     
-    /* 預設的"距離"標籤樣式 */
     .filter-tag[data-filter-value="distance"]:hover {
       background-color: #e8eaf6;
     }
@@ -147,18 +146,15 @@
         border-color: var(--primary-color);
     }
 
-    /* 通用 hover 效果 */
     .filter-tag:not([data-filter-value="distance"]):hover {
         filter: brightness(0.95);
     }
 
-    /* 所有標籤選中時的通用視覺效果 */
     .filter-tag.active {
       transform: scale(1.05);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     
-    /* 分類顏色定義 (未選中狀態) */
     .filter-tag[data-filter-value="台式"]     { background-color: #e3f2fd; border-color: #bbdefb; color: #1565c0; }
     .filter-tag[data-filter-value="日式"]     { background-color: #ffebee; border-color: #ffcdd2; color: #c62828; }
     .filter-tag[data-filter-value="居酒屋"]   { background-color: #f3e5f5; border-color: #e1bee7; color: #6a1b9a; }
@@ -175,7 +171,6 @@
     .filter-tag[data-filter-value="手搖飲"]   { background-color: #e0f7fa; border-color: #b2ebf2; color: #00838f; }
     .filter-tag[data-filter-value="小吃"]     { background-color: #eceff1; border-color: #cfd8dc; color: #37474f; }
 
-    /* 分類顏色定義 (選中 .active 狀態) */
     .filter-tag[data-filter-value="台式"].active     { background-color: #42a5f5; border-color: #42a5f5; color: white; }
     .filter-tag[data-filter-value="日式"].active     { background-color: #e57373; border-color: #e57373; color: white; }
     .filter-tag[data-filter-value="居酒屋"].active   { background-color: #ab47bc; border-color: #ab47bc; color: white; }
