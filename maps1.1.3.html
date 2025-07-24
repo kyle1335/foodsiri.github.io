@@ -401,10 +401,9 @@
             <button class="clear-search-btn" id="clear-search" onclick="clearSearch()">×</button>
           </div>
           <div class="filter-tags-container">
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="早午餐" onclick="applyFilter(this)">早午餐</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="台式" onclick="applyFilter(this)">台式</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="日式" onclick="applyFilter(this)">日式</button>
-            <button class="filter-tag" data-filter-type="keyword" data-filter-value="居酒屋" onclick="applyFilter(this)">居酒屋</button>
-            <button class="filter-tag" data-filter-type="keyword" data-filter-value="酒吧" onclick="applyFilter(this)">酒吧</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="熱炒" onclick="applyFilter(this)">熱炒</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="火鍋" onclick="applyFilter(this)">火鍋</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="美式" onclick="applyFilter(this)">美式</button>
@@ -413,9 +412,10 @@
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="泰式" onclick="applyFilter(this)">泰式</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="越式" onclick="applyFilter(this)">越式</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="咖啡廳" onclick="applyFilter(this)">咖啡廳</button>
-            <button class="filter-tag" data-filter-type="keyword" data-filter-value="早午餐" onclick="applyFilter(this)">早午餐</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="手搖飲" onclick="applyFilter(this)">手搖飲</button>
             <button class="filter-tag" data-filter-type="keyword" data-filter-value="小吃" onclick="applyFilter(this)">小吃</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="居酒屋" onclick="applyFilter(this)">居酒屋</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="酒吧" onclick="applyFilter(this)">酒吧</button>
           </div>
           <div class="list-content" id="list-content-area"><p class="list-status-text">正在初始化地圖...</p></div>
         </div>
@@ -599,10 +599,9 @@
     var activeFilter = null; // MODIFICATION: No filter active by default
 
     const categoryKeywords = {
+        '早午餐':   { color: '#ffee58', keywords: ['brunch', 'breakfast', '早午餐'] },
         '台式':     { color: '#42a5f5', keywords: ['taiwanese', '台式', '熱炒店'] },
         '日式':     { color: '#e57373', keywords: ['japanese', 'sushi', 'ramen', '丼', '食堂', '拉麵', '壽司', '日式'] },
-        '居酒屋':   { color: '#ab47bc', keywords: ['izakaya', '居酒屋'] },
-        '酒吧':     { color: '#7e57c2', keywords: ['bar', 'pub', '酒館', '酒吧'] },
         '熱炒':     { color: '#ffca28', keywords: ['熱炒'] },
         '火鍋':     { color: '#ff9800', keywords: ['hot_pot', '火鍋', '鍋物', '涮涮鍋'] },
         '美式':     { color: '#29b6f6', keywords: ['american', 'hamburger', '美式', '漢堡'] },
@@ -611,9 +610,10 @@
         '泰式':     { color: '#26a69a', keywords: ['thai', '泰式'] },
         '越式':     { color: '#9ccc65', keywords: ['vietnamese', '越式', '越南'] },
         '咖啡廳':   { color: '#795548', keywords: ['cafe', 'coffee_shop', '咖啡'] },
-        '早午餐':   { color: '#ffee58', keywords: ['brunch', 'breakfast', '早午餐'] },
         '手搖飲':   { color: '#26c6da', keywords: ['bubble_tea_shop', '手搖', '飲料'] },
-        '小吃':     { color: '#78909c', keywords: ['snack', '小吃', '快餐', '麵線'] }
+        '小吃':     { color: '#78909c', keywords: ['snack', '小吃', '快餐', '麵線'] },
+        '居酒屋':   { color: '#ab47bc', keywords: ['izakaya', '居酒屋'] },
+        '酒吧':     { color: '#7e57c2', keywords: ['bar', 'pub', '酒館', '酒吧'] }
     };
     
     // --- START: 新增備用顏色池與索引 ---
