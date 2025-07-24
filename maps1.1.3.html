@@ -538,6 +538,7 @@
         setupAutocomplete();
         updateUserGPS(true); // Initial load with map centering
     };
+    window.initMap = initMap; // FIX: Ensure initMap is globally accessible
 
     window.applyFilter = function(element) {
         const filterType = element.dataset.filterType;
@@ -762,6 +763,7 @@
   
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
+    async
     defer
   ></script>
 
