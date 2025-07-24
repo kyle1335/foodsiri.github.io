@@ -489,13 +489,12 @@
     var qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
 
     const firebaseConfig = {
-        apiKey: "AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs",
+        apiKey: "YOUR_FIREBASE_API_KEY",
         authDomain: "foodiedata-b4982.firebaseapp.com",
         projectId: "foodiedata-b4982",
         storageBucket: "foodiedata-b4982.firebasestorage.app",
         messagingSenderId: "90315404352",
-        appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5",
-        measurementId: "G-5FD72CVKGB"
+        appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5"
     };
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth(); 
@@ -525,20 +524,38 @@
     }
 
     function initMap() {
+        if (window.mapInitialized) return;
+        
         isMapReady = true;
         userGpsPosition = { lat: 25.0479, lng: 121.5171 };
         restaurantMarkers = [];
         const mapDiv = document.getElementById("map"); 
         if (!mapDiv) { console.error("Map element not found."); return; }
+
         map = new google.maps.Map(mapDiv, { center: userGpsPosition, zoom: 15, disableDefaultUI: true, zoomControl: true });
         placesService = new google.maps.places.PlacesService(map);
         infoWindow = new google.maps.InfoWindow({ content: '<div></div>', padding: 0 });
         directionsService = new google.maps.DirectionsService();
         directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } });
+        
+        // 🔧 FIXED: 加入關鍵的地圖事件監聽器
+        map.addListener("idle", () => {
+            if (!directionsRenderer.getDirections() || !directionsRenderer.getDirections().routes.length) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500);
+            }
+        });
+
+        map.addListener("click", (e) => {
+            if (e.placeId) e.stop();
+            window.clearSearch();
+        });
+        
         setupAutocomplete();
-        updateUserGPS(true); // Initial load with map centering
+        updateUserGPS(true); 
+        window.mapInitialized = true;
     };
-    window.initMap = initMap; // FIX: Ensure initMap is globally accessible
+    window.initMap = initMap;
 
     window.applyFilter = function(element) {
         const filterType = element.dataset.filterType;
@@ -579,7 +596,7 @@
     };
     
     window.centerOnUserGPS = function() {
-        updateUserGPS(true); // Re-center and re-search
+        updateUserGPS(true);
     }
     
     function updateUserGPS(centerMap = false) {
@@ -600,12 +617,12 @@
                         searchNearbyRestaurants(userGpsPosition);
                     }
                 },
-                () => { // Error case
-                    searchNearbyRestaurants(map.getCenter()); // Search from default center
+                () => { 
+                    searchNearbyRestaurants(map.getCenter()); 
                 }
             );
         } else {
-            searchNearbyRestaurants(map.getCenter()); // Geolocation not supported
+            searchNearbyRestaurants(map.getCenter()); 
         }
     }
     
@@ -690,12 +707,12 @@
     function handleSignIn() { const email = document.getElementById('login-email-input').value; const password = document.getElementById('login-password-input').value; const errorDiv = document.getElementById('login-error'); errorDiv.textContent = ''; if (!email || !password) { errorDiv.textContent = '請輸入電子郵件和密碼。'; return; } auth.signInWithEmailAndPassword(email, password).then(() => { window.goBack(); }).catch(error => { errorDiv.textContent = '登入失敗，請檢查信箱或密碼。'; }); }
     function handleGoogleSignIn() { const provider = new firebase.auth.GoogleAuthProvider(); auth.signInWithPopup(provider).then(() => { window.goBack(); }).catch(error => { const errorDiv = document.getElementById('login-error'); errorDiv.textContent = 'Google 登入失敗，請稍後再試。'; }); }
     function handleSignOut() { auth.signOut().catch(error => console.error("登出錯誤:", error)); }
-    function saveReview() { if (!currentUser) { alert('請先登入！'); window.showPage('login-page'); return; } const name = document.getElementById('review-restaurant-name').value.trim(); const rating = document.getElementById('review-rating').dataset.rating; if (!name || rating === "0") { alert("請務必填寫「餐廳名称」和「喜愛程度」！"); return; } const photoPreviews = document.querySelectorAll('#photo-preview-container .photo-preview-item img'); const photos = []; for (const img of photoPreviews) { photos.push(img.src); } const posts = getPosts(); const postData = { name, items: document.getElementById('review-meal-items').value.trim(), cost: Number(document.getElementById('review-cost').value) || 0, mealType: document.getElementById('review-meal-type').value, rating, content: document.getElementById('review-content').value.trim(), photos }; if (editingPostId) { const postIndex = posts.findIndex(p => p.id === editingPostId); if (postIndex > -1) { posts[postIndex] = { ...posts[postIndex], ...postData }; alert("評論已成功更新！"); } } else { const newPost = { id: Date.now(), timestamp: new Date().toISOString(), ...postData }; posts.unshift(newPost); alert("評論已成功儲存！"); } savePosts(posts); editingPostId = null; resetReviewForm(); window.showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]')); }
+    function saveReview() { if (!currentUser) { alert('請先登入！'); window.showPage('login-page'); return; } const name = document.getElementById('review-restaurant-name').value.trim(); const rating = document.getElementById('review-rating').dataset.rating; if (!name || rating === "0") { alert("請務必填寫「餐廳名称」和「喜愛程度」！"); return; } const photoPreviews = document.querySelectorAll('#photo-preview-container .photo-preview-item img'); const photos = []; for (const img of photoPreviews) { photos.push(img.src); } const posts = getPosts(); const postData = { id: editingPostId || Date.now().toString(), userId: currentUser.uid, restaurantName: name, mealItems: document.getElementById('review-meal-items').value.trim(), cost: Number(document.getElementById('review-cost').value) || 0, mealType: document.getElementById('review-meal-type').value, rating: Number(rating), content: document.getElementById('review-content').value.trim(), photos, timestamp: new Date().getTime(), location: selectedPlaceForReview ? selectedPlaceForReview.location : null }; if (editingPostId) { const postIndex = posts.findIndex(p => p.id === editingPostId); if (postIndex > -1) { posts[postIndex] = postData; alert("評論已成功更新！"); } } else { posts.unshift(postData); alert("評論已成功儲存！"); } savePosts(posts); editingPostId = null; resetReviewForm(); window.showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]')); }
     function showProfileTab(tabId, tabElement) { document.querySelectorAll('#profile-page .tab-btn').forEach(btn => { btn.classList.remove('active'); }); tabElement.classList.add('active'); document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active'); if (tabId === 'accounting') renderAccountingRecords(); if (tabId === 'posts') renderMyPosts(); if (tabId === 'favorites') renderFavoriteRestaurants(); if (tabId === 'friends') renderFriendsList(); }
     function goToReviewPageFromMap() { if (infoWindow) { infoWindow.close(); } if (!currentUser) { alert('請先登入才能新增評論！'); window.showPage('login-page'); return; } if (!selectedPlaceForReview) return; const addReviewNavButton = document.querySelector('.nav-item[onclick*="add-review-page"]'); window.showPage('add-review-page', addReviewNavButton); document.getElementById('review-restaurant-name').value = selectedPlaceForReview.name; };
     function openQrScanner() { qrModal.style.display = 'flex'; qrStatusText.textContent = '請將發票左方(總金額)或右方(明細) QR Code 對準掃描框'; scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(s) { stream = s; video.srcObject = stream; video.setAttribute("playsinline", true); video.play(); requestAnimationFrame(tick); }).catch(function(err) { qrStatusText.textContent = '無法啟動相機。請確認已授權。'; console.error("相機錯誤:", err); }); }
     function closeQrScanner() { qrModal.style.display = 'none'; if (stream) { stream.getTracks().forEach(track => track.stop()); } if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; } }
-    function editPost(postId) { const posts = getPosts(); const postToEdit = posts.find(p => p.id === postId); if (!postToEdit) return; editingPostId = postId; document.getElementById('review-restaurant-name').value = postToEdit.name; document.getElementById('review-meal-items').value = postToEdit.items || ''; document.getElementById('review-cost').value = postToEdit.cost || ''; document.getElementById('review-meal-type').value = postToEdit.mealType || 'other'; document.getElementById('review-content').value = postToEdit.content || ''; document.getElementById('review-rating').dataset.rating = postToEdit.rating; updateHeartDisplay(postToEdit.rating); const previewContainer = document.getElementById('photo-preview-container'); previewContainer.innerHTML = ''; if (postToEdit.photos && postToEdit.photos.length > 0) { displayPhotoPreviews(postToEdit.photos); } document.getElementById('add-review-header').innerHTML = `<i class="fa-solid fa-pen-to-square"></i>編輯美食評論`; document.getElementById('save-review-btn').textContent = "更新評論"; window.showPage('add-review-page'); }
+    function editPost(postId) { const posts = getPosts(); const postToEdit = posts.find(p => p.id === postId); if (!postToEdit) return; editingPostId = postId; document.getElementById('review-restaurant-name').value = postToEdit.restaurantName; document.getElementById('review-meal-items').value = postToEdit.mealItems || ''; document.getElementById('review-cost').value = postToEdit.cost || ''; document.getElementById('review-meal-type').value = postToEdit.mealType || 'other'; document.getElementById('review-content').value = postToEdit.content || ''; document.getElementById('review-rating').dataset.rating = postToEdit.rating; updateHeartDisplay(postToEdit.rating); const previewContainer = document.getElementById('photo-preview-container'); previewContainer.innerHTML = ''; if (postToEdit.photos && postToEdit.photos.length > 0) { displayPhotoPreviews(postToEdit.photos); } document.getElementById('add-review-header').innerHTML = `<i class="fa-solid fa-pen-to-square"></i>編輯美食評論`; document.getElementById('save-review-btn').textContent = "更新評論"; window.showPage('add-review-page'); }
     function deletePost(postId) { if (confirm('確定要刪除這筆紀錄嗎？\n(這將會同時刪除記帳和貼文內容)')) { let posts = getPosts(); posts = posts.filter(p => p.id !== postId); savePosts(posts); renderProfilePage(); } }
     function createChallengeBoard() { const titleInput = document.getElementById('new-challenge-title'); const subtitleInput = document.getElementById('new-challenge-subtitle'); const title = titleInput.value.trim(); const subtitle = subtitleInput.value.trim(); if (!title) { alert('請務必輸入挑戰主標題！'); return; } const boards = getChallengeBoards(); const newBoard = { id: Date.now(), creatorId: currentUser.uid, title: title, subtitle: subtitle, participants: [{ userId: currentUser.uid, name: currentUser.displayName || '我', score: 0 }] }; boards.unshift(newBoard); saveChallengeBoards(boards); titleInput.value = ''; subtitleInput.value = ''; renderChallengeBoardList(); }
     function viewChallengeBoard(boardId) { viewingChallengeId = boardId; renderChallengePage(); }
@@ -711,8 +728,8 @@
     function setupLoggedOutUI() { document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; renderProfilePage(); renderChallengePage(); updateRandomPageStatus(); }
     function renderProfilePage() { const activeTabBtn = document.querySelector('#profile-page .tab-btn.active'); if(activeTabBtn) { window.showProfileTab(activeTabBtn.getAttribute('onclick').match(/'([^']+)'/)[1], activeTabBtn); } else { window.showProfileTab('accounting', document.querySelector('#profile-page .tab-btn')); } }
     const loggedOutPlaceholder = (message) => `<p class="placeholder-text">請先<a href="#" onclick="window.showPage('login-page')">登入</a>${message}</p>`;
-    function renderAccountingRecords() { const container = document.getElementById('accounting-content'); if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的消費紀錄。'); return; } const posts = getPosts().filter(p => p.cost > 0); if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">尚無消費紀錄。</p>`; return; } const mealTypeNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', other: '其他' }; const mealTypeOrder = ['breakfast', 'lunch', 'dinner', 'other']; const groupedByDate = posts.reduce((acc, post) => { const date = new Date(post.timestamp).toLocaleDateString(); if (!acc[date]) { acc[date] = []; } acc[date].push(post); return acc; }, {}); const sortedDates = Object.keys(groupedByDate).sort((a, b) => new Date(b) - new Date(a)); let html = ''; sortedDates.forEach(date => { html += `<div class="accounting-date-group"><div class="accounting-date-header">${date}</div>`; const dayPosts = groupedByDate[date]; mealTypeOrder.forEach(mealType => { const mealPosts = dayPosts.filter(p => (p.mealType || 'other') === mealType); if (mealPosts.length > 0) { html += `<h4 class="accounting-meal-header">${mealTypeNames[mealType]}</h4>`; html += mealPosts.map(p => `<div class="record-card"><span class="cost">$${p.cost}</span><div class="title">${p.name}</div><div class="details">${p.items || '無品項紀錄'}</div></div>`).join(''); } }); html += `</div>`; }); container.innerHTML = html || `<p class="placeholder-text">尚無消費紀錄。</p>`; }
-    function renderMyPosts() { const postsContent = document.getElementById('posts-content'); if (!currentUser) { postsContent.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); return; } if (!postsContent.querySelector('.sort-container')) { postsContent.innerHTML = `<div class="sort-container" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; padding: 0;"><label for="post-sort-order" style="font-size: 14px; color: var(--text-light); margin-right: 8px;">排序:</label><select id="post-sort-order" onchange="renderMyPosts()" style="border-radius: 15px; border: 1px solid #ddd; padding: 5px 10px; font-size: 14px; background-color: white;"><option value="newest">由新到舊</option><option value="oldest">由舊到新</option></select></div><div id="posts-list-container"></div>`; } const listContainer = document.getElementById('posts-list-container'); let posts = getPosts(); if (posts.length === 0) { listContainer.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`; return; } const sortOrder = document.getElementById('post-sort-order').value; posts.sort((a, b) => sortOrder === 'newest' ? new Date(b.timestamp) - new Date(a.timestamp) : new Date(a.timestamp) - new Date(b.timestamp)); listContainer.innerHTML = posts.map(p => { const ratingHtml = Array(parseInt(p.rating)).fill('<i class="fa-solid fa-heart"></i>').join(''); let photosHtml = ''; if (p.photos && p.photos.length > 0) { photosHtml = `<div class="post-photos">${p.photos.map(photoSrc => `<img src="${photoSrc}" alt="Post photo">`).join('')}</div>`; } return `<div class="post-card"><div class="card-actions"><button class="action-btn btn-edit" onclick="editPost(${p.id})">編輯</button><button class="action-btn btn-delete" onclick="deletePost(${p.id})">刪除</button></div><div class="title">${p.name}</div><div class="details">${new Date(p.timestamp).toLocaleString()}</div><p class="content" style="white-space: pre-wrap;">${p.content || '（無詳細評論）'}</p><div class="post-rating">${ratingHtml}</div>${photosHtml}</div>`; }).join(''); }
+    function renderAccountingRecords() { const container = document.getElementById('accounting-content'); if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的消費紀錄。'); return; } const posts = getPosts().filter(p => p.cost > 0); if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">尚無消費紀錄。</p>`; return; } const mealTypeNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', other: '其他' }; const mealTypeOrder = ['breakfast', 'lunch', 'dinner', 'other']; const groupedByDate = posts.reduce((acc, post) => { const date = new Date(post.timestamp).toLocaleDateString(); if (!acc[date]) { acc[date] = []; } acc[date].push(post); return acc; }, {}); const sortedDates = Object.keys(groupedByDate).sort((a, b) => new Date(b) - new Date(a)); let html = ''; sortedDates.forEach(date => { html += `<div class="accounting-date-group"><div class="accounting-date-header">${date}</div>`; const dayPosts = groupedByDate[date]; mealTypeOrder.forEach(mealType => { const mealPosts = dayPosts.filter(p => (p.mealType || 'other') === mealType); if (mealPosts.length > 0) { html += `<h4 class="accounting-meal-header">${mealTypeNames[mealType]}</h4>`; html += mealPosts.map(p => `<div class="record-card"><span class="cost">$${p.cost}</span><div class="title">${p.restaurantName}</div><div class="details">${p.mealItems || '無品項紀錄'}</div></div>`).join(''); } }); html += `</div>`; }); container.innerHTML = html || `<p class="placeholder-text">尚無消費紀錄。</p>`; }
+    function renderMyPosts() { const postsContent = document.getElementById('posts-content'); if (!currentUser) { postsContent.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); return; } if (!postsContent.querySelector('.sort-container')) { postsContent.innerHTML = `<div class="sort-container" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; padding: 0;"><label for="post-sort-order" style="font-size: 14px; color: var(--text-light); margin-right: 8px;">排序:</label><select id="post-sort-order" onchange="renderMyPosts()" style="border-radius: 15px; border: 1px solid #ddd; padding: 5px 10px; font-size: 14px; background-color: white;"><option value="newest">由新到舊</option><option value="oldest">由舊到新</option></select></div><div id="posts-list-container"></div>`; } const listContainer = document.getElementById('posts-list-container'); let posts = getPosts(); if (posts.length === 0) { listContainer.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`; return; } const sortOrder = document.getElementById('post-sort-order').value; posts.sort((a, b) => sortOrder === 'newest' ? b.timestamp - a.timestamp : a.timestamp - b.timestamp); listContainer.innerHTML = posts.map(p => { const ratingHtml = Array(parseInt(p.rating)).fill('<i class="fa-solid fa-heart"></i>').join(''); let photosHtml = ''; if (p.photos && p.photos.length > 0) { photosHtml = `<div class="post-photos">${p.photos.map(photoSrc => `<img src="${photoSrc}" alt="Post photo">`).join('')}</div>`; } return `<div class="post-card"><div class="card-actions"><button class="action-btn btn-edit" onclick="editPost('${p.id}')">編輯</button><button class="action-btn btn-delete" onclick="deletePost('${p.id}')">刪除</button></div><div class="title">${p.restaurantName}</div><div class="details">${new Date(p.timestamp).toLocaleString()}</div><p class="content" style="white-space: pre-wrap;">${p.content || '（無詳細評論）'}</p><div class="post-rating">${ratingHtml}</div>${photosHtml}</div>`; }).join(''); }
     function renderFavoriteRestaurants() { const container = document.getElementById('favorites-content'); if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的最愛餐廳。'); return; } const favorites = getFavorites(); if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有加入任何最愛餐廳。<br>可以從地圖上點擊餐廳的<i class="far fa-bookmark" style="color:#ccc"></i>來加入喔！</p>`; return; } container.innerHTML = '<h3>我的最愛餐廳</h3>' + favorites.map(f => `<div class="record-card"><div class="card-actions"><button class="action-btn btn-delete" onclick="toggleFavorite({place_id: '${f.place_id}', name: '${f.name}'}, null)">移除</button></div><div class="title"><i class="fa-solid fa-utensils" style="margin-right:8px; color: var(--primary-color)"></i>${f.name}</div></div>`).join(''); }
     function renderFriendsList() { const friendsContent = document.getElementById('friends-content'); if (!currentUser) { friendsContent.innerHTML = loggedOutPlaceholder('以查看好友名單。'); return; } if (!friendsContent.querySelector('.search-area')) { friendsContent.innerHTML = `<div class="search-area" style="padding: 0 0 20px 0; border-bottom: none; background: transparent;"><p style="font-size: 14px; color: var(--text-light); margin-bottom: 10px;">透過 ID 或 Email 搜尋好友：</p><div style="display: flex; gap: 10px; align-items: center;"><input type="text" id="friend-search-input" class="search-input" placeholder="輸入好友ID或Email..." style="border-radius: 8px; padding: 12px 15px; width: auto; flex-grow: 1;"><button class="btn" style="padding: 0; width: 80px; height: 44px; flex-shrink: 0;" onclick="searchFriend()">搜尋</button></div></div><div id="friends-list-container"></div>`; } const listContainer = document.getElementById('friends-list-container'); const friends = getFriends(); if (friends.length === 0) { listContainer.innerHTML = `<p class="placeholder-text">您還沒有加入任何好友。</p>`; } else { listContainer.innerHTML = friends.map(f => `<div class="record-card"><div class="card-actions"><button class="action-btn btn-delete" onclick="deleteFriend('${f.id}')">刪除</button></div><div class="title"><i class="fa-solid fa-user-group" style="margin-right:8px; color: var(--text-light)"></i>${f.name}</div><div class="details">ID: ${f.id}</div></div>`).join(''); } }
     function getPosts() { if (!currentUser) return []; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
@@ -764,7 +781,7 @@
   
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
-    async
+    defer
   ></script>
 
 </body>
