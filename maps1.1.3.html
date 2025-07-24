@@ -657,7 +657,6 @@
         const hoursInfo = getOpeningHoursInfo(finalDetails);
         const weeklyHoursHtml = hoursInfo.weekday_text.map((text, index) => {
             const parts = text.split('： ');
-            // FIX: Handle cases like "星期一： 休息" where parts[1] is undefined
             const day = parts[0];
             const time = parts.length > 1 ? parts[1] : ''; 
             return `<div class="day-hours ${index === hoursInfo.currentDayIndex ? 'current-day' : ''}"><span>${day}</span><span>${time}</span></div>`;
@@ -684,7 +683,6 @@
         infoWindow.open({ anchor: marker, map: map, shouldFocus: false });
     }
 
-    // --- The rest of the script remains unchanged from the previous version ---
     function getPlaceCategory(place) { if (!place || !place.types) return ''; for (const categoryName in categoryKeywords) { const data = categoryKeywords[categoryName]; for (const keyword of data.keywords) { if (place.types.includes(keyword.replace('_', ' '))) { return categoryName; } } } const mainType = place.types[0]; if(mainType) return mainType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); return ''; }
     function createStarRating(rating) { if (!rating) return ''; const fullStars = Math.floor(rating); const halfStar = rating % 1 >= 0.5 ? 1 : 0; const emptyStars = 5 - fullStars - halfStar; let stars = ''; for (let i = 0; i < fullStars; i++) stars += '<i class="fas fa-star"></i>'; if (halfStar) stars += '<i class="fas fa-star-half-alt"></i>'; for (let i = 0; i < emptyStars; i++) stars += '<i class="far fa-star"></i>'; return stars; }
     function createPriceLevel(level) { if (!level) return ''; return '· ' + '$'.repeat(level); }
