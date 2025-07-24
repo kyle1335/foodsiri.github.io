@@ -152,7 +152,6 @@
     .list-status-text { text-align: center; color: #999; padding: 40px 20px; }
     .location-btn { position: absolute; bottom: 20px; right: 20px; background: #fff; color: var(--primary-color); border: none; width: 50px; height: 50px; border-radius: 25px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); cursor: pointer; z-index: 10; font-size: 24px; display: flex; justify-content: center; align-items: center; }
     
-    /* --- MODIFICATION START: New styles for InfoWindow --- */
     .gm-style-iw.gm-style-iw-c { padding: 0 !important; max-width: 320px !important; }
     .gm-style-iw-d { overflow: hidden !important; }
 
@@ -167,7 +166,6 @@
     .place-info-window .day-hours.current-day { font-weight: bold; color: #1a73e8; }
     .place-info-window .day-hours span:first-child { flex-shrink: 0; margin-right: 10px; }
     .place-info-window .day-hours span:last-child { text-align: right; }
-    /* --- MODIFICATION END --- */
     
     .page-header { padding: 15px 20px; background-color: #fff; border-bottom: 1px solid #eee; text-align: center; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
     .page-header h2 { margin: 0; font-size: 18px; color: var(--text-color); display: flex; align-items: center; justify-content: center; flex-grow: 1; }
@@ -659,7 +657,10 @@
         const hoursInfo = getOpeningHoursInfo(finalDetails);
         const weeklyHoursHtml = hoursInfo.weekday_text.map((text, index) => {
             const parts = text.split('： ');
-            return `<div class="day-hours ${index === hoursInfo.currentDayIndex ? 'current-day' : ''}"><span>${parts[0]}</span><span>${parts[1]}</span></div>`;
+            // FIX: Handle cases like "星期一： 休息" where parts[1] is undefined
+            const day = parts[0];
+            const time = parts.length > 1 ? parts[1] : ''; 
+            return `<div class="day-hours ${index === hoursInfo.currentDayIndex ? 'current-day' : ''}"><span>${day}</span><span>${time}</span></div>`;
         }).join('');
         
         let content = `
