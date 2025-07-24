@@ -489,12 +489,13 @@
     var qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
 
     const firebaseConfig = {
-        apiKey: "YOUR_FIREBASE_API_KEY",
+        apiKey: "AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs",
         authDomain: "foodiedata-b4982.firebaseapp.com",
         projectId: "foodiedata-b4982",
         storageBucket: "foodiedata-b4982.firebasestorage.app",
         messagingSenderId: "90315404352",
-        appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5"
+        appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5",
+        measurementId: "G-5FD72CVKGB"
     };
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth(); 
@@ -538,7 +539,6 @@
         directionsService = new google.maps.DirectionsService();
         directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 } });
         
-        // 🔧 FIXED: 加入關鍵的地圖事件監聽器
         map.addListener("idle", () => {
             if (!directionsRenderer.getDirections() || !directionsRenderer.getDirections().routes.length) {
                 clearTimeout(debounceTimer);
