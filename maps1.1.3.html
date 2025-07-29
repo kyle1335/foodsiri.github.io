@@ -442,7 +442,7 @@
 
   <script>
     // --- 全域變數定義 ---
-    var currentUser = null, map, userGpsPosition, userMarker, debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
+    var currentUser = null, map, userGpsPosition, userMarker, debounceTimer, placesService, autocomplete, infoWindow;
     var isMapReady = false, editingPostId = null, viewingChallengeId = null, activeFilter = null, pageHistory = [], auth;
     var restaurantMarkers = [];
     var qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId, selectedPlaceForReview;
@@ -463,7 +463,6 @@
     async function initMap() {
         if (window.mapInitialized) return;
         const { Map } = await google.maps.importLibrary("maps");
-        const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
         
         isMapReady = true;
         userGpsPosition = { lat: 25.0479, lng: 121.5171 };
@@ -527,7 +526,8 @@
         });
     }
 
-    function displayPlaces(places, isSingleResult = false) {
+    async function displayPlaces(places, isSingleResult = false) {
+        const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
         const listContentArea = document.getElementById("list-content-area");
         let html = '';
         restaurantMarkers.forEach(marker => { marker.map = null; });
@@ -536,7 +536,7 @@
         
         places.forEach(place => {
             if (!place.geometry || !place.geometry.location) return;
-            const marker = createMarker(place);
+            const marker = createMarker(place, AdvancedMarkerElement);
             restaurantMarkers.push(marker);
             
             const ratingHtml = place.rating ? `${place.rating} <i class="fas fa-star" style="color: #fbbc05;"></i>` : '無評分';
@@ -550,11 +550,11 @@
         if (isSingleResult && restaurantMarkers.length > 0) { selectRestaurant(restaurantMarkers[0].placeId); }
     }
 
-    function createMarker(place) {
+    function createMarker(place, AdvancedMarkerElement) {
         const markerIcon = document.createElement('div');
         markerIcon.style.cssText = `width: 18px; height: 18px; background-color: ${getCategoryColor(place)}; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); cursor: pointer;`;
         
-        const marker = new google.maps.marker.AdvancedMarkerElement({
+        const marker = new AdvancedMarkerElement({
             map,
             position: place.geometry.location,
             content: markerIcon,
@@ -594,13 +594,13 @@
     window.showPage = function(pageId, navElement = null) { if (pageId === 'add-review-page' && !editingPostId) resetReviewForm(); const activePage = document.querySelector('.page.active'); if (activePage && (!['login-page', 'register-page'].includes(activePage.id) || !['login-page', 'register-page'].includes(pageId))) { pageHistory.push(activePage.id); } document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(pageId).classList.add('active'); if (navElement) { document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active')); navElement.classList.add('active'); pageHistory = []; } if (pageId === 'random-page') updateRandomPageStatus(); if (pageId === 'challenge-page') { viewingChallengeId = null; renderChallengePage(); } if (pageId === 'profile-page') renderProfilePage(); };
     window.goBack = function() { editingPostId = null; resetReviewForm(); if (pageHistory.length > 0) { const lastPageId = pageHistory.pop(); document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(lastPageId).classList.add('active'); } else { window.showPage('map-page', document.querySelector('.nav-item[onclick*="map-page"]')); } };
     window.centerOnUserGPS = () => updateUserGPS(true);
-    function updateUserGPS(centerMap = false) { if (!isMapReady) return; document.getElementById("list-content-area").innerHTML = `<p class="list-status-text">正在獲取您的位置...</p>`; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; if (!userMarker) { const userIcon = document.createElement('div'); userIcon.innerHTML = `<i class="fas fa-location-arrow" style="color: white; font-size: 14px; transform: rotate(-45deg);"></i>`; userIcon.style.cssText = 'width: 28px; height: 28px; background-color: #4285F4; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);'; userMarker = new google.maps.marker.AdvancedMarkerElement({ position: userGpsPosition, map, title: "您的位置", content: userIcon, zIndex: 1000 }); } else { userMarker.position = userGpsPosition; } if (centerMap) { map.panTo(userGpsPosition); searchNearbyRestaurants(userGpsPosition); } }, () => { searchNearbyRestaurants(map.getCenter()); } ); } else { searchNearbyRestaurants(map.getCenter()); } }
+    async function updateUserGPS(centerMap = false) { if (!isMapReady) return; const { AdvancedMarkerElement } = await google.maps.importLibrary("marker"); document.getElementById("list-content-area").innerHTML = `<p class="list-status-text">正在獲取您的位置...</p>`; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; if (!userMarker) { const userIcon = document.createElement('div'); userIcon.innerHTML = `<i class="fas fa-location-arrow" style="color: white; font-size: 14px; transform: rotate(-45deg);"></i>`; userIcon.style.cssText = 'width: 28px; height: 28px; background-color: #4285F4; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);'; userMarker = new AdvancedMarkerElement({ position: userGpsPosition, map, title: "您的位置", content: userIcon, zIndex: 1000 }); } else { userMarker.position = userGpsPosition; } if (centerMap) { map.panTo(userGpsPosition); searchNearbyRestaurants(userGpsPosition); } }, () => { searchNearbyRestaurants(map.getCenter()); } ); } else { searchNearbyRestaurants(map.getCenter()); } }
     window.clearSearch = function(suppressSearch = false) { infoWindow.close(); const input = document.getElementById('search-input'); input.value = ''; input.dispatchEvent(new Event('input')); highlightListItem(null); if (!suppressSearch) { searchNearbyRestaurants(userGpsPosition || map.getCenter()); } }
     
     // --- Helper & UI Detail Functions ---
-    function getCategoryColor(place) { if (!place) return defaultMarkerColor; const placeName = (place.name || '').toLowerCase(); const placeTypes = place.types || []; for (const categoryName in categoryKeywords) { const data = categoryKeywords[categoryName]; for (const keyword of data.keywords) { if (placeName.includes(keyword) || placeTypes.some(t => t.replace(/_/g, ' ').includes(keyword))) { return data.color; } } } const color = miscColors[miscColorIndex]; miscColorIndex = (miscColorIndex + 1) % miscColors.length; return color; }
+    function getPlaceCategory(place) { if (!place) return ''; const placeName = (place.name || '').toLowerCase(); const placeTypes = place.types || []; for (const categoryName in categoryKeywords) { const data = categoryKeywords[categoryName]; for (const keyword of data.keywords) { if (placeName.includes(keyword) || placeTypes.some(t => t.replace(/_/g, ' ').includes(keyword))) { return categoryName; } } } const mainType = place.types[0]; if (mainType) return mainType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); return ''; }
     window.toggleHoursDetail = function(element) { const detailDiv = element.nextElementSibling; if (detailDiv) { detailDiv.style.display = detailDiv.style.display === 'block' ? 'none' : 'block'; } }
-    function getOpeningHoursInfo(details) { if (details && details.business_status === "CLOSED_PERMANENTLY") { return { statusText: '永久停業', statusColor: 'var(--danger-color)', weekday_text: [], currentDayIndex: -1 }; } if (!details || !details.opening_hours || typeof details.utc_offset_minutes === 'undefined') { return { statusText: '營業時間資訊不明', statusColor: 'var(--text-light)', weekday_text: [], currentDayIndex: -1 }; } const oh = details.opening_hours; const now = new Date(); const userTimezoneOffset = now.getTimezoneOffset(); const restaurantNow = new Date(now.getTime() + (details.utc_offset_minutes + userTimezoneOffset) * 60000); const dayOfWeek = restaurantNow.getDay(); const googleDayIndex = (dayOfWeek + 6) % 7; let statusText = oh.isOpen() ? "營業中" : "休息中"; if (oh.isOpen() && oh.periods) { const period = oh.periods.find(p => p.open.day === dayOfWeek && (!p.close || p.close.day === dayOfWeek)); if (period && period.close) { statusText += ` • ${period.close.time.hours}:${String(period.close.time.minutes).padStart(2,'0')} 關店`; } } return { statusText, statusColor: oh.isOpen() ? "var(--success-color)" : "var(--danger-color)", weekday_text: oh.weekday_text || [], currentDayIndex: googleDayIndex }; }
+    function getOpeningHoursInfo(details) { if (details && details.business_status === "CLOSED_PERMANENTLY") { return { statusText: '永久停業', statusColor: 'var(--danger-color)', weekday_text: [], currentDayIndex: -1 }; } if (!details || !details.opening_hours || typeof details.utc_offset_minutes === 'undefined') { return { statusText: '營業時間資訊不明', statusColor: 'var(--text-light)', weekday_text: [], currentDayIndex: -1 }; } const oh = details.opening_hours; const now = new Date(); const userTimezoneOffset = now.getTimezoneOffset(); const restaurantNow = new Date(now.getTime() + (details.utc_offset_minutes + userTimezoneOffset) * 60000); const dayOfWeek = restaurantNow.getDay(); const googleDayIndex = (dayOfWeek + 6) % 7; let statusText = oh.isOpen() ? "營業中" : "休息中"; if (oh.isOpen() && oh.periods) { const period = oh.periods.find(p => p.open.day === dayOfWeek && (!p.close || p.close.day === dayOfWeek)); if (period && period.close) { statusText += ` • ${String(period.close.hours).padStart(2, '0')}:${String(period.close.minutes).padStart(2, '0')} 關店`; } } return { statusText, statusColor: oh.isOpen() ? "var(--success-color)" : "var(--danger-color)", weekday_text: oh.weekday_text || [], currentDayIndex: googleDayIndex }; }
     function showPlaceDetailsInWindow(details, marker) { const hoursInfo = getOpeningHoursInfo(details); const weeklyHoursHtml = hoursInfo.weekday_text.map((text, index) => { const parts = text.split(/:\s(.*)/s); const day = parts[0]; const time = parts.length > 1 ? parts[1] : ''; return `<div class="day-hours ${index === hoursInfo.currentDayIndex ? 'current-day' : ''}"><span>${day}</span><span>${time}</span></div>`; }).join(''); let content = `<div class="place-info-window"><h3>${details.name}</h3><div class="place-detail-row"><i class="detail-icon fas fa-map-marker-alt"></i><div>${details.formatted_address || details.vicinity}</div></div>${details.rating ? `<div class="place-detail-row"><i class="detail-icon fas fa-star"></i><div>${details.rating} (${details.user_ratings_total || 0} 則評論)</div></div>` : ''}${details.formatted_phone_number ? `<div class="place-detail-row"><i class="detail-icon fas fa-phone"></i><div>${details.formatted_phone_number}</div></div>` : ''}<div class="place-detail-row" onclick="toggleHoursDetail(this)" style="cursor: pointer;"><i class="detail-icon far fa-clock"></i><div class="hours-header ${hoursInfo.currentDayIndex !== -1 ? 'current-day-bold' : ''}" style="width:100%; color:${hoursInfo.statusColor};">${hoursInfo.statusText}</div></div><div class="hours-detail">${weeklyHoursHtml}</div></div>`; infoWindow.setContent(content); infoWindow.open({ anchor: marker, map: map }); }
     function createPriceLevel(level) { if (typeof level !== 'number') return ''; return '· ' + '$'.repeat(level); }
     
@@ -663,6 +663,7 @@
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry,marker&callback=initMap&v=beta"
     defer
+    async
   ></script>
 
 </body>
