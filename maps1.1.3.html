@@ -172,8 +172,7 @@
     .btn-navigate:hover { background-color: #3367D6; }
     .btn-navigate i { margin-right: 8px; }
 
-    /* **NEW**: Directions Panel Styles */
-    #directions-panel { display: none; position: absolute; top: 10px; left: 10px; right: 10px; background: white; z-index: 20; padding: 10px 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 8px; max-width: 350px; }
+    #directions-panel { display: none; position: absolute; top: 10px; left: 10px; right: 10px; background: white; z-index: 20; padding: 10px 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); flex-direction: column; gap: 8px; max-width: 350px; }
     .directions-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; }
     .travel-modes { display: flex; gap: 5px; }
     .travel-mode-btn { background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; cursor: pointer; transition: all 0.2s; }
@@ -268,7 +267,6 @@
       <div id="map-page" class="page active">
         <div id="map-panel">
           <div id="map"></div>
-          <!-- **NEW**: Directions Panel -->
           <div id="directions-panel" style="display: none;">
             <div class="directions-header">
                 <div class="travel-modes">
@@ -277,9 +275,7 @@
                 </div>
                 <button class="directions-close-btn" onclick="clearRoute()">×</button>
             </div>
-            <div class="directions-info" id="directions-info-content">
-                <!-- Route info will be injected here by JS -->
-            </div>
+            <div class="directions-info" id="directions-info-content"></div>
           </div>
           <button class="location-btn" onclick="centerOnUserGPS()"><i class="fas fa-location-arrow"></i></button>
         </div>
@@ -478,7 +474,6 @@
     var qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId, selectedPlaceForReview;
     var activePlaceId = null; 
     
-    // **NEW**: Variables for Directions Service
     var directionsService, drivingRenderer, walkingRenderer;
     var currentRouteDestination = null;
     var currentTravelMode = 'DRIVING';
@@ -489,7 +484,8 @@
     const miscColors = ['#4fc3f7', '#7986cb', '#ba68c8', '#aed581', '#ff8a65', '#90a4ae'];
     let miscColorIndex = 0;
     const defaultMarkerColor = '#EA4335';
-    const mockUserDB = [ { id: 'friend01', name: '美食探險家', email: 'explorer@food.com' }, { id: 'friend02', name: '吃貨小夥伴', email: 'partner@food.com' }, { id: 'friend03', name: '深夜食堂常客', email: 'nightowl@food.com' }, { id: 'friend04', 'name': '甜點魔人', email: 'dessert@food.com' }, { id: 'admin01', name: 'Admin User', email: 'admin@mail.com' } ];
+    // **FIXED**: Removed extra quote from 'name' key
+    const mockUserDB = [ { id: 'friend01', name: '美食探險家', email: 'explorer@food.com' }, { id: 'friend02', name: '吃貨小夥伴', email: 'partner@food.com' }, { id: 'friend03', name: '深夜食堂常客', email: 'nightowl@food.com' }, { id: 'friend04', name: '甜點魔人', email: 'dessert@food.com' }, { id: 'admin01', name: 'Admin User', email: 'admin@mail.com' } ];
     
     const firebaseConfig = { apiKey: "AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs", authDomain: "foodiedata-b4982.firebaseapp.com", projectId: "foodiedata-b4982", storageBucket: "foodiedata-b4982.firebasestorage.app", messagingSenderId: "90315404352", appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5", measurementId: "G-5FD72CVKGB" };
     firebase.initializeApp(firebaseConfig);
@@ -522,15 +518,12 @@
             activePlaceId = null;
         });
         
-        // **NEW**: Initialize Directions Service and Renderers
         directionsService = new DirectionsService();
-        // Driving (blue line)
         drivingRenderer = new DirectionsRenderer({
             map: map,
             polylineOptions: { strokeColor: '#4285F4', strokeWeight: 6, zIndex: 50 },
-            suppressMarkers: true // We use our own markers
+            suppressMarkers: true
         });
-        // Walking (green line)
         walkingRenderer = new DirectionsRenderer({
             map: map,
             polylineOptions: { strokeColor: '#34A853', strokeOpacity: 0.8, strokeWeight: 6, zIndex: 49 },
@@ -672,7 +665,6 @@
     window.toggleHoursDetail = function(element) { const detailDiv = element.nextElementSibling; if (detailDiv) { detailDiv.style.display = detailDiv.style.display === 'block' ? 'none' : 'block'; } }
     function getOpeningHoursInfo(details) { if (details && details.business_status === "CLOSED_PERMANENTLY") { return { statusText: '永久停業', statusColor: 'var(--danger-color)', weekday_text: [], currentDayIndex: -1 }; } if (!details || !details.opening_hours || typeof details.utc_offset_minutes === 'undefined') { return { statusText: '營業時間資訊不明', statusColor: 'var(--text-light)', weekday_text: [], currentDayIndex: -1 }; } const oh = details.opening_hours; const isOpen = typeof oh.isOpen === 'function' ? oh.isOpen() : oh.open_now; const now = new Date(); const userTimezoneOffset = now.getTimezoneOffset(); const restaurantNow = new Date(now.getTime() + (details.utc_offset_minutes + userTimezoneOffset) * 60000); const dayOfWeek = restaurantNow.getDay(); const googleDayIndex = (dayOfWeek + 6) % 7; let statusText = isOpen ? "營業中" : "休息中"; if (isOpen && oh.periods) { const period = oh.periods.find(p => p.open && p.open.day === dayOfWeek && p.close); if (period && period.close) { let closeTime = period.close.time; if (typeof closeTime === 'string') { statusText += ` • ${closeTime.substring(0, 2)}:${closeTime.substring(2, 4)} 關店`; } } } return { statusText, statusColor: isOpen ? "var(--success-color)" : "var(--danger-color)", weekday_text: oh.weekday_text || [], currentDayIndex: googleDayIndex }; }
     
-    // **MODIFIED**: Added navigation button
     function showPlaceDetailsInWindow(details, marker) {
         if (activePlaceId !== details.place_id) return;
         const hoursInfo = getOpeningHoursInfo(details);
@@ -696,7 +688,7 @@
 
     function createPriceLevel(level) { if (typeof level !== 'number') return ''; return '· ' + '$'.repeat(level); }
 
-    // **NEW**: Directions functions
+    // --- Directions Functions ---
     function calculateAndShowRoute(destination, travelMode = 'DRIVING') {
         if (!userGpsPosition) {
             alert('無法獲取您的目前位置，請開啟定位服務後再試。');
@@ -705,6 +697,15 @@
         clearRoute();
         currentRouteDestination = destination;
         currentTravelMode = travelMode;
+
+        // **MODIFIED**: Show loading state immediately
+        const panel = document.getElementById('directions-panel');
+        const infoContent = document.getElementById('directions-info-content');
+        infoContent.innerHTML = `<span><i class="fa-solid fa-spinner fa-spin"></i> 正在計算路線...</span>`;
+        document.getElementById('driving-mode-btn').classList.toggle('active', currentTravelMode === 'DRIVING');
+        document.getElementById('walking-mode-btn').classList.toggle('active', currentTravelMode === 'WALKING');
+        panel.style.display = 'flex';
+        infoWindow.close();
 
         directionsService.route(
             {
@@ -716,37 +717,44 @@
         );
     }
 
+    // **MODIFIED**: Improved error handling and status display
     function displayRoute(response, status) {
-        const panel = document.getElementById('directions-panel');
-        if (status === 'OK') {
+        const infoContent = document.getElementById('directions-info-content');
+        if (status === 'OK' && response.routes && response.routes.length > 0) {
             const leg = response.routes[0].legs[0];
-            const infoContent = document.getElementById('directions-info-content');
+            
             infoContent.innerHTML = `<span><i class="fa-solid fa-clock"></i> ${leg.duration.text}</span> <span><i class="fa-solid fa-map-pin"></i> ${leg.distance.text}</span>`;
             
-            // Use the correct renderer based on travel mode
             const renderer = (currentTravelMode === 'DRIVING') ? drivingRenderer : walkingRenderer;
             renderer.setDirections(response);
-
-            // Update active button state
-            document.getElementById('driving-mode-btn').classList.toggle('active', currentTravelMode === 'DRIVING');
-            document.getElementById('walking-mode-btn').classList.toggle('active', currentTravelMode === 'WALKING');
-            
-            panel.style.display = 'flex';
-            infoWindow.close();
         } else {
-            alert('無法規劃路線，目的地可能無法到達或網路連線有問題。');
-            panel.style.display = 'none';
+            let errorMessage = '無法規劃路線。';
+            switch (status) {
+                case google.maps.DirectionsStatus.NOT_FOUND:
+                    errorMessage = '找不到起點或終點。';
+                    break;
+                case google.maps.DirectionsStatus.ZERO_RESULTS:
+                    errorMessage = '找不到可行的路線。';
+                    break;
+                case google.maps.DirectionsStatus.OVER_QUERY_LIMIT:
+                    errorMessage = 'API用量超限，請稍後再試。';
+                    break;
+                default:
+                    errorMessage = '網路錯誤或未知問題。';
+                    break;
+            }
+            infoContent.innerHTML = `<span style="color: var(--danger-color);"><i class="fa-solid fa-triangle-exclamation"></i> ${errorMessage}</span>`;
         }
     }
 
     function clearRoute() {
-        drivingRenderer.setDirections(null);
-        walkingRenderer.setDirections(null);
+        drivingRenderer.setDirections({routes: []}); // Use empty routes object to clear
+        walkingRenderer.setDirections({routes: []});
         document.getElementById('directions-panel').style.display = 'none';
         currentRouteDestination = null;
     }
     
-    // --- Auth, Data & Other Features (No changes below this line) ---
+    // --- Auth, Data & Other Features ---
     function handleRegister() { const name = document.getElementById('register-name-input').value.trim(); const email = document.getElementById('register-email-input').value; const password = document.getElementById('register-password-input').value; const errorDiv = document.getElementById('register-error'); errorDiv.textContent = ''; if (!name || !email || !password) { errorDiv.textContent = '所有欄位都必須填寫！'; return; } auth.createUserWithEmailAndPassword(email, password).then(userCredential => userCredential.user.updateProfile({ displayName: name })).then(() => { window.goBack(); }).catch(error => { switch(error.code) { case 'auth/email-already-in-use': errorDiv.textContent = '此電子郵件已被註冊。'; break; case 'auth/invalid-email': errorDiv.textContent = '電子郵件格式不正確。'; break; case 'auth/weak-password': errorDiv.textContent = '密碼強度不足 (至少6位數)。'; break; default: errorDiv.textContent = '註冊失敗，請稍後再試。'; } }); }
     function handleSignIn() { const email = document.getElementById('login-email-input').value; const password = document.getElementById('login-password-input').value; const errorDiv = document.getElementById('login-error'); errorDiv.textContent = ''; if (!email || !password) { errorDiv.textContent = '請輸入電子郵件和密碼。'; return; } auth.signInWithEmailAndPassword(email, password).then(() => { window.goBack(); }).catch(error => { errorDiv.textContent = '登入失敗，請檢查信箱或密碼。'; }); }
     function handleGoogleSignIn() { const provider = new firebase.auth.GoogleAuthProvider(); auth.signInWithPopup(provider).then(() => { window.goBack(); }).catch(error => { document.getElementById('login-error').textContent = 'Google 登入失敗，請稍後再試。'; }); }
