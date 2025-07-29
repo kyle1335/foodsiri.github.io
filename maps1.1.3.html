@@ -1000,20 +1000,14 @@
         }
     }
     
-    // --- MODIFICATION START: 根據您的指示更新此函式 ---
     window.toggleOpeningHours = function(evt, btn) {
-        // 停止冒泡，避免點到按鈕反而把 InfoWindow 關掉
         evt.stopPropagation();
-
-        // 找到同一層級的 .opening-hours-details
         const detailsDiv = btn
             .closest('.info-window-content')
             .querySelector('.opening-hours-details');
-
         const expanded = detailsDiv.classList.toggle('expanded');
         btn.textContent = expanded ? '收起' : '查看詳細時間';
     }
-    // --- MODIFICATION END ---
 
     function setupLoggedInUI(user) { document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block'; const userName = user.displayName || user.email.split('@')[0]; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`; renderProfilePage(); }
     function setupLoggedOutUI() { document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; renderProfilePage(); renderChallengePage(); updateRandomPageStatus(); }
@@ -1265,7 +1259,7 @@
         if (place.business_status === "CLOSED_PERMANENTLY") { 
             openStatusHtml = `<span class="open-status closed">永久停業</span>`; 
         } else if (details && details.opening_hours) { 
-            const isOpen = details.opening_hours.isOpen(); 
+            const isOpen = details.opening_hours.open_now; 
             openStatusHtml = isOpen ? `<span class="open-status open">營業中</span>` : `<span class="open-status closed">休息中</span>`; 
         } 
         const ratingHtml = place.rating ? `<i class="fas fa-star" style="color: #ffd700;"></i> ${place.rating}` : `無評分`; 
@@ -1339,19 +1333,32 @@
     
     function getRoutePromise(origin, destination, travelMode) { return new Promise(resolve => { const request = { origin, destination, travelMode }; directionsService.route(request, (res, stat) => { if (stat === 'OK') { const leg = res.routes[0].legs[0]; resolve({ distance: leg.distance.text, duration: leg.duration.text, response: res }); } else { resolve(null); } }); }); }
     
-    function getPlaceDetailsPromise(placeId) { 
-        const request = { 
-            placeId: placeId, 
-            fields: ['name', 'rating', 'user_ratings_total', 'formatted_phone_number', 'opening_hours', 'vicinity', 'business_status', 'formatted_address', 'place_id', 'types', 'website'] 
-        }; 
-        return new Promise(resolve => { 
-            placesService.getDetails(request, (details, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && details) { resolve(details); } else { resolve(null); } }); 
-        }); 
+    function getPlaceDetailsPromise(placeId) {
+        const request = {
+            placeId,
+            fields: [
+                'name', 'rating', 'user_ratings_total', 'formatted_phone_number',
+                'vicinity', 'business_status', 'formatted_address', 'website',
+                'place_id', 'types',
+                'opening_hours', 
+                'opening_hours.periods',
+                'opening_hours.open_now'
+            ]
+        };
+        return new Promise(resolve => {
+            placesService.getDetails(request, (details, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && details) {
+                    resolve(details);
+                } else {
+                    console.error("Place Details request failed for placeId:", placeId, "with status:", status);
+                    resolve(null);
+                }
+            });
+        });
     }
 
     function showSinglePlaceResult(place, routeInfo, placeDetails) { const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = ""; addRestaurantToList(place, routeInfo, placeDetails); highlightListItem(place.place_id); }
 
-    // --- MODIFICATION START: 根據您的指示更新此函式 ---
     function showPlaceDetailsInWindow(place, marker, routeInfo = {}, details = null) {
         const isFav = isFavorite(place.place_id);
         const favIconClass = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
@@ -1383,20 +1390,18 @@
         if (details && details.business_status === "CLOSED_PERMANENTLY") {
             content += `<p><i class="fas fa-store-slash"></i><span style="color: var(--danger-color); font-weight: bold;">永久停業</span></p>`;
         } else if (details && details.opening_hours) {
-            const isOpen = details.opening_hours.isOpen();
+            const isOpen = details.opening_hours.open_now;
             const statusText = isOpen ? "營業中" : "休息中";
             const color = isOpen ? "var(--success-color)" : "var(--danger-color)";
             
             let hoursHtml = `<p><i class="fas fa-clock"></i><span style="color: ${color}; font-weight: bold;">${statusText}</span>`;
             if (details.opening_hours.weekday_text) {
-                // 將 onclick 改為傳遞 event 和 this
                 hoursHtml += `<button class="opening-hours-toggle" onclick="toggleOpeningHours(event, this)">查看詳細時間</button></p>
                 <div class="opening-hours-details">${details.opening_hours.weekday_text.join('<br>')}</div>`;
             } else {
                 hoursHtml += `</p>`;
             }
             content += hoursHtml;
-
         } else {
             content += `<p><i class="fas fa-clock"></i><span>營業時間資訊不明</span></p>`;
         }
@@ -1409,7 +1414,6 @@
         infoWindow.setContent(content);
         infoWindow.open({ anchor: marker, map: map, shouldFocus: false });
     }
-    // --- MODIFICATION END ---
     
     function highlightListItem(placeId, scroll) { document.querySelectorAll(".list-item.is-selected").forEach((el) => el.classList.remove("is-selected")); if(placeId) { const listItem = document.querySelector(`.list-item[data-place-id="${placeId}"]`); if (listItem) { listItem.classList.add("is-selected"); if (scroll) { listItem.scrollIntoView({ behavior: "smooth", block: "center" }); } } } }
     function clearRestaurantMarkers() { restaurantMarkers.forEach((marker) => marker.setMap(null)); restaurantMarkers = []; }
