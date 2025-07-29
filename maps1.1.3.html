@@ -650,7 +650,7 @@
 
     // --- Firebase 初始化 ---
     const firebaseConfig = {
-        apiKey: "AIzaSyBQNGqpCU04OhQ-Py3iKvWcSxGuDgwIFsQ",
+      apiKey: "AIzaSyBQNGqpCU04OhQ-Py3iKvWcSxGuDgwIFsQ",
       authDomain: "foodiedata-b4982.firebaseapp.com",
       projectId: "foodiedata-b4982",
       storageBucket: "foodiedata-b4982.firebasestorage.app",
@@ -658,8 +658,8 @@
       appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5",
       measurementId: "G-5FD72CVKGB"
     };
-    firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth(); 
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = getAuth(app); 
     db = firebase.firestore();
 
     // --- Firestore Data Helpers (CRUD) ---
