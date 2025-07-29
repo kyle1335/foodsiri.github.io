@@ -473,7 +473,14 @@
     var restaurantMarkers = [];
     var qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId, selectedPlaceForReview;
     var activePlaceId = null; 
-    
+
+    // **NEW**: Variable to manage persistent selection
+    var persistentPlaceSelection = {
+        placeId: null,
+        marker: null,
+        shouldKeepOpen: false
+    };
+
     var directionsService, drivingRenderer, walkingRenderer;
     var currentRouteDestination = null;
     var currentTravelMode = 'DRIVING';
@@ -511,7 +518,10 @@
         infoWindow = new google.maps.InfoWindow({ content: '', disableAutoPan: true });
 
         infoWindow.addListener('closeclick', () => {
+            // **MODIFIED**: Reset persistent state when user manually closes the window
             activePlaceId = null;
+            persistentPlaceSelection.shouldKeepOpen = false;
+            persistentPlaceSelection.placeId = null;
         });
         
         directionsService = new google.maps.DirectionsService();
@@ -615,13 +625,23 @@
         return marker;
     }
 
+    // **MODIFIED**: Supports persistence
     function selectRestaurant(placeId) {
         const marker = restaurantMarkers.find(m => m.placeId === placeId);
         if (!marker) return;
-        clearRoute();
+        
+        if (persistentPlaceSelection.placeId !== placeId) {
+            clearRoute();
+        }
+        
         highlightListItem(placeId);
         map.panTo(marker.getPosition());
         activePlaceId = placeId;
+        
+        persistentPlaceSelection.placeId = placeId;
+        persistentPlaceSelection.marker = marker;
+        persistentPlaceSelection.shouldKeepOpen = true;
+        
         infoWindow.setContent(`<div class="place-info-window"><div class="info-window-status"><i class="fas fa-spinner fa-spin"></i> 正在載入詳細資訊...</div></div>`);
         infoWindow.open({ anchor: marker, map: map });
         fetchPlaceDetailsWithRetry(placeId, marker, 2);
@@ -650,7 +670,23 @@
     window.selectListItem = (placeId) => selectRestaurant(placeId);
 
     // --- UI & Page Logic ---
-    window.applyFilter = function(element) { infoWindow.close(); activePlaceId = null; clearRoute(); const filterValue = element.dataset.filterValue; if (element.classList.contains('active')) { activeFilter = null; element.classList.remove('active'); } else { activeFilter = { type: 'keyword', value: filterValue }; document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active')); element.classList.add('active'); } if (map) { clearSearch(true); searchNearbyRestaurants(map.getCenter()); } }
+    // **MODIFIED**: Does not close InfoWindow
+    window.applyFilter = function(element) { 
+        const filterValue = element.dataset.filterValue; 
+        if (element.classList.contains('active')) { 
+            activeFilter = null; 
+            element.classList.remove('active'); 
+        } else { 
+            activeFilter = { type: 'keyword', value: filterValue }; 
+            document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active')); 
+            element.classList.add('active'); 
+        } 
+        if (map) { 
+            // Do not clear the search text input, just re-run search with the filter
+            searchNearbyRestaurants(map.getCenter()); 
+        } 
+    }
+
     window.showPage = function(pageId, navElement = null) { if (pageId === 'add-review-page' && !editingPostId) resetReviewForm(); const activePage = document.querySelector('.page.active'); if (activePage && (!['login-page', 'register-page'].includes(activePage.id) || !['login-page', 'register-page'].includes(pageId))) { pageHistory.push(activePage.id); } document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(pageId).classList.add('active'); if (navElement) { document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active')); navElement.classList.add('active'); pageHistory = []; } if (pageId === 'random-page') updateRandomPageStatus(); if (pageId === 'challenge-page') { viewingChallengeId = null; renderChallengePage(); } if (pageId === 'profile-page') renderProfilePage(); };
     window.goBack = function() { editingPostId = null; resetReviewForm(); if (pageHistory.length > 0) { const lastPageId = pageHistory.pop(); document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(lastPageId).classList.add('active'); } else { window.showPage('map-page', document.querySelector('.nav-item[onclick*="map-page"]')); } };
     window.centerOnUserGPS = () => updateUserGPS(true);
@@ -685,7 +721,23 @@
         } 
     }
 
-    window.clearSearch = function(suppressSearch = false) { infoWindow.close(); activePlaceId = null; clearRoute(); const input = document.getElementById('search-input'); input.value = ''; input.dispatchEvent(new Event('input')); highlightListItem(null); if (!suppressSearch) { searchNearbyRestaurants(userGpsPosition || map.getCenter()); } }
+    // **MODIFIED**: Respects persistence state
+    window.clearSearch = function(suppressSearch = false) { 
+        persistentPlaceSelection.shouldKeepOpen = false; // Clearing search should un-pin
+        infoWindow.close(); 
+        activePlaceId = null; 
+        clearRoute();
+        
+        const input = document.getElementById('search-input'); 
+        input.value = ''; 
+        input.dispatchEvent(new Event('input')); 
+        document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active'));
+        activeFilter = null;
+        highlightListItem(null); 
+        if (!suppressSearch) { 
+            searchNearbyRestaurants(userGpsPosition || map.getCenter()); 
+        } 
+    }
     
     // --- Helper & UI Detail Functions ---
     function getPlaceCategory(place) { if (!place || !place.types) return ''; const placeName = (place.name || '').toLowerCase(); for (const categoryName in categoryKeywords) { const data = categoryKeywords[categoryName]; for (const keyword of data.keywords) { if (placeName.includes(keyword) || place.types.some(t => t.replace(/_/g, ' ').includes(keyword))) { return categoryName; } } } const mainType = place.types[0]; if (mainType) return mainType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); return ''; }
