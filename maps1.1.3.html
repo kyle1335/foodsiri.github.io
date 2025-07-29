@@ -504,8 +504,7 @@
             center: userGpsPosition,
             zoom: 15,
             disableDefaultUI: true,
-            zoomControl: true,
-            mapId: 'FOODIE_APP_MAP' // mapId can still be used for styling
+            zoomControl: true
         });
 
         placesService = new google.maps.places.PlacesService(map);
@@ -540,7 +539,7 @@
 
     function setupAutocomplete() {
         const input = document.getElementById('search-input');
-        autocomplete = new google.maps.places.Autocomplete(input, { types: ['establishment'], fields: ['place_id', 'geometry', 'name', 'vicinity', 'types'] });
+        autocomplete = new google.maps.places.Autocomplete(input, { types: ['establishment'] });
         autocomplete.bindTo('bounds', map);
         autocomplete.addListener('place_changed', () => {
             infoWindow.close();
@@ -588,8 +587,7 @@
             restaurantMarkers.push(marker);
             
             const ratingHtml = place.rating ? `${place.rating} <i class="fas fa-star" style="color: #fbbc05;"></i>` : '無評分';
-            const openStatus = place.opening_hours ? (place.opening_hours.open_now ? '<span class="open-status open">營業中</span>' : '<span class="open-status closed">休息中</span>') : '';
-            const detailsHtml = `${getPlaceCategory(place) || ''} · ${ratingHtml} ${createPriceLevel(place.price_level)} · ${openStatus}`;
+            const detailsHtml = `${getPlaceCategory(place) || ''} · ${ratingHtml} ${createPriceLevel(place.price_level)}`;
             
             html += `<div class="list-item" id="item-${place.place_id}" onclick="selectListItem('${place.place_id}')"><i class="item-icon fas fa-utensils"></i><div class="item-info"><div class="item-name">${place.name}</div><div class="item-details">${detailsHtml}</div><div class="item-address">${place.vicinity}</div></div></div>`;
         });
@@ -693,7 +691,7 @@
     function getPlaceCategory(place) { if (!place || !place.types) return ''; const placeName = (place.name || '').toLowerCase(); for (const categoryName in categoryKeywords) { const data = categoryKeywords[categoryName]; for (const keyword of data.keywords) { if (placeName.includes(keyword) || place.types.some(t => t.replace(/_/g, ' ').includes(keyword))) { return categoryName; } } } const mainType = place.types[0]; if (mainType) return mainType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); return ''; }
     function getCategoryColor(place) { if (!place) return defaultMarkerColor; const placeName = (place.name || '').toLowerCase(); const placeTypes = place.types || []; for (const categoryName in categoryKeywords) { const data = categoryKeywords[categoryName]; for (const keyword of data.keywords) { if (placeName.includes(keyword) || placeTypes.some(t => t.replace(/_/g, ' ').includes(keyword))) { return data.color; } } } const color = miscColors[miscColorIndex]; miscColorIndex = (miscColorIndex + 1) % miscColors.length; return color; }
     window.toggleHoursDetail = function(element) { const detailDiv = element.nextElementSibling; if (detailDiv) { detailDiv.style.display = detailDiv.style.display === 'block' ? 'none' : 'block'; } }
-    function getOpeningHoursInfo(details) { if (details && details.business_status === "CLOSED_PERMANENTLY") { return { statusText: '永久停業', statusColor: 'var(--danger-color)', weekday_text: [], currentDayIndex: -1 }; } if (!details || !details.opening_hours || typeof details.utc_offset_minutes === 'undefined') { return { statusText: '營業時間資訊不明', statusColor: 'var(--text-light)', weekday_text: [], currentDayIndex: -1 }; } const oh = details.opening_hours; const isOpen = typeof oh.isOpen === 'function' ? oh.isOpen() : oh.open_now; const now = new Date(); const userTimezoneOffset = now.getTimezoneOffset(); const restaurantNow = new Date(now.getTime() + (details.utc_offset_minutes + userTimezoneOffset) * 60000); const dayOfWeek = restaurantNow.getDay(); const googleDayIndex = (dayOfWeek + 6) % 7; let statusText = isOpen ? "營業中" : "休息中"; if (isOpen && oh.periods) { const period = oh.periods.find(p => p.open && p.open.day === dayOfWeek && p.close); if (period && period.close) { let closeTime = period.close.time; if (typeof closeTime === 'string') { statusText += ` • ${closeTime.substring(0, 2)}:${closeTime.substring(2, 4)} 關店`; } } } return { statusText, statusColor: isOpen ? "var(--success-color)" : "var(--danger-color)", weekday_text: oh.weekday_text || [], currentDayIndex: googleDayIndex }; }
+    function getOpeningHoursInfo(details) { if (details && details.business_status === "CLOSED_PERMANENTLY") { return { statusText: '永久停業', statusColor: 'var(--danger-color)', weekday_text: [], currentDayIndex: -1 }; } if (!details || !details.opening_hours || typeof details.utc_offset_minutes === 'undefined') { return { statusText: '營業時間資訊不明', statusColor: 'var(--text-light)', weekday_text: [], currentDayIndex: -1 }; } const oh = details.opening_hours; const isOpen = typeof oh.isOpen === 'function' ? oh.isOpen() : false; const now = new Date(); const userTimezoneOffset = now.getTimezoneOffset(); const restaurantNow = new Date(now.getTime() + (details.utc_offset_minutes + userTimezoneOffset) * 60000); const dayOfWeek = restaurantNow.getDay(); const googleDayIndex = (dayOfWeek + 6) % 7; let statusText = isOpen ? "營業中" : "休息中"; if (isOpen && oh.periods) { const period = oh.periods.find(p => p.open && p.open.day === dayOfWeek && p.close); if (period && period.close) { let closeTime = period.close.time; if (typeof closeTime === 'string') { statusText += ` • ${closeTime.substring(0, 2)}:${closeTime.substring(2, 4)} 關店`; } } } return { statusText, statusColor: isOpen ? "var(--success-color)" : "var(--danger-color)", weekday_text: oh.weekday_text || [], currentDayIndex: googleDayIndex }; }
     
     function showPlaceDetailsInWindow(details, marker) {
         if (activePlaceId !== details.place_id) return;
@@ -835,9 +833,9 @@
   </script>
   
   <script
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry,directions&callback=initMap"
-  defer
-></script>
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry,directions&callback=initMap"
+    defer
+  ></script>
 
 </body>
 </html>
