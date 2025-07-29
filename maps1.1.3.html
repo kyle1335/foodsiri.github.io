@@ -206,7 +206,6 @@
     .favorite-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 0 5px; color: #ddd; }
     .favorite-btn.is-favorite { color: var(--danger-color); }
     
-    /* --- MODIFICATION START: 新增營業時間詳細顯示樣式 --- */
     .opening-hours-details {
       font-size: 12px;
       color: var(--text-light);
@@ -229,7 +228,6 @@
       padding: 0 5px;
       text-decoration: underline;
     }
-    /* --- MODIFICATION END --- */
 
     .page-header { padding: 15px 20px; background-color: #fff; border-bottom: 1px solid #eee; text-align: center; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
     .page-header h2 { margin: 0; font-size: 18px; color: var(--text-color); display: flex; align-items: center; justify-content: center; flex-grow: 1; }
@@ -1002,21 +1000,18 @@
         }
     }
     
-    // --- MODIFICATION START: 新增營業時間切換顯示功能 ---
-    window.toggleOpeningHours = function(element) {
-        // Stop event propagation to prevent the info window from closing
-        event.stopPropagation();
-        
-        const detailsDiv = element.closest('.info-window-content').querySelector('.opening-hours-details');
-        const isExpanded = detailsDiv.classList.contains('expanded');
-        
-        if (isExpanded) {
-            detailsDiv.classList.remove('expanded');
-            element.textContent = '查看詳細時間';
-        } else {
-            detailsDiv.classList.add('expanded');
-            element.textContent = '收起';
-        }
+    // --- MODIFICATION START: 根據您的指示更新此函式 ---
+    window.toggleOpeningHours = function(evt, btn) {
+        // 停止冒泡，避免點到按鈕反而把 InfoWindow 關掉
+        evt.stopPropagation();
+
+        // 找到同一層級的 .opening-hours-details
+        const detailsDiv = btn
+            .closest('.info-window-content')
+            .querySelector('.opening-hours-details');
+
+        const expanded = detailsDiv.classList.toggle('expanded');
+        btn.textContent = expanded ? '收起' : '查看詳細時間';
     }
     // --- MODIFICATION END ---
 
@@ -1344,7 +1339,6 @@
     
     function getRoutePromise(origin, destination, travelMode) { return new Promise(resolve => { const request = { origin, destination, travelMode }; directionsService.route(request, (res, stat) => { if (stat === 'OK') { const leg = res.routes[0].legs[0]; resolve({ distance: leg.distance.text, duration: leg.duration.text, response: res }); } else { resolve(null); } }); }); }
     
-    // --- MODIFICATION START: 擴充請求的欄位 ---
     function getPlaceDetailsPromise(placeId) { 
         const request = { 
             placeId: placeId, 
@@ -1354,11 +1348,10 @@
             placesService.getDetails(request, (details, status) => { if (status === google.maps.places.PlacesServiceStatus.OK && details) { resolve(details); } else { resolve(null); } }); 
         }); 
     }
-    // --- MODIFICATION END ---
 
     function showSinglePlaceResult(place, routeInfo, placeDetails) { const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = ""; addRestaurantToList(place, routeInfo, placeDetails); highlightListItem(place.place_id); }
 
-    // --- MODIFICATION START: 豐富化資訊視窗內容 ---
+    // --- MODIFICATION START: 根據您的指示更新此函式 ---
     function showPlaceDetailsInWindow(place, marker, routeInfo = {}, details = null) {
         const isFav = isFavorite(place.place_id);
         const favIconClass = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
@@ -1396,7 +1389,8 @@
             
             let hoursHtml = `<p><i class="fas fa-clock"></i><span style="color: ${color}; font-weight: bold;">${statusText}</span>`;
             if (details.opening_hours.weekday_text) {
-                hoursHtml += `<button class="opening-hours-toggle" onclick="toggleOpeningHours(this)">查看詳細時間</button></p>
+                // 將 onclick 改為傳遞 event 和 this
+                hoursHtml += `<button class="opening-hours-toggle" onclick="toggleOpeningHours(event, this)">查看詳細時間</button></p>
                 <div class="opening-hours-details">${details.opening_hours.weekday_text.join('<br>')}</div>`;
             } else {
                 hoursHtml += `</p>`;
