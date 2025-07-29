@@ -622,8 +622,9 @@
     var editingPostId = null; 
     var viewingChallengeId = null;
     var activeFilter = null;
-    var userFavorites = new Set(); // 用 Set 來快速查找最愛
-    var userFriends = []; // Cache for friends list
+    var userFavorites = new Set();
+    var userFriends = [];
+    var qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
 
     const categoryKeywords = {
         '台式':     { color: '#42a5f5', keywords: ['taiwanese', '台式', '熱炒店'] },
@@ -646,11 +647,10 @@
     const miscColors = ['#4fc3f7', '#7986cb', '#ba68c8', '#aed581', '#ff8a65', '#90a4ae'];
     let miscColorIndex = 0;
     const defaultMarkerColor = '#EA4335';
-    var qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
 
     // --- Firebase 初始化 ---
     const firebaseConfig = {
-        apiKey: "YOUR_API_KEY", // 請替換成您的 Firebase API Key
+        apiKey: "YOUR_API_KEY", // ❗ 請替換成您的 Firebase API Key
         authDomain: "YOUR_AUTH_DOMAIN",
         projectId: "YOUR_PROJECT_ID",
         storageBucket: "YOUR_STORAGE_BUCKET",
@@ -729,7 +729,23 @@
         if (!currentUser) return;
         return db.collection('users').doc(currentUser.uid).collection('friends').doc(friendId).delete();
     }
-    // (Challenge Board functions would go here if using Firestore)
+    
+    async function getChallengeBoards() {
+        if (!currentUser) return [];
+        const snapshot = await db.collection('users').doc(currentUser.uid).collection('challenges').orderBy('createdAt', 'desc').get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+
+    async function getChallengeBoard(boardId) {
+        if (!currentUser) return null;
+        const doc = await db.collection('users').doc(currentUser.uid).collection('challenges').doc(boardId).get();
+        return doc.exists ? { id: doc.id, ...doc.data() } : null;
+    }
+
+    async function updateChallengeBoard(boardId, data) {
+        if (!currentUser) return;
+        return db.collection('users').doc(currentUser.uid).collection('challenges').doc(boardId).update(data);
+    }
 
     // --- Initialization & Core App Flow ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -822,7 +838,7 @@
             pageHistory = [];
         }
         if (pageId === 'random-page') updateRandomPageStatus();
-        if (pageId === 'challenge-page') { /* renderChallengePage(); */ }
+        if (pageId === 'challenge-page') { viewingChallengeId = null; renderChallengePage(); }
         if (pageId === 'profile-page') renderProfilePage();
     };
 
@@ -855,6 +871,7 @@
         userFavorites.clear();
         userFriends = [];
         renderProfilePage(); 
+        renderChallengePage();
         updateRandomPageStatus();
     }
 
@@ -873,7 +890,8 @@
                 const user = userCredential.user;
                 db.collection('users').doc(user.uid).set({
                     displayName: name,
-                    email: email
+                    email: email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 return user.updateProfile({ displayName: name });
             })
@@ -914,7 +932,8 @@
                     if (!doc.exists) {
                         userRef.set({
                             displayName: user.displayName,
-                            email: user.email
+                            email: user.email,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     }
                 });
@@ -1522,7 +1541,7 @@
         gradientString += ')';
         wheel.style.background = gradientString;
     }
-
+    
     // --- Event Handlers ---
     async function handleSaveReview() {
         if (!currentUser) { alert('請先登入！'); window.showPage('login-page'); return; }
@@ -1686,6 +1705,7 @@
 
     function displayPhotoPreviews(items) {
         const previewContainer = document.getElementById('photo-preview-container');
+        previewContainer.innerHTML = ''; // Clear previous previews
         for (const item of items) {
             if (item instanceof File) {
                 if (!item.type.startsWith('image/')){ continue; }
@@ -1718,11 +1738,10 @@
 
     function tick() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            qrStatusText.textContent = '掃描中...';
             canvasElement.height = video.videoHeight;
             canvasElement.width = video.videoWidth;
-            canvas.getContext('2d').drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-            var imageData = canvas.getContext('2d').getImageData(0, 0, canvasElement.width, canvasElement.height);
+            canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+            var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
             var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
 
             if (code) {
