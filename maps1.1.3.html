@@ -3,12 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>FoodieApp</title>
+  <title>FoodieApp (Firebase v9)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
-  <!-- External libraries are loaded first in the head -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <!-- Non-module scripts remain in the head -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
   <style>
@@ -655,12 +652,12 @@
 
     // --- Firebase 初始化 (v8 命名空間寫法) ---
     const firebaseConfig = {
-      apiKey: "AIzaSyBQNGqpCU04OhQ-Py3iKvWcSxGuDgwIFsQ", // ❗ 請替換成您的 Firebase API Key
-      authDomain: "foodiedata-b4982.firebaseapp.com",
-      projectId: "foodiedata-b4982",
-      storageBucket: "foodiedata-b4982.firebasestorage.app",
-      messagingSenderId: "90315404352",
-      appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5"
+      apiKey: "YOUR_API_KEY", // ❗ 請替換成您的 Firebase API Key
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth(); 
@@ -1843,11 +1840,6 @@
         } catch (e) { return null; }
     }
   </script>
-  
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
-    defer
-  ></script>
 
 </body>
 </html>
