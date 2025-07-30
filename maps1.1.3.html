@@ -611,6 +611,11 @@
     </div>
   </div>
 
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places,geometry&callback=initMap"
+    defer
+  ></script>
+
   <script>
     // --- 全域變數定義 ---
     var currentUser = null; 
@@ -648,18 +653,17 @@
     let miscColorIndex = 0;
     const defaultMarkerColor = '#EA4335';
 
-    // --- Firebase 初始化 ---
+    // --- Firebase 初始化 (v8 命名空間寫法) ---
     const firebaseConfig = {
-      apiKey: "AIzaSyBQNGqpCU04OhQ-Py3iKvWcSxGuDgwIFsQ",
+      apiKey: "AIzaSyBQNGqpCU04OhQ-Py3iKvWcSxGuDgwIFsQ", // ❗ 請替換成您的 Firebase API Key
       authDomain: "foodiedata-b4982.firebaseapp.com",
       projectId: "foodiedata-b4982",
       storageBucket: "foodiedata-b4982.firebasestorage.app",
       messagingSenderId: "90315404352",
-      appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5",
-      measurementId: "G-5FD72CVKGB"
+      appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5"
     };
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = getAuth(app); 
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth(); 
     db = firebase.firestore();
 
     // --- Firestore Data Helpers (CRUD) ---
