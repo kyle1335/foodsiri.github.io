@@ -412,6 +412,54 @@
       }
     }
   </style>
+
+  <!-- 關鍵修正：提前定義全域變數和函數 -->
+  <script>
+    // 全域變數先聲明
+    window.currentUser = null;
+    window.map = null;
+    window.userGpsPosition = null;
+    window.userMarker = null;
+    window.restaurantMarkers = [];
+    window.isMapReady = false;
+    window.pageHistory = [];
+    window.auth = null;
+    window.db = null;
+    window.selectedPlaceForReview = null;
+    window.editingPostId = null;
+    window.viewingChallengeId = null;
+    window.activeFilter = null;
+    window.userFavorites = new Set();
+    window.userFriends = [];
+    
+    // 必須提前定義的全域函數
+    window.initMap = function() {
+      console.log('initMap called successfully!');
+      // 這個函數會在模組載入後被重新定義
+    };
+    
+    // 其他必要的全域函數暫時佔位
+    window.showPage = function() { console.log('showPage placeholder'); };
+    window.applyFilter = function() { console.log('applyFilter placeholder'); };
+    window.clearSearch = function() { console.log('clearSearch placeholder'); };
+    window.centerOnUserGPS = function() { console.log('centerOnUserGPS placeholder'); };
+    window.goBack = function() { console.log('goBack placeholder'); };
+    window.handleRegister = function() { console.log('handleRegister placeholder'); };
+    window.handleSignIn = function() { console.log('handleSignIn placeholder'); };
+    window.handleGoogleSignIn = function() { console.log('handleGoogleSignIn placeholder'); };
+    window.handleSignOut = function() { console.log('handleSignOut placeholder'); };
+    window.showProfileTab = function() { console.log('showProfileTab placeholder'); };
+    window.handleSaveReview = function() { console.log('handleSaveReview placeholder'); };
+    window.toggleOpeningHours = function() { console.log('toggleOpeningHours placeholder'); };
+    window.handleToggleFavorite = function() { console.log('handleToggleFavorite placeholder'); };
+    window.openQrScanner = function() { console.log('openQrScanner placeholder'); };
+    window.closeQrScanner = function() { console.log('closeQrScanner placeholder'); };
+    window.startRandomPick = function() { console.log('startRandomPick placeholder'); };
+    window.createChallengeBoard = function() { console.log('createChallengeBoard placeholder'); };
+    window.searchFriend = function() { console.log('searchFriend placeholder'); };
+    window.renderChallengePage = function() { console.log('renderChallengePage placeholder'); };
+    window.goToReviewPageFromMap = function() { console.log('goToReviewPageFromMap placeholder'); };
+  </script>
 </head>
 <body>
   <div class="app-container">
@@ -643,18 +691,23 @@
         serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-    // --- 全域變數定義 ---
-    var currentUser = null; 
-    var map, userGpsPosition, userMarker, restaurantMarkers, debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
-    var isMapReady = false; 
-    var pageHistory = [];
-    var auth, db; 
-    var selectedPlaceForReview = null; 
-    var editingPostId = null; 
-    var viewingChallengeId = null;
-    var activeFilter = null;
-    var userFavorites = new Set();
-    var userFriends = [];
+    // --- 重新定義全域變數 (使用 window 上已宣告的變數) ---
+    var currentUser = window.currentUser; 
+    var map = window.map;
+    var userGpsPosition = window.userGpsPosition;
+    var userMarker = window.userMarker;
+    var restaurantMarkers = window.restaurantMarkers;
+    var debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
+    var isMapReady = window.isMapReady; 
+    var pageHistory = window.pageHistory;
+    var auth = window.auth;
+    var db = window.db; 
+    var selectedPlaceForReview = window.selectedPlaceForReview; 
+    var editingPostId = window.editingPostId; 
+    var viewingChallengeId = window.viewingChallengeId;
+    var activeFilter = window.activeFilter;
+    var userFavorites = window.userFavorites;
+    var userFriends = window.userFriends;
     var qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
 
     const categoryKeywords = {
@@ -679,7 +732,7 @@
     let miscColorIndex = 0;
     const defaultMarkerColor = '#EA4335';
 
-    // --- Firebase 初始化 (v9+ Modular 寫法) ---
+    // --- Firebase 初始化 (v9+ Modular 寫法保持不變) ---
     const firebaseConfig = {
       apiKey: "AIzaSyBQNGqpCU04OhQ-Py3iKvWcSxGuDgwIFsQ",
       authDomain: "foodiedata-b4982.firebaseapp.com",
@@ -693,7 +746,11 @@
     auth = getAuth(app); 
     db = getFirestore(app);
 
-    // --- Firestore Data Helpers (CRUD) ---
+    // 更新全域變數
+    window.auth = auth;
+    window.db = db;
+
+    // --- Firestore Data Helpers (CRUD) - 保持不變 ---
     async function getPosts() {
         if (!currentUser) return [];
         const q = query(collection(db, 'users', currentUser.uid, 'posts'), orderBy('timestamp', 'desc'));
@@ -787,6 +844,40 @@
         return updateDoc(docRef, data);
     }
 
+    // --- 重新定義 initMap 函數到全域作用域 ---
+    window.initMap = function() {
+        console.log('🗺️ initMap called - Firebase v9 version');
+        isMapReady = true;
+        window.isMapReady = true;
+        userGpsPosition = { lat: 25.0479, lng: 121.5171 };
+        restaurantMarkers = [];
+        
+        map = new google.maps.Map(document.getElementById("map"), {
+            center: userGpsPosition,
+            zoom: 15,
+            disableDefaultUI: true,
+            zoomControl: true
+        });
+        
+        window.map = map;
+        
+        placesService = new google.maps.places.PlacesService(map);
+        infoWindow = new google.maps.InfoWindow();
+        directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer({
+            map: map,
+            suppressMarkers: true,
+            polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 }
+        });
+        
+        createUserMarker(userGpsPosition);
+        setupMapListeners();
+        setupAutocomplete();
+        updateUserGPS();
+        
+        console.log('✅ 地圖初始化完成！');
+    };
+
     // --- Initialization & Core App Flow ---
     document.addEventListener('DOMContentLoaded', () => {
         const setVh = () => {
@@ -798,6 +889,7 @@
 
         onAuthStateChanged(auth, user => { 
             currentUser = user;
+            window.currentUser = user;
             if (user) { 
                 setupLoggedInUI(user);
             } else { 
@@ -833,31 +925,6 @@
         cameraFileInput.addEventListener('change', handleFileSelection);
         window.showPage('map-page', document.querySelector('.nav-item')); 
     });
-
-    window.initMap = function() {
-        isMapReady = true;
-        userGpsPosition = { lat: 25.0479, lng: 121.5171 };
-        restaurantMarkers = [];
-        map = new google.maps.Map(document.getElementById("map"), {
-            center: userGpsPosition,
-            zoom: 15,
-            disableDefaultUI: true,
-            zoomControl: true
-        });
-        placesService = new google.maps.places.PlacesService(map);
-        infoWindow = new google.maps.InfoWindow();
-        directionsService = new google.maps.DirectionsService();
-        directionsRenderer = new google.maps.DirectionsRenderer({
-            map: map,
-            suppressMarkers: true,
-            polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 }
-        });
-        
-        createUserMarker(userGpsPosition);
-        setupMapListeners();
-        setupAutocomplete();
-        updateUserGPS();
-    };
     
     // --- Page Navigation & UI ---
     window.showPage = function(pageId, navElement = null) {
