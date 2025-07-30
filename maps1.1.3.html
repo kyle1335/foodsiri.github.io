@@ -656,13 +656,14 @@
     </div>
   </div>
 
+  <!-- 修正：先載入 Google Maps API，再載入模組 -->
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
     defer
   ></script>
   
   <script type="module">
-    // --- Firebase SDK v9+ Imports ---
+    // --- Firebase SDK v9+ Imports (保持不變) ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { 
       getAuth, 
