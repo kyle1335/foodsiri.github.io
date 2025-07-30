@@ -612,8 +612,37 @@
     src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places,geometry&callback=initMap"
     defer
   ></script>
+  
+  <script type="module">
+    // --- Firebase SDK v9+ Imports ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { 
+      getAuth, 
+      onAuthStateChanged, 
+      createUserWithEmailAndPassword, 
+      signInWithEmailAndPassword,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      updateProfile
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { 
+        getFirestore, 
+        collection, 
+        doc, 
+        setDoc, 
+        getDoc, 
+        addDoc, 
+        getDocs, 
+        updateDoc, 
+        deleteDoc,
+        query,
+        where,
+        orderBy,
+        limit,
+        serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  <script>
     // --- 全域變數定義 ---
     var currentUser = null; 
     var map, userGpsPosition, userMarker, restaurantMarkers, debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
@@ -650,50 +679,54 @@
     let miscColorIndex = 0;
     const defaultMarkerColor = '#EA4335';
 
-    // --- Firebase 初始化 (v8 命名空間寫法) ---
+    // --- Firebase 初始化 (v9+ Modular 寫法) ---
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY", // ❗ 請替換成您的 Firebase API Key
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyBQNGqpCU04OhQ-Py3iKvWcSxGuDgwIFsQ",
+      authDomain: "foodiedata-b4982.firebaseapp.com",
+      projectId: "foodiedata-b4982",
+      storageBucket: "foodiedata-b4982.firebasestorage.app",
+      messagingSenderId: "90315404352",
+      appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5",
+      measurementId: "G-5FD72CVKGB"
     };
-    firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth(); 
-    db = firebase.firestore();
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app); 
+    db = getFirestore(app);
 
     // --- Firestore Data Helpers (CRUD) ---
     async function getPosts() {
         if (!currentUser) return [];
-        const snapshot = await db.collection('users').doc(currentUser.uid).collection('posts').orderBy('timestamp', 'desc').get();
+        const q = query(collection(db, 'users', currentUser.uid, 'posts'), orderBy('timestamp', 'desc'));
+        const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
 
     async function savePost(postData) {
         if (!currentUser) return;
-        const collectionRef = db.collection('users').doc(currentUser.uid).collection('posts');
+        const collectionRef = collection(db, 'users', currentUser.uid, 'posts');
         if (editingPostId) {
-            return collectionRef.doc(editingPostId).update({
+            const docRef = doc(db, 'users', currentUser.uid, 'posts', editingPostId);
+            return updateDoc(docRef, {
                 ...postData,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                updatedAt: serverTimestamp()
             });
         } else {
-            return collectionRef.add({
+            return addDoc(collectionRef, {
                 ...postData,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                timestamp: serverTimestamp()
             });
         }
     }
 
     async function deletePostFromDB(postId) {
         if (!currentUser) return;
-        return db.collection('users').doc(currentUser.uid).collection('posts').doc(postId).delete();
+        const docRef = doc(db, 'users', currentUser.uid, 'posts', postId);
+        return deleteDoc(docRef);
     }
     
     async function getFavorites() {
         if (!currentUser) return [];
-        const snapshot = await db.collection('users').doc(currentUser.uid).collection('favorites').get();
+        const snapshot = await getDocs(collection(db, 'users', currentUser.uid, 'favorites'));
         const favorites = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         userFavorites = new Set(favorites.map(f => f.id));
         return favorites;
@@ -705,48 +738,53 @@
 
     async function toggleFavoriteInDB(place) {
         if (!currentUser) return;
-        const favoriteRef = db.collection('users').doc(currentUser.uid).collection('favorites').doc(place.place_id);
+        const favoriteRef = doc(db, 'users', currentUser.uid, 'favorites', place.place_id);
         if (isFavorite(place.place_id)) {
-            await favoriteRef.delete();
+            await deleteDoc(favoriteRef);
             userFavorites.delete(place.place_id);
         } else {
-            await favoriteRef.set({ name: place.name, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            await setDoc(favoriteRef, { name: place.name, addedAt: serverTimestamp() });
             userFavorites.add(place.place_id);
         }
     }
 
     async function getFriends() {
         if (!currentUser) return [];
-        const snapshot = await db.collection('users').doc(currentUser.uid).collection('friends').get();
+        const snapshot = await getDocs(collection(db, 'users', currentUser.uid, 'friends'));
         userFriends = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         return userFriends;
     }
 
     async function saveFriend(friendData) {
         if (!currentUser) return;
-        return db.collection('users').doc(currentUser.uid).collection('friends').doc(friendData.id).set(friendData);
+        const friendRef = doc(db, 'users', currentUser.uid, 'friends', friendData.id);
+        return setDoc(friendRef, friendData);
     }
 
     async function removeFriend(friendId) {
         if (!currentUser) return;
-        return db.collection('users').doc(currentUser.uid).collection('friends').doc(friendId).delete();
+        const friendRef = doc(db, 'users', currentUser.uid, 'friends', friendId);
+        return deleteDoc(friendRef);
     }
     
     async function getChallengeBoards() {
         if (!currentUser) return [];
-        const snapshot = await db.collection('users').doc(currentUser.uid).collection('challenges').orderBy('createdAt', 'desc').get();
+        const q = query(collection(db, 'users', currentUser.uid, 'challenges'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
 
     async function getChallengeBoard(boardId) {
         if (!currentUser) return null;
-        const doc = await db.collection('users').doc(currentUser.uid).collection('challenges').doc(boardId).get();
-        return doc.exists ? { id: doc.id, ...doc.data() } : null;
+        const docRef = doc(db, 'users', currentUser.uid, 'challenges', boardId);
+        const docSnap = await getDoc(docRef);
+        return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
     }
 
     async function updateChallengeBoard(boardId, data) {
         if (!currentUser) return;
-        return db.collection('users').doc(currentUser.uid).collection('challenges').doc(boardId).update(data);
+        const docRef = doc(db, 'users', currentUser.uid, 'challenges', boardId);
+        return updateDoc(docRef, data);
     }
 
     // --- Initialization & Core App Flow ---
@@ -758,7 +796,7 @@
         setVh();
         window.addEventListener('resize', setVh);
 
-        auth.onAuthStateChanged(user => { 
+        onAuthStateChanged(auth, user => { 
             currentUser = user;
             if (user) { 
                 setupLoggedInUI(user);
@@ -796,7 +834,7 @@
         window.showPage('map-page', document.querySelector('.nav-item')); 
     });
 
-    function initMap() {
+    window.initMap = function() {
         isMapReady = true;
         userGpsPosition = { lat: 25.0479, lng: 121.5171 };
         restaurantMarkers = [];
@@ -887,15 +925,16 @@
             errorDiv.textContent = '所有欄位都必須填寫！';
             return;
         }
-        auth.createUserWithEmailAndPassword(email, password)
+        createUserWithEmailAndPassword(auth, email, password)
             .then(userCredential => {
                 const user = userCredential.user;
-                db.collection('users').doc(user.uid).set({
+                const userDocRef = doc(db, 'users', user.uid);
+                setDoc(userDocRef, {
                     displayName: name,
                     email: email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    createdAt: serverTimestamp()
                 });
-                return user.updateProfile({ displayName: name });
+                return updateProfile(user, { displayName: name });
             })
             .then(() => { window.goBack(); })
             .catch(error => {
@@ -919,26 +958,25 @@
             return;
         }
 
-        auth.signInWithEmailAndPassword(email, password)
+        signInWithEmailAndPassword(auth, email, password)
             .then(() => { window.goBack(); })
             .catch(error => { errorDiv.textContent = '登入失敗，請檢查信箱或密碼。'; });
     }
 
     window.handleGoogleSignIn = function() { 
-        const provider = new firebase.auth.GoogleAuthProvider(); 
-        auth.signInWithPopup(provider)
-            .then((result) => { 
+        const provider = new GoogleAuthProvider(); 
+        signInWithPopup(auth, provider)
+            .then(async (result) => { 
                 const user = result.user;
-                const userRef = db.collection('users').doc(user.uid);
-                userRef.get().then(doc => {
-                    if (!doc.exists) {
-                        userRef.set({
-                            displayName: user.displayName,
-                            email: user.email,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
-                });
+                const userRef = doc(db, 'users', user.uid);
+                const docSnap = await getDoc(userRef);
+                if (!docSnap.exists()) {
+                    setDoc(userRef, {
+                        displayName: user.displayName,
+                        email: user.email,
+                        createdAt: serverTimestamp()
+                    });
+                }
                 window.goBack(); 
             })
             .catch(error => { 
@@ -948,7 +986,7 @@
     }
 
     window.handleSignOut = function() { 
-        auth.signOut().catch(error => console.error("登出錯誤:", error)); 
+        signOut(auth).catch(error => console.error("登出錯誤:", error)); 
     }
     
     // --- Map & Places API Functions ---
