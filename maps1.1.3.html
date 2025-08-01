@@ -658,6 +658,666 @@
 
   <!-- 修正：先載入 Google Maps API，再載入模組 -->
   <script
+    src="https://maps.googleapis.com/maps/api/js?key=<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>FoodieApp (Firebase v9)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+  <!-- Non-module scripts remain in the head -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+  <style>
+    :root { 
+      --primary-color: #667eea; 
+      --secondary-color: #764ba2; 
+      --success-color: #28a745; 
+      --danger-color: #dc3545; 
+      --background-color: #f8f9fa; 
+      --text-color: #333; 
+      --text-light: #6c757d; 
+      --nav-height: 60px;
+      --vh: 1vh; 
+    }
+    html {
+        height: 100%;
+    }
+    body { 
+        height: 100%; 
+        margin: 0; 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+        background-color: #e9ebee;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+    .app-container { 
+      width: 100%;
+      height: 100%;
+      max-width: 390px;
+      max-height: 844px;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--background-color);
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.25);
+      border-radius: 40px;
+      border: 10px solid #111;
+      position: relative;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    main { 
+      flex: 1;
+      overflow: hidden; 
+      position: relative;
+      display: flex;
+    }
+    .page { 
+      width: 100%; height: 100%; 
+      display: none; 
+      flex-direction: column; 
+      overflow: hidden; 
+    }
+    .page.active { 
+      display: flex; 
+    }
+    .app-nav { height: var(--nav-height); width: 100%; background: #fff; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-around; align-items: center; flex-shrink: 0; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-light); font-size: 12px; cursor: pointer; transition: color 0.2s; width: 100%; }
+    .nav-item i { font-size: 22px; margin-bottom: 4px; }
+    .nav-item.active { color: var(--primary-color); }
+    #map-page { 
+      flex-direction: column; 
+    }
+    #map-panel { 
+      flex: 6.5;
+      position: relative; 
+      background: #e5e3df; 
+      width: 100%; 
+    }
+    #list-panel { 
+      flex: 3.5;
+      border-top: 1px solid #ddd; 
+      display: flex; 
+      flex-direction: column; 
+      background: white; 
+      overflow: hidden; 
+      width: 100%; 
+    }
+    #map { width: 100%; height: 100%; }
+    .search-area { padding: 15px; border-bottom: 1px solid #eee; background: white; flex-shrink: 0; position: relative; }
+    .search-input { width: 100%; padding: 12px 40px 12px 15px; font-size: 16px; border-radius: 25px; border: 1px solid #ccc; box-sizing: border-box; }
+    .clear-search-btn { position: absolute; top: 50%; right: 25px; transform: translateY(-50%); background: #ccc; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold; color: white; display: none; justify-content: center; align-items: center; }
+    
+    .filter-tags-container {
+      display: flex;
+      justify-content: flex-start;
+      gap: 8px;
+      padding: 0 15px 15px 15px;
+      background: white;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch; 
+    }
+    
+    .filter-tags-container::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .filter-tags-container::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .filter-tags-container::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 4px;
+    }
+
+    .filter-tags-container::-webkit-scrollbar-thumb:hover {
+      background: #aaa;
+    }
+
+    .filter-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 14px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      background-color: #f0f0f0;
+      color: var(--text-color);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap; 
+      transition: all 0.2s ease-in-out;
+    }
+    
+    .filter-tag[data-filter-value="distance"]:hover {
+      background-color: #e8eaf6;
+    }
+    .filter-tag[data-filter-value="distance"].active {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .filter-tag:not([data-filter-value="distance"]):hover {
+        filter: brightness(0.95);
+    }
+
+    .filter-tag.active {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .filter-tag[data-filter-value="台式"]     { background-color: #e3f2fd; border-color: #bbdefb; color: #1565c0; }
+    .filter-tag[data-filter-value="日式"]     { background-color: #ffebee; border-color: #ffcdd2; color: #c62828; }
+    .filter-tag[data-filter-value="居酒屋"]   { background-color: #f3e5f5; border-color: #e1bee7; color: #6a1b9a; }
+    .filter-tag[data-filter-value="酒吧"]     { background-color: #ede7f6; border-color: #d1c4e9; color: #4527a0; }
+    .filter-tag[data-filter-value="熱炒"]     { background-color: #fff8e1; border-color: #ffecb3; color: #ffa000; }
+    .filter-tag[data-filter-value="火鍋"]     { background-color: #fff3e0; border-color: #ffe0b2; color: #ef6c00; }
+    .filter-tag[data-filter-value="美式"]     { background-color: #e1f5fe; border-color: #b3e5fc; color: #0277bd; }
+    .filter-tag[data-filter-value="中式"]     { background-color: #fbe9e7; border-color: #ffccbc; color: #d84315; }
+    .filter-tag[data-filter-value="義式"]     { background-color: #e8f5e9; border-color: #c8e6c9; color: #2e7d32; }
+    .filter-tag[data-filter-value="泰式"]     { background-color: #e0f2f1; border-color: #b2dfdb; color: #00695c; }
+    .filter-tag[data-filter-value="越式"]     { background-color: #f1f8e9; border-color: #dcedc8; color: #558b2f; }
+    .filter-tag[data-filter-value="咖啡廳"]   { background-color: #efebe9; border-color: #d7ccc8; color: #5d4037; }
+    .filter-tag[data-filter-value="早午餐"]   { background-color: #fffde7; border-color: #fff9c4; color: #f57f17; }
+    .filter-tag[data-filter-value="手搖飲"]   { background-color: #e0f7fa; border-color: #b2ebf2; color: #00838f; }
+    .filter-tag[data-filter-value="小吃"]     { background-color: #eceff1; border-color: #cfd8dc; color: #37474f; }
+
+    .filter-tag[data-filter-value="台式"].active     { background-color: #42a5f5; border-color: #42a5f5; color: white; }
+    .filter-tag[data-filter-value="日式"].active     { background-color: #e57373; border-color: #e57373; color: white; }
+    .filter-tag[data-filter-value="居酒屋"].active   { background-color: #ab47bc; border-color: #ab47bc; color: white; }
+    .filter-tag[data-filter-value="酒吧"].active     { background-color: #7e57c2; border-color: #7e57c2; color: white; }
+    .filter-tag[data-filter-value="熱炒"].active     { background-color: #ffca28; border-color: #ffca28; color: #333; }
+    .filter-tag[data-filter-value="火鍋"].active     { background-color: #ff9800; border-color: #fb8c00; color: white; }
+    .filter-tag[data-filter-value="美式"].active     { background-color: #29b6f6; border-color: #29b6f6; color: white; }
+    .filter-tag[data-filter-value="中式"].active     { background-color: #ff7043; border-color: #ff7043; color: white; }
+    .filter-tag[data-filter-value="義式"].active     { background-color: #66bb6a; border-color: #66bb6a; color: white; }
+    .filter-tag[data-filter-value="泰式"].active     { background-color: #26a69a; border-color: #26a69a; color: white; }
+    .filter-tag[data-filter-value="越式"].active     { background-color: #9ccc65; border-color: #9ccc65; color: #333; }
+    .filter-tag[data-filter-value="咖啡廳"].active   { background-color: #795548; border-color: #6d4c41; color: white; }
+    .filter-tag[data-filter-value="早午餐"].active   { background-color: #ffee58; border-color: #fdd835; color: #333; }
+    .filter-tag[data-filter-value="手搖飲"].active   { background-color: #26c6da; border-color: #26c6da; color: white; }
+    .filter-tag[data-filter-value="小吃"].active     { background-color: #78909c; border-color: #78909c; color: white; }
+
+    .list-content { overflow-y: auto; flex-grow: 1; }
+    .list-item { display: flex; align-items: flex-start; gap: 15px; padding: 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background-color 0.2s; }
+    .list-item.is-selected { background-color: #e8eaf6; border-left: 4px solid var(--primary-color); padding-left: 11px; }
+    .item-icon { font-size: 18px; color: var(--primary-color); margin-top: 3px; flex-shrink: 0; }
+    .item-info { flex-grow: 1; min-width: 0; }
+    .item-name { font-weight: 600; font-size: 16px; }
+    .item-details, .item-address { font-size: 13px; color: var(--text-light); margin-top: 4px; }
+    .item-address { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-distance { font-weight: 500; font-size: 14px; color: var(--text-color); white-space: nowrap; text-align: right; }
+    .open-status.open { color: #28a745; font-weight: bold; }
+    .open-status.closed { color: #dc3545; font-weight: bold; }
+    .list-status-text { text-align: center; color: #999; padding: 40px 20px; }
+    .location-btn { position: absolute; bottom: 20px; right: 20px; background: #fff; color: var(--primary-color); border: none; width: 50px; height: 50px; border-radius: 25px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); cursor: pointer; z-index: 10; font-size: 24px; display: flex; justify-content: center; align-items: center; }
+    .gm-style-iw-d { overflow: auto !important; }
+    .info-window-content { font-family: inherit; padding: 5px; max-width: 280px; }
+    .info-window-content h4 { font-size: 16px; margin: 0 0 8px 0; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+    .info-window-content p { font-size: 14px; margin: 0 0 5px 0; color: #555; display: flex; align-items: center; }
+    .info-window-content i { margin-right: 8px; color: var(--primary-color); width: 16px; text-align: center; flex-shrink: 0; }
+    .favorite-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 0 5px; color: #ddd; }
+    .favorite-btn.is-favorite { color: var(--danger-color); }
+    
+    .opening-hours-details {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 5px;
+      padding-left: 24px;
+      line-height: 1.5;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    .opening-hours-details.expanded {
+      max-height: 200px;
+    }
+    .opening-hours-toggle {
+      background: none;
+      border: none;
+      color: var(--primary-color);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 0 5px;
+      text-decoration: underline;
+    }
+
+    .page-header { padding: 15px 20px; background-color: #fff; border-bottom: 1px solid #eee; text-align: center; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
+    .page-header h2 { margin: 0; font-size: 18px; color: var(--text-color); display: flex; align-items: center; justify-content: center; flex-grow: 1; }
+    .page-header h2 i { margin-right: 10px; color: var(--primary-color); }
+    .header-action { font-size: 16px; color: var(--primary-color); text-decoration: none; cursor: pointer; }
+    .header-back-btn { font-size: 20px; color: var(--text-color); cursor: pointer; }
+    .page-header .placeholder { width: 24px; }
+    .page-content { flex-grow: 1; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+    .placeholder-text { text-align: center; color: var(--text-light); margin-top: 50px; padding: 20px; }
+    .btn { display: block; width: 100%; padding: 15px; background-color: var(--success-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; }
+    #random-picker-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; box-sizing: border-box; }
+    
+    #picker-wheel { 
+      width: 280px; 
+      height: 280px; 
+      border: 10px solid #ddd; 
+      border-radius: 50%; 
+      position: relative; 
+      margin-bottom: 30px; 
+      transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1);
+      overflow: hidden; 
+    }
+    .slice-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 90px; 
+        height: 60px; 
+        margin-left: -45px;
+        margin-top: -30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform-origin: center center;
+        color: white;
+        font-weight: 600;
+        font-size: 12px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+        text-align: center;
+        pointer-events: none; 
+    }
+    #picker-arrow { 
+      width: 0; 
+      height: 0; 
+      border-left: 15px solid transparent; 
+      border-right: 15px solid transparent; 
+      border-top: 25px solid var(--danger-color); 
+      position: absolute; 
+      top: -35px;
+      left: 50%; 
+      transform: translateX(-50%); 
+      z-index: 10; 
+    }
+    #picker-result { 
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 80px;
+      background-color: white;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px; 
+      font-weight: bold; 
+      color: var(--primary-color); 
+      text-align: center; 
+      z-index: 5;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    #random-status-text {
+        min-height: 40px; 
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text-color);
+    }
+    #random-status-text.placeholder-text {
+        font-size: 14px;
+        font-weight: normal;
+        color: var(--text-light);
+    }
+
+    .form-group { margin-bottom: 20px; position: relative; } .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-color); } .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; } .form-group select { background-color: white; -webkit-appearance: none; } .form-group textarea { min-height: 120px; resize: vertical; } .rating-hearts { display: flex; gap: 10px; font-size: 30px; color: #ddd; cursor: pointer; } .rating-hearts .fa-heart:hover, .rating-hearts .fa-heart.active { color: #ff4d6d; } 
+    .photo-upload-container { background: #f0f0f0; border: 2px dashed #ccc; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+    .photo-upload-buttons { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+    .btn-upload { background: #fff; color: var(--text-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; display: inline-flex; align-items: center; }
+    .btn-upload i { margin-right: 8px; }
+    #photo-preview-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; justify-content: center; }
+    .photo-preview-item { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+    .photo-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+    .delete-photo-btn { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; background-color: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; line-height: 20px; }
+    .profile-tabs { display: flex; gap: 10px; padding: 15px 20px; background: #fff; border-bottom: 1px solid #eee; overflow-x: auto; flex-shrink: 0; } .tab-btn { background: #f0f0f0; border: none; border-radius: 20px; padding: 8px 15px; font-size: 14px; cursor: pointer; white-space: nowrap; } .tab-btn.active { background: var(--primary-color); color: #fff; } .tab-content { display: none; } .tab-content.active { display: block; }
+    .record-card, .post-card { position: relative; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); } .record-card .title, .post-card .title { font-weight: 600; margin-bottom: 5px; } .record-card .details, .post-card .details { font-size: 14px; color: var(--text-light); } .record-card .cost { font-weight: bold; color: var(--success-color); float: right; } .post-card .content { margin-top: 10px; font-size: 15px; line-height: 1.6; } .post-card .post-rating { margin-top: 10px; color: #ff4d6d; }
+    .post-photos { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .post-photos img { width: 70px; height: 70px; object-fit: cover; border-radius: 6px; border: 1px solid #eee; }
+    .card-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 8px; }
+    .action-btn { background: none; border: 1px solid #ccc; border-radius: 5px; padding: 3px 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+    .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .action-btn.btn-edit { color: var(--primary-color); border-color: var(--primary-color); }
+    .action-btn.btn-edit:hover:not(:disabled) { background: var(--primary-color); color: white; }
+    .action-btn.btn-delete { color: var(--danger-color); border-color: var(--danger-color); }
+    .action-btn.btn-delete:hover:not(:disabled) { background: var(--danger-color); color: white; }
+    .auth-form-container { width: 100%; max-width: 400px; margin: 0 auto; padding: 20px;}
+    .auth-form-container h3 { text-align: center; margin-bottom: 20px; font-size: 20px; }
+    .auth-form-container input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
+    .btn-auth { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; margin-bottom: 10px; color: #fff; font-weight: bold; }
+    .btn-auth.primary { background-color: var(--primary-color); }
+    .btn-auth.secondary { background-color: #fff; color: #4285F4; border: 1px solid #ddd; display:flex; align-items:center; justify-content:center; gap: 10px;}
+    .auth-separator { display: flex; align-items: center; text-align: center; color: #aaa; margin: 20px 0; }
+    .auth-separator::before, .auth-separator::after { content: ''; flex: 1; border-bottom: 1px solid #ddd; }
+    .auth-separator:not(:empty)::before { margin-right: .25em; }
+    .auth-separator:not(:empty)::after { margin-left: .25em; }
+    .auth-switch-link { text-align: center; margin-top: 15px; font-size: 14px; color: var(--primary-color); cursor: pointer; }
+    #auth-error { color: #dc3545; margin-top: 15px; min-height: 20px; font-weight: 500; text-align: center; }
+    .btn-scan-qr { position: absolute; top: 0; right: 0; background: var(--primary-color); color: white; border: none; border-radius: 0 8px 0 8px; padding: 5px 10px; font-size: 13px; cursor: pointer; }
+    .btn-scan-qr i { margin-right: 5px; }
+    #qr-scanner-modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); flex-direction: column; justify-content: center; align-items: center; }
+    .qr-scanner-content { position: relative; background-color: #111; padding: 20px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 10px; text-align: center; }
+    #qr-scanner-video { width: 100%; border-radius: 8px; }
+    #qr-status-text { color: white; font-size: 16px; margin-top: 15px; height: 40px; line-height: 1.4; }
+    .qr-scanner-close-btn { position: absolute; top: -15px; right: -15px; color: white; background-color: #dc3545; border-radius: 50%; width: 30px; height: 30px; font-size: 20px; font-weight: bold; cursor: pointer; border: 2px solid white; display:flex; justify-content:center; align-items:center; }
+    #scan-box { position: absolute; left: 50%; top: 50%; width: 60%; height: 50%; transform: translate(-50%, -50%); border: 3px solid rgba(255, 255, 255, 0.7); border-radius: 10px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); }
+    
+    .challenge-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      transition: background-color 0.2s;
+    }
+    .challenge-text {
+      font-size: 16px;
+      flex-grow: 1;
+      margin-right: 15px;
+    }
+    .challenge-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .accounting-date-group { margin-bottom: 20px; }
+    .accounting-date-header { font-size: 16px; font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 10px; }
+    .accounting-meal-header { font-size: 14px; font-weight: 500; color: var(--text-light); margin: 15px 0 5px 0; }
+    
+    @media (min-width: 1200px) {
+      .app-container {
+        width: 100%;
+        max-width: 1280px;
+        height: 90vh;
+        max-height: 800px;
+        border-radius: 12px;
+        border: 1px solid #ccc;
+      }
+      #map-page {
+        flex-direction: row;
+      }
+      #map-panel {
+        width: 60%;
+        height: 100%;
+        flex: 6;
+      }
+      #list-panel {
+        width: 40%;
+        height: 100%;
+        flex: 4;
+        border-top: none;
+        border-left: 1px solid #ddd;
+      }
+      #add-review-page .page-content,
+      #challenge-page .page-content,
+      #profile-page .page-content,
+      #login-page .page-content,
+      #register-page .page-content {
+        max-width: 700px;
+        width: 100%;
+        margin: 0 auto;
+      }
+    }
+  </style>
+
+  <!-- 關鍵修正：提前定義全域變數和函數 -->
+  <script>
+    // 全域變數先聲明
+    window.currentUser = null;
+    window.map = null;
+    window.userGpsPosition = null;
+    window.userMarker = null;
+    window.restaurantMarkers = [];
+    window.isMapReady = false;
+    window.pageHistory = [];
+    window.auth = null;
+    window.db = null;
+    window.selectedPlaceForReview = null;
+    window.editingPostId = null;
+    window.viewingChallengeId = null;
+    window.activeFilter = null;
+    window.userFavorites = new Set();
+    window.userFriends = [];
+    
+    // 必須提前定義的全域函數
+    window.initMap = function() {
+      console.log('initMap called successfully!');
+      // 這個函數會在模組載入後被重新定義
+    };
+    
+    // 其他必要的全域函數暫時佔位
+    window.showPage = function() { console.log('showPage placeholder'); };
+    window.applyFilter = function() { console.log('applyFilter placeholder'); };
+    window.clearSearch = function() { console.log('clearSearch placeholder'); };
+    window.centerOnUserGPS = function() { console.log('centerOnUserGPS placeholder'); };
+    window.goBack = function() { console.log('goBack placeholder'); };
+    window.handleRegister = function() { console.log('handleRegister placeholder'); };
+    window.handleSignIn = function() { console.log('handleSignIn placeholder'); };
+    window.handleGoogleSignIn = function() { console.log('handleGoogleSignIn placeholder'); };
+    window.handleSignOut = function() { console.log('handleSignOut placeholder'); };
+    window.showProfileTab = function() { console.log('showProfileTab placeholder'); };
+    window.handleSaveReview = function() { console.log('handleSaveReview placeholder'); };
+    window.toggleOpeningHours = function() { console.log('toggleOpeningHours placeholder'); };
+    window.handleToggleFavorite = function() { console.log('handleToggleFavorite placeholder'); };
+    window.openQrScanner = function() { console.log('openQrScanner placeholder'); };
+    window.closeQrScanner = function() { console.log('closeQrScanner placeholder'); };
+    window.startRandomPick = function() { console.log('startRandomPick placeholder'); };
+    window.createChallengeBoard = function() { console.log('createChallengeBoard placeholder'); };
+    window.searchFriend = function() { console.log('searchFriend placeholder'); };
+    window.renderChallengePage = function() { console.log('renderChallengePage placeholder'); };
+    window.goToReviewPageFromMap = function() { console.log('goToReviewPageFromMap placeholder'); };
+  </script>
+</head>
+<body>
+  <div class="app-container">
+    <main>
+      <div id="map-page" class="page active">
+        <div id="map-panel">
+          <div id="map"></div>
+          <button class="location-btn" onclick="centerOnUserGPS()"><i class="fas fa-location-arrow"></i></button>
+        </div>
+        <div id="list-panel">
+          <div class="search-area">
+            <input type="text" id="search-input" class="search-input" placeholder="搜尋餐廳或地點...">
+            <button class="clear-search-btn" id="clear-search" onclick="clearSearch()">×</button>
+          </div>
+          <div class="filter-tags-container">
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="早午餐" onclick="applyFilter(this)">早午餐</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="台式" onclick="applyFilter(this)">台式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="日式" onclick="applyFilter(this)">日式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="熱炒" onclick="applyFilter(this)">熱炒</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="火鍋" onclick="applyFilter(this)">火鍋</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="美式" onclick="applyFilter(this)">美式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="中式" onclick="applyFilter(this)">中式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="義式" onclick="applyFilter(this)">義式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="泰式" onclick="applyFilter(this)">泰式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="越式" onclick="applyFilter(this)">越式</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="咖啡廳" onclick="applyFilter(this)">咖啡廳</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="手搖飲" onclick="applyFilter(this)">手搖飲</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="小吃" onclick="applyFilter(this)">小吃</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="居酒屋" onclick="applyFilter(this)">居酒屋</button>
+            <button class="filter-tag" data-filter-type="keyword" data-filter-value="酒吧" onclick="applyFilter(this)">酒吧</button>
+          </div>
+          <div class="list-content" id="list-content-area"><p class="list-status-text">正在初始化地圖...</p></div>
+        </div>
+      </div>
+      <div id="random-page" class="page">
+        <div class="page-header"><h2><i class="fa-solid fa-dice"></i>美食隨機選</h2><div class="placeholder"></div></div>
+        <div id="random-picker-container">
+            <div id="picker-arrow"></div>
+            <div id="picker-wheel">
+                <div id="picker-result">?</div>
+            </div>
+            <button class="btn" id="random-pick-btn" onclick="startRandomPick()">開始抽籤！</button>
+            <p id="random-status-text" class="placeholder-text" style="background: none; margin-top: 20px;"></p>
+        </div>
+      </div>
+      <div id="add-review-page" class="page">
+        <div class="page-header"><h2 id="add-review-header"><i class="fa-solid fa-pencil"></i>新增美食評論</h2><div class="placeholder"></div></div>
+        <div class="page-content">
+            <div class="form-group"><label for="review-restaurant-name">餐廳名稱</label><input type="text" id="review-restaurant-name" placeholder="輸入吃過的餐廳"></div>
+            <div class="form-group">
+                <label for="review-meal-items">餐點項目</label>
+                <button class="btn-scan-qr" onclick="openQrScanner()"><i class="fa-solid fa-qrcode"></i>掃描發票</button>
+                <textarea id="review-meal-items" placeholder="吃了什麼好料？ (例如：小籠包、牛肉麵)
+或點擊右上角掃描發票自動帶入"></textarea>
+            </div>
+            <div class="form-group"><label for="review-cost">花費金額 (NT$)</label><input type="number" id="review-cost" placeholder="大約花了多少錢？"></div>
+             <div class="form-group">
+                <label for="review-meal-type">用餐類型</label>
+                <select id="review-meal-type">
+                    <option value="other">其他</option>
+                    <option value="breakfast">早餐</option>
+                    <option value="lunch">午餐</option>
+                    <option value="dinner">晚餐</option>
+                </select>
+            </div>
+            <div class="form-group"><label>喜愛程度</label><div class="rating-hearts" id="review-rating" data-rating="0"><i class="fa-solid fa-heart" data-value="1"></i><i class="fa-solid fa-heart" data-value="2"></i><i class="fa-solid fa-heart" data-value="3"></i><i class="fa-solid fa-heart" data-value="4"></i><i class="fa-solid fa-heart" data-value="5"></i></div></div>
+            <div class="form-group"><label for="review-content">評論內容 (會成為貼文)</label><textarea id="review-content" placeholder="分享你的心得、推薦或建議..."></textarea></div>
+            <div class="form-group">
+                <label>新增照片</label>
+                <div class="photo-upload-container">
+                    <div class="photo-upload-buttons">
+                        <div id="btn-select-from-album" class="btn-upload"><i class="fa-solid fa-images"></i>從相簿選擇</div>
+                        <div id="btn-open-camera" class="btn-upload"><i class="fa-solid fa-camera"></i>開啟相機</div>
+                    </div>
+                    <input type="file" id="photo-file-input" accept="image/*" multiple style="display: none;">
+                    <input type="file" id="camera-file-input" accept="image/*" capture="environment" style="display: none;">
+                    <div id="photo-preview-container"></div>
+                </div>
+            </div>
+            <button class="btn" id="save-review-btn" onclick="handleSaveReview()">儲存評論與貼文</button>
+        </div>
+      </div>
+      <div id="challenge-page" class="page">
+        <div class="page-header"><h2><i class="fa-solid fa-trophy"></i>美食挑戰榜</h2><div class="placeholder"></div></div>
+        <div class="page-content" id="challenge-page-content">
+            <div id="challenge-list-view">
+                <div class="form-group" style="background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <h4><i class="fa-solid fa-plus-circle" style="margin-right: 8px;"></i>建立新的挑戰</h4>
+                    <input type="text" id="new-challenge-title" placeholder="挑戰主標題，例如：拉麵制霸戰" style="margin-bottom: 10px;">
+                    <input type="text" id="new-challenge-subtitle" placeholder="次標題，例如：一個月內誰吃最多家！">
+                    <button class="btn" style="margin-top: 10px;" onclick="createChallengeBoard()">建立挑戰榜</button>
+                </div>
+                <div id="challenge-boards-container" style="margin-top: 20px;"></div>
+            </div>
+            <div id="challenge-detail-view" style="display: none;"></div>
+        </div>
+      </div>
+      <div id="profile-page" class="page">
+        <div class="page-header">
+          <div class="placeholder"></div>
+          <h2 id="profile-header"><i class="fa-solid fa-user"></i>個人檔案</h2>
+          <a id="profile-login-btn" class="header-action" style="display: none;" onclick="showPage('login-page')">登入/註冊</a>
+          <a id="profile-logout-btn" class="header-action" style="display: none;" onclick="handleSignOut()">登出</a>
+        </div>
+        <div class="profile-tabs">
+            <button class="tab-btn active" onclick="showProfileTab('accounting', this)">記帳顯示</button>
+            <button class="tab-btn" onclick="showProfileTab('posts', this)">我的貼文</button>
+            <button class="tab-btn" onclick="showProfileTab('favorites', this)">最愛餐廳</button>
+            <button class="tab-btn" onclick="showProfileTab('friends', this)">好友名單</button>
+        </div>
+        <div class="page-content" style="padding-top:10px;">
+            <div id="accounting-content" class="tab-content active"></div>
+            <div id="posts-content" class="tab-content">
+                <div class="sort-container" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; padding: 0;">
+                    <label for="post-sort-order" style="font-size: 14px; color: var(--text-light); margin-right: 8px;">排序:</label>
+                    <select id="post-sort-order" onchange="renderMyPosts()" style="border-radius: 15px; border: 1px solid #ddd; padding: 5px 10px; font-size: 14px; background-color: white;">
+                        <option value="newest">由新到舊</option>
+                        <option value="oldest">由舊到新</option>
+                    </select>
+                </div>
+                <div id="posts-list-container"></div>
+            </div>
+            <div id="favorites-content" class="tab-content"></div>
+            <div id="friends-content" class="tab-content">
+                <div class="search-area" style="padding: 0 0 20px 0; border-bottom: none; background: transparent;">
+                    <p style="font-size: 14px; color: var(--text-light); margin-bottom: 10px;">透過 Email 搜尋並加入好友：</p>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="friend-search-input" class="search-input" placeholder="輸入好友的 Email..." style="border-radius: 8px; padding: 12px 15px; width: auto; flex-grow: 1;">
+                        <button class="btn" style="padding: 0; width: 80px; height: 44px; flex-shrink: 0;" onclick="searchFriend()">搜尋</button>
+                    </div>
+                </div>
+                <div id="friends-list-container"></div>
+            </div>
+        </div>
+      </div>
+      <div id="login-page" class="page">
+        <div class="page-header">
+          <i class="fa-solid fa-chevron-left header-back-btn" onclick="goBack()"></i>
+          <h2>會員登入</h2>
+          <div class="placeholder"></div>
+        </div>
+        <div class="page-content">
+          <div class="auth-form-container">
+            <input type="email" id="login-email-input" placeholder="電子郵件" required>
+            <input type="password" id="login-password-input" placeholder="密碼" required>
+            <div id="login-error" class="auth-error-message"></div>
+            <button class="btn-auth primary" onclick="handleSignIn()">登入</button>
+            <div class="auth-separator">或</div>
+            <button class="btn-auth secondary" onclick="handleGoogleSignIn()">
+              <i class="fab fa-google"></i> 使用 Google 登入
+            </button>
+            <div class="auth-switch-link" onclick="showPage('register-page')">
+              還沒有帳號？點此註冊
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="register-page" class="page">
+         <div class="page-header">
+          <i class="fa-solid fa-chevron-left header-back-btn" onclick="goBack()"></i>
+          <h2>註冊新帳號</h2>
+          <div class="placeholder"></div>
+        </div>
+        <div class="page-content">
+          <div class="auth-form-container">
+            <input type="text" id="register-name-input" placeholder="姓名或暱稱" required>
+            <input type="email" id="register-email-input" placeholder="電子郵件" required>
+            <input type="password" id="register-password-input" placeholder="設定密碼 (至少6位數)" required>
+            <div id="register-error" class="auth-error-message"></div>
+            <button class="btn-auth primary" onclick="handleRegister()">註冊送出</button>
+            <div class="auth-switch-link" onclick="showPage('login-page')">
+              已經有帳號了？點此登入
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer class="app-nav">
+      <div class="nav-item active" onclick="showPage('map-page', this)"><i class="fa-solid fa-map-location-dot"></i><span>地圖</span></div>
+      <div class="nav-item" onclick="showPage('random-page', this)"><i class="fa-solid fa-dice"></i><span>隨機選</span></div>
+      <div class="nav-item" onclick="showPage('add-review-page', this)"><i class="fa-solid fa-plus-circle"></i><span>新增</span></div>
+      <div class="nav-item" onclick="showPage('challenge-page', this)"><i class="fa-solid fa-trophy"></i><span>挑戰榜</span></div>
+      <div class="nav-item" onclick="showPage('profile-page', this)"><i class="fa-solid fa-user"></i><span>個人</span></div>
+    </footer>
+  </div>
+
+  <div id="qr-scanner-modal">
+    <div class="qr-scanner-content">
+        <span class="qr-scanner-close-btn" onclick="closeQrScanner()">×</span>
+        <video id="qr-scanner-video" playsinline></video>
+        <div id="scan-box"></div>
+        <canvas id="qr-canvas" style="display: none;"></canvas>
+        <p id="qr-status-text">請將發票 QR Code 對準掃描框</p>
+    </div>
+  </div>
+
+  <!-- 修正：先載入 Google Maps API，再載入模組 -->
+  <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR47ndYnp0jxNAWB-QJ8gUbdHtrYnQdHs&libraries=places,geometry&callback=initMap"
     defer
   ></script>
@@ -1946,5 +2606,1296 @@
         } catch (e) { return null; }
     }
   </script>
+
+</body>
+</html>&libraries=places,geometry&callback=initMap"
+    defer
+  ></script>
+  
+  <script type="module">
+    // --- Firebase SDK v9+ Imports (保持不變) ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { 
+      getAuth, 
+      onAuthStateChanged, 
+      createUserWithEmailAndPassword, 
+      signInWithEmailAndPassword,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      updateProfile
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { 
+        getFirestore, 
+        collection, 
+        doc, 
+        setDoc, 
+        getDoc, 
+        addDoc, 
+        getDocs, 
+        updateDoc, 
+        deleteDoc,
+        query,
+        where,
+        orderBy,
+        limit,
+        serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    // --- 重新定義全域變數 (使用 window 上已宣告的變數) ---
+    var currentUser = window.currentUser; 
+    var map = window.map;
+    var userGpsPosition = window.userGpsPosition;
+    var userMarker = window.userMarker;
+    var restaurantMarkers = window.restaurantMarkers;
+    var debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
+    var isMapReady = window.isMapReady; 
+    var pageHistory = window.pageHistory;
+    var auth = window.auth;
+    var db = window.db; 
+    var selectedPlaceForReview = window.selectedPlaceForReview; 
+    var editingPostId = window.editingPostId; 
+    var viewingChallengeId = window.viewingChallengeId;
+    var activeFilter = window.activeFilter;
+    var userFavorites = window.userFavorites;
+    var userFriends = window.userFriends;
+    var qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
+
+    const categoryKeywords = {
+        '台式':     { color: '#42a5f5', keywords: ['taiwanese', '台式', '熱炒店'] },
+        '日式':     { color: '#e57373', keywords: ['japanese', 'sushi', 'ramen', '丼', '食堂', '拉麵', '壽司', '日式'] },
+        '居酒屋':   { color: '#ab47bc', keywords: ['izakaya', '居酒屋'] },
+        '酒吧':     { color: '#7e57c2', keywords: ['bar', 'pub', '酒館', '酒吧'] },
+        '熱炒':     { color: '#ffca28', keywords: ['熱炒'] },
+        '火鍋':     { color: '#ff9800', keywords: ['hot_pot', '火鍋', '鍋物', '涮涮鍋'] },
+        '美式':     { color: '#29b6f6', keywords: ['american', 'hamburger', '美式', '漢堡'] },
+        '中式':     { color: '#ff7043', keywords: ['chinese', '中式', '麵館', '餃'] },
+        '義式':     { color: '#66bb6a', keywords: ['italian', 'pasta', 'pizza', '義式', '披薩'] },
+        '泰式':     { color: '#26a69a', keywords: ['thai', '泰式'] },
+        '越式':     { color: '#9ccc65', keywords: ['vietnamese', '越式', '越南'] },
+        '咖啡廳':   { color: '#795548', keywords: ['cafe', 'coffee_shop', '咖啡'] },
+        '早午餐':   { color: '#ffee58', keywords: ['brunch', 'breakfast', '早午餐'] },
+        '手搖飲':   { color: '#26c6da', keywords: ['bubble_tea_shop', '手搖', '飲料'] },
+        '小吃':     { color: '#78909c', keywords: ['snack', '小吃', '快餐', '麵線'] }
+    };
+    
+    const miscColors = ['#4fc3f7', '#7986cb', '#ba68c8', '#aed581', '#ff8a65', '#90a4ae'];
+    let miscColorIndex = 0;
+    const defaultMarkerColor = '#EA4335';
+
+    // --- Firebase 初始化 (v9+ Modular 寫法保持不變) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyBQNGqpCU04OhQ-Py3iKvWcSxGuDgwIFsQ",
+      authDomain: "foodiedata-b4982.firebaseapp.com",
+      projectId: "foodiedata-b4982",
+      storageBucket: "foodiedata-b4982.firebasestorage.app",
+      messagingSenderId: "90315404352",
+      appId: "1:90315404352:web:e12b4fc3f5a87a11191ba5",
+      measurementId: "G-5FD72CVKGB"
+    };
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app); 
+    db = getFirestore(app);
+
+    // 更新全域變數
+    window.auth = auth;
+    window.db = db;
+
+    // --- Firestore Data Helpers (CRUD) - 保持不變 ---
+    async function getPosts() {
+        if (!currentUser) return [];
+        const q = query(collection(db, 'users', currentUser.uid, 'posts'), orderBy('timestamp', 'desc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+
+    async function savePost(postData) {
+        if (!currentUser) return;
+        const collectionRef = collection(db, 'users', currentUser.uid, 'posts');
+        if (editingPostId) {
+            const docRef = doc(db, 'users', currentUser.uid, 'posts', editingPostId);
+            return updateDoc(docRef, {
+                ...postData,
+                updatedAt: serverTimestamp()
+            });
+        } else {
+            return addDoc(collectionRef, {
+                ...postData,
+                timestamp: serverTimestamp()
+            });
+        }
+    }
+
+    async function deletePostFromDB(postId) {
+        if (!currentUser) return;
+        const docRef = doc(db, 'users', currentUser.uid, 'posts', postId);
+        return deleteDoc(docRef);
+    }
+    
+    async function getFavorites() {
+        if (!currentUser) return [];
+        const snapshot = await getDocs(collection(db, 'users', currentUser.uid, 'favorites'));
+        const favorites = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        userFavorites = new Set(favorites.map(f => f.id));
+        return favorites;
+    }
+
+    function isFavorite(placeId) {
+        return userFavorites.has(placeId);
+    }
+
+    async function toggleFavoriteInDB(place) {
+        if (!currentUser) return;
+        const favoriteRef = doc(db, 'users', currentUser.uid, 'favorites', place.place_id);
+        if (isFavorite(place.place_id)) {
+            await deleteDoc(favoriteRef);
+            userFavorites.delete(place.place_id);
+        } else {
+            await setDoc(favoriteRef, { name: place.name, addedAt: serverTimestamp() });
+            userFavorites.add(place.place_id);
+        }
+    }
+
+    async function getFriends() {
+        if (!currentUser) return [];
+        const snapshot = await getDocs(collection(db, 'users', currentUser.uid, 'friends'));
+        userFriends = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return userFriends;
+    }
+
+    async function saveFriend(friendData) {
+        if (!currentUser) return;
+        const friendRef = doc(db, 'users', currentUser.uid, 'friends', friendData.id);
+        return setDoc(friendRef, friendData);
+    }
+
+    async function removeFriend(friendId) {
+        if (!currentUser) return;
+        const friendRef = doc(db, 'users', currentUser.uid, 'friends', friendId);
+        return deleteDoc(friendRef);
+    }
+    
+    async function getChallengeBoards() {
+        if (!currentUser) return [];
+        const q = query(collection(db, 'users', currentUser.uid, 'challenges'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+
+    async function getChallengeBoard(boardId) {
+        if (!currentUser) return null;
+        const docRef = doc(db, 'users', currentUser.uid, 'challenges', boardId);
+        const docSnap = await getDoc(docRef);
+        return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+    }
+
+    async function updateChallengeBoard(boardId, data) {
+        if (!currentUser) return;
+        const docRef = doc(db, 'users', currentUser.uid, 'challenges', boardId);
+        return updateDoc(docRef, data);
+    }
+
+    // --- 重新定義 initMap 函數到全域作用域 ---
+    window.initMap = function() {
+        console.log('🗺️ initMap called - Firebase v9 version');
+        isMapReady = true;
+        window.isMapReady = true;
+        userGpsPosition = { lat: 25.0479, lng: 121.5171 };
+        restaurantMarkers = [];
+        
+        map = new google.maps.Map(document.getElementById("map"), {
+            center: userGpsPosition,
+            zoom: 15,
+            disableDefaultUI: true,
+            zoomControl: true
+        });
+        
+        window.map = map;
+        
+        placesService = new google.maps.places.PlacesService(map);
+        infoWindow = new google.maps.InfoWindow();
+        directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer({
+            map: map,
+            suppressMarkers: true,
+            polylineOptions: { strokeColor: '#4285F4', strokeOpacity: 0.8, strokeWeight: 6 }
+        });
+        
+        createUserMarker(userGpsPosition);
+        setupMapListeners();
+        setupAutocomplete();
+        updateUserGPS();
+        
+        console.log('✅ 地圖初始化完成！');
+    };
+
+    // --- Initialization & Core App Flow ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const setVh = () => {
+          const vh = window.innerHeight * 0.01;
+          document.documentElement.style.setProperty('--vh', `${vh}px`);
+        };
+        setVh();
+        window.addEventListener('resize', setVh);
+
+        onAuthStateChanged(auth, user => { 
+            currentUser = user;
+            window.currentUser = user;
+            if (user) { 
+                setupLoggedInUI(user);
+            } else { 
+                setupLoggedOutUI(); 
+            } 
+        });
+
+        document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => {
+            heart.addEventListener('click', handleRatingClick);
+            heart.addEventListener('mouseover', handleRatingHover);
+            heart.addEventListener('mouseout', handleRatingMouseout);
+        });
+        qrModal = document.getElementById('qr-scanner-modal');
+        video = document.getElementById('qr-scanner-video');
+        canvasElement = document.getElementById('qr-canvas');
+        canvas = canvasElement.getContext('2d');
+        qrStatusText = document.getElementById('qr-status-text');
+        scanBox = document.getElementById('scan-box');
+        const btnSelectAlbum = document.getElementById('btn-select-from-album');
+        const btnOpenCamera = document.getElementById('btn-open-camera');
+        const photoFileInput = document.getElementById('photo-file-input');
+        const cameraFileInput = document.getElementById('camera-file-input');
+        btnSelectAlbum.addEventListener('click', () => photoFileInput.click());
+        btnOpenCamera.addEventListener('click', () => cameraFileInput.click());
+        const handleFileSelection = (event) => {
+            const files = event.target.files;
+            if (files && files.length > 0) {
+                displayPhotoPreviews(files);
+            }
+            event.target.value = null; 
+        };
+        photoFileInput.addEventListener('change', handleFileSelection);
+        cameraFileInput.addEventListener('change', handleFileSelection);
+        window.showPage('map-page', document.querySelector('.nav-item')); 
+    });
+    
+    // --- Page Navigation & UI ---
+    window.showPage = function(pageId, navElement = null) {
+        if (pageId === 'add-review-page' && !editingPostId) {
+            resetReviewForm(); 
+        }
+        const activePage = document.querySelector('.page.active');
+        if (activePage) {
+            if (!['login-page', 'register-page'].includes(activePage.id) || !['login-page', 'register-page'].includes(pageId)) {
+                pageHistory.push(activePage.id);
+            }
+        }
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        if (navElement) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            navElement.classList.add('active');
+            pageHistory = [];
+        }
+        if (pageId === 'random-page') updateRandomPageStatus();
+        if (pageId === 'challenge-page') { viewingChallengeId = null; renderChallengePage(); }
+        if (pageId === 'profile-page') renderProfilePage();
+    };
+
+    window.goBack = function() {
+        editingPostId = null; 
+        resetReviewForm();
+        if (pageHistory.length > 0) {
+            const lastPageId = pageHistory.pop();
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(lastPageId).classList.add('active');
+        } else {
+            window.showPage('map-page', document.querySelector('.nav-item[onclick*="map-page"]'));
+        }
+    };
+
+    // --- Authentication UI & Logic ---
+    async function setupLoggedInUI(user) { 
+        document.getElementById('profile-login-btn').style.display = 'none'; 
+        document.getElementById('profile-logout-btn').style.display = 'block'; 
+        const userName = user.displayName || user.email.split('@')[0]; 
+        document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`; 
+        await getFavorites(); // Pre-fetch favorites on login
+        renderProfilePage(); 
+    }
+
+    function setupLoggedOutUI() { 
+        document.getElementById('profile-login-btn').style.display = 'block'; 
+        document.getElementById('profile-logout-btn').style.display = 'none'; 
+        document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; 
+        userFavorites.clear();
+        userFriends = [];
+        renderProfilePage(); 
+        renderChallengePage();
+        updateRandomPageStatus();
+    }
+
+    window.handleRegister = function() {
+        const name = document.getElementById('register-name-input').value.trim();
+        const email = document.getElementById('register-email-input').value;
+        const password = document.getElementById('register-password-input').value;
+        const errorDiv = document.getElementById('register-error');
+        errorDiv.textContent = '';
+        if (!name || !email || !password) {
+            errorDiv.textContent = '所有欄位都必須填寫！';
+            return;
+        }
+        createUserWithEmailAndPassword(auth, email, password)
+            .then(userCredential => {
+                const user = userCredential.user;
+                const userDocRef = doc(db, 'users', user.uid);
+                setDoc(userDocRef, {
+                    displayName: name,
+                    email: email,
+                    createdAt: serverTimestamp()
+                });
+                return updateProfile(user, { displayName: name });
+            })
+            .then(() => { window.goBack(); })
+            .catch(error => {
+                switch(error.code) {
+                    case 'auth/email-already-in-use': errorDiv.textContent = '此電子郵件已被註冊。'; break;
+                    case 'auth/invalid-email': errorDiv.textContent = '電子郵件格式不正確。'; break;
+                    case 'auth/weak-password': errorDiv.textContent = '密碼強度不足 (至少6位數)。'; break;
+                    default: errorDiv.textContent = '註冊失敗，請稍後再試。';
+                }
+            });
+    }
+    
+    window.handleSignIn = function() {
+        const email = document.getElementById('login-email-input').value;
+        const password = document.getElementById('login-password-input').value;
+        const errorDiv = document.getElementById('login-error');
+        errorDiv.textContent = '';
+
+        if (!email || !password) {
+            errorDiv.textContent = '請輸入電子郵件和密碼。';
+            return;
+        }
+
+        signInWithEmailAndPassword(auth, email, password)
+            .then(() => { window.goBack(); })
+            .catch(error => { errorDiv.textContent = '登入失敗，請檢查信箱或密碼。'; });
+    }
+
+    window.handleGoogleSignIn = function() { 
+        const provider = new GoogleAuthProvider(); 
+        signInWithPopup(auth, provider)
+            .then(async (result) => { 
+                const user = result.user;
+                const userRef = doc(db, 'users', user.uid);
+                const docSnap = await getDoc(userRef);
+                if (!docSnap.exists()) {
+                    setDoc(userRef, {
+                        displayName: user.displayName,
+                        email: user.email,
+                        createdAt: serverTimestamp()
+                    });
+                }
+                window.goBack(); 
+            })
+            .catch(error => { 
+                const errorDiv = document.getElementById('login-error'); 
+                errorDiv.textContent = 'Google 登入失敗，請稍後再試。'; 
+            }); 
+    }
+
+    window.handleSignOut = function() { 
+        signOut(auth).catch(error => console.error("登出錯誤:", error)); 
+    }
+    
+    // --- Map & Places API Functions ---
+    window.applyFilter = function(element) {
+        const filterType = element.dataset.filterType;
+        const filterValue = element.dataset.filterValue;
+
+        if (element.classList.contains('active')) {
+            activeFilter = null;
+            element.classList.remove('active');
+        } else {
+            activeFilter = { type: filterType, value: filterValue };
+            document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active'));
+            element.classList.add('active');
+        }
+        
+        if (map) {
+            clearSearch(true); 
+            searchNearbyRestaurants(map.getCenter());
+        }
+    }
+
+    window.centerOnUserGPS = function() { if (map && userGpsPosition) { map.panTo(userGpsPosition); } }
+    
+    window.clearSearch = function(suppressSearch = false) { 
+        directionsRenderer.setDirections({ routes: [] }); 
+        infoWindow.close(); 
+        const input = document.getElementById('search-input'); 
+        input.value = ''; 
+        document.getElementById('clear-search').style.display = 'none'; 
+        highlightListItem(null); 
+        if (!suppressSearch) { 
+            searchNearbyRestaurants(map.getCenter()); 
+        } 
+    }
+    
+    function getCategoryColor(place) {
+        if (!place) return defaultMarkerColor;
+        const placeName = place.name.toLowerCase();
+        const placeTypes = place.types || [];
+
+        for (const categoryName in categoryKeywords) {
+            const data = categoryKeywords[categoryName];
+            for (const keyword of data.keywords) {
+                if (placeName.includes(keyword) || placeTypes.includes(keyword.replace('_', ' '))) {
+                    return data.color;
+                }
+            }
+        }
+        
+        const color = miscColors[miscColorIndex];
+        miscColorIndex = (miscColorIndex + 1) % miscColors.length;
+        return color;
+    }
+
+    function createUserMarker(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
+    
+    function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener("click", (e) => { if (e.placeId) { e.stop(); } window.clearSearch(); }); }
+    
+    function setupAutocomplete() { 
+        const input = document.getElementById('search-input'); 
+        const clearBtn = document.getElementById('clear-search');
+        autocomplete = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'tw' }, types: ['establishment', 'geocode'], fields: ['place_id', 'geometry', 'name', 'formatted_address', 'vicinity', 'business_status', 'types'] }); 
+        input.addEventListener('input', () => { clearBtn.style.display = input.value ? 'flex' : 'none'; }); 
+        autocomplete.addListener('place_changed', () => { const place = autocomplete.getPlace(); if (place.geometry && place.geometry.location) { window.clearSearch(true); handlePlaceSelection(place); } }); 
+    }
+
+    function updateUserGPS() { if (!isMapReady) return; document.getElementById("list-content-area").innerHTML = `<p class="list-status-text">正在獲取您的位置...</p>`; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (position) => { userGpsPosition = { lat: position.coords.latitude, lng: position.coords.longitude }; createUserMarker(userGpsPosition); window.centerOnUserGPS(); }, () => searchNearbyRestaurants(map.getCenter()) ); } else { searchNearbyRestaurants(map.getCenter()); } }
+    
+    function searchNearbyRestaurants(location) {
+        if (!isMapReady) return;
+        const listContainer = document.getElementById("list-content-area");
+        listContainer.innerHTML = `<p class="list-status-text">正在搜尋附近餐廳...</p>`;
+        clearRestaurantMarkers();
+        miscColorIndex = 0;
+
+        const request = {
+            location: location,
+            radius: 1500,
+            type: 'restaurant'
+        };
+
+        if (activeFilter && activeFilter.type === 'keyword' && activeFilter.value) {
+            request.keyword = activeFilter.value;
+            listContainer.innerHTML = `<p class="list-status-text">正在搜尋「${activeFilter.value}」...</p>`;
+        }
+
+        placesService.nearbySearch(request, (results, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                processAndDisplayResults(results, location);
+            } else {
+                listContainer.innerHTML = `<p class="list-status-text">此區域找不到符合條件的餐廳</p>`;
+            }
+        });
+    }
+
+    function processAndDisplayResults(places, center) {
+        const listContainer = document.getElementById("list-content-area");
+        let placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) }));
+        
+        placesWithDistance.sort((a, b) => a.distance - b.distance);
+        
+        if (placesWithDistance.length === 0) {
+            listContainer.innerHTML = `<p class="list-status-text">找不到符合條件的餐廳</p>`;
+            return;
+        }
+
+        listContainer.innerHTML = "";
+        placesWithDistance.forEach((place) => {
+            addRestaurantMarker(place);
+            addRestaurantToList(place, null, { business_status: place.business_status });
+        });
+    }
+    
+    function addRestaurantMarker(place) {
+        const markerColor = getCategoryColor(place);
+
+        const marker = new google.maps.Marker({
+            position: place.geometry.location,
+            map: map,
+            title: place.name,
+            icon: {
+                path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
+                fillColor: markerColor, 
+                fillOpacity: 1,
+                strokeWeight: 0,
+                scale: 1.5,
+                anchor: new google.maps.Point(12, 24)
+            }
+        });
+        
+        marker.markerColor = markerColor; 
+
+        marker.addListener('click', (e) => {
+            e.domEvent.stopPropagation();
+            handlePlaceSelection(place);
+        });
+        marker.place_id = place.place_id;
+        restaurantMarkers.push(marker);
+    }
+    
+    function handlePlaceSelection(place) {
+        const marker = restaurantMarkers.find((m) => m.place_id === place.place_id);
+        const markerColor = marker ? marker.markerColor : getCategoryColor(place);
+
+        if (marker) {
+            map.panTo(marker.getPosition());
+        } else {
+            map.panTo(place.geometry.location);
+        }
+        highlightListItem(place.place_id, true);
+        initiateRouteAndDetailsFetch(place, markerColor);
+    }
+
+    async function initiateRouteAndDetailsFetch(place, color) {
+        if (!userGpsPosition || !place.geometry || !place.geometry.location) {
+            showPlaceDetailsInWindow(place, null, {});
+            return;
+        }
+        document.getElementById('clear-search').style.display = 'flex';
+        clearRestaurantMarkers();
+        const [drivingResult, walkingResult, placeDetails] = await Promise.all([
+            getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.DRIVING),
+            getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.WALKING),
+            getPlaceDetailsPromise(place.place_id)
+        ]);
+        const routeInfo = { driving: drivingResult, walking: walkingResult };
+        if (drivingResult) {
+            directionsRenderer.setDirections(drivingResult.response);
+            map.fitBounds(drivingResult.response.routes[0].bounds);
+        } else {
+            directionsRenderer.setDirections({ routes: [] });
+        }
+        
+        const finalPlaceDataForColor = { ...place, types: (placeDetails && placeDetails.types) || place.types || [] };
+        const markerColor = color || getCategoryColor(finalPlaceDataForColor);
+
+        const destinationMarker = new google.maps.Marker({
+            position: place.geometry.location,
+            map: map,
+            title: place.name,
+            icon: {
+                path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
+                fillColor: markerColor, 
+                fillOpacity: 1,
+                strokeWeight: 0,
+                scale: 1.5,
+                anchor: new google.maps.Point(12, 24)
+            }
+        });
+        
+        destinationMarker.addListener('click', (e) => {
+            e.stopPropagation();
+            handlePlaceSelection(place);
+        });
+        restaurantMarkers.push(destinationMarker);
+        showPlaceDetailsInWindow(place, destinationMarker, routeInfo, placeDetails);
+        showSinglePlaceResult(place, routeInfo, placeDetails);
+    }
+    
+    function getRoutePromise(origin, destination, travelMode) { return new Promise(resolve => { const request = { origin, destination, travelMode }; directionsService.route(request, (res, stat) => { if (stat === 'OK') { const leg = res.routes[0].legs[0]; resolve({ distance: leg.distance.text, duration: leg.duration.text, response: res }); } else { resolve(null); } }); }); }
+    
+    function getPlaceDetailsPromise(placeId) {
+        const request = {
+            placeId,
+            fields: [
+                'name', 'rating', 'user_ratings_total', 'formatted_phone_number',
+                'vicinity', 'formatted_address', 'website', 'place_id', 'types',
+                'business_status',
+                'opening_hours', 'opening_hours.open_now', 'opening_hours.periods', 'opening_hours.weekday_text'
+            ]
+        };
+        return new Promise(resolve => {
+            placesService.getDetails(request, (details, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && details) {
+                    resolve(details);
+                } else {
+                    console.error('Place Details request failed for', placeId, 'status:', status);
+                    resolve(null);
+                }
+            });
+        });
+    }
+
+    function showSinglePlaceResult(place, routeInfo, placeDetails) { 
+        const listContainer = document.getElementById("list-content-area"); 
+        listContainer.innerHTML = ""; 
+        addRestaurantToList(place, routeInfo, placeDetails); 
+        highlightListItem(place.place_id); 
+    }
+    
+    function showPlaceDetailsInWindow(place, marker, routeInfo = {}, details = null) {
+        const isFav = isFavorite(place.place_id);
+        const favIcon = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        const favClass = isFav ? 'is-favorite' : '';
+        const pdata = JSON.stringify({ name: place.name, place_id: place.place_id }).replace(/"/g, "'");
+        
+        let content = `<div class="info-window-content">
+            <h4>
+                <span>${place.name}</span>
+                <button class="favorite-btn ${favClass}" onclick="handleToggleFavorite(${pdata}, this)">
+                    <i class="${favIcon}"></i>
+                </button>
+            </h4>`;
+        
+        const finalDetails = details || place; 
+        const address = finalDetails.formatted_address || finalDetails.vicinity;
+        if (address) content += `<p><i class="fas fa-map-marker-alt"></i><span>${address}</span></p>`;
+        if (details && details.rating) { 
+            const ratingCount = details.user_ratings_total ? `(${details.user_ratings_total} 則評論)` : '';
+            content += `<p><i class="fas fa-star" style="color: #FFD700;"></i><span>${details.rating} ${ratingCount}</span></p>`; 
+        }
+        if (routeInfo.driving) { content += `<p><i class="fas fa-car"></i><span>${routeInfo.driving.distance} (${routeInfo.driving.duration})</span></p>`; }
+        if (routeInfo.walking) { content += `<p><i class="fas fa-walking"></i><span>${routeInfo.walking.distance} (${routeInfo.walking.duration})</span></p>`; }
+        if (details && details.formatted_phone_number) { content += `<p><i class="fas fa-phone"></i><span>${details.formatted_phone_number}</span></p>`; }
+        if (details && details.website) { content += `<p><i class="fas fa-globe"></i><a href="${details.website}" target="_blank" onclick="event.stopPropagation()">官方網站</a></p>`; }
+
+        if (details) {
+            if (details.business_status === 'CLOSED_PERMANENTLY') {
+            content += `<p><i class="fas fa-store-slash"></i>
+                <span style="color: var(--danger-color); font-weight: bold;">永久停業</span>
+            </p>`;
+            } else if (details.opening_hours) {
+            const isOpen = details.opening_hours.open_now;
+            const statusText = isOpen ? '營業中' : '休息中';
+            const color = isOpen ? 'var(--success-color)' : 'var(--danger-color)';
+
+            content += `<p><i class="fas fa-clock"></i>
+                <span style="color: ${color}; font-weight: bold;">
+                ${statusText}
+                </span>`;
+
+            if (details.opening_hours.weekday_text) {
+                content += `<button class="opening-hours-toggle" onclick="toggleOpeningHours(event,this)">
+                    查看詳細時間
+                </button>
+                </p>
+                <div class="opening-hours-details">
+                ${details.opening_hours.weekday_text.join('<br>')}
+                </div>`;
+            } else {
+                content += `</p>`;
+            }
+            } else {
+            content += `<p><i class="fas fa-clock"></i>
+                <span>營業時間資訊不明</span>
+            </p>`;
+            }
+        }
+
+        selectedPlaceForReview = { name: place.name };
+        content += `<p style="text-align:center; margin-top:10px;">
+            <a href="#" onclick="goToReviewPageFromMap();return false;"
+                style="background:var(--primary-color);color:#fff;
+                        padding:6px 12px;border-radius:5px;
+                        font-size:14px; font-weight:500; text-decoration:none;">
+                <i class="fa-solid fa-pencil" style="margin-right:5px"></i>
+                新增評論
+            </a>
+            </p>
+        </div>`;
+
+        infoWindow.setContent(content);
+        infoWindow.open({ anchor: marker, map: map, shouldFocus: false });
+    }
+
+    function addRestaurantToList(place, routeInfo = null, details = null) {
+        const listContainer = document.getElementById('list-content-area');
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.dataset.placeId = place.place_id;
+
+        let openStatusHtml = '';
+        const detailsToCheck = details || place;
+
+        if (detailsToCheck.business_status === 'CLOSED_PERMANENTLY') {
+            openStatusHtml = `<span class="open-status closed">永久停業</span>`;
+        } else if (details && details.opening_hours) {
+            const isOpen = details.opening_hours.open_now;
+            openStatusHtml = isOpen
+            ? `<span class="open-status open">營業中</span>`
+            : `<span class="open-status closed">休息中</span>`;
+        }
+
+        const ratingHtml = place.rating
+            ? `<i class="fas fa-star" style="color:#ffd700;"></i> ${place.rating}`
+            : '無評分';
+        const detailsText = [ratingHtml, openStatusHtml].filter(Boolean).join(' · ');
+        const addressHtml = `<div class="item-address">${place.vicinity || place.formatted_address || ''}</div>`;
+
+        let distanceHtml = '';
+        if (routeInfo && routeInfo.driving) {
+            distanceHtml = `<div class="item-distance">
+            <i class="fas fa-car"></i> ${routeInfo.driving.distance}
+            </div>`;
+        } else if (place.distance) {
+            distanceHtml = `<div class="item-distance">
+            ${Math.round(place.distance)}m
+            </div>`;
+        }
+
+        item.innerHTML = `
+            <div class="item-icon"><i class="fas fa-utensils"></i></div>
+            <div class="item-info">
+            <div class="item-name">${place.name}</div>
+            ${addressHtml}
+            <div class="item-details">${detailsText}</div>
+            </div>
+            ${distanceHtml}
+        `;
+        item.onclick = e => { e.stopPropagation(); handlePlaceSelection(place); };
+        listContainer.appendChild(item);
+    }
+    
+    function highlightListItem(placeId, scroll) { document.querySelectorAll(".list-item.is-selected").forEach((el) => el.classList.remove("is-selected")); if(placeId) { const listItem = document.querySelector(`.list-item[data-place-id="${placeId}"]`); if (listItem) { listItem.classList.add("is-selected"); if (scroll) { listItem.scrollIntoView({ behavior: "smooth", block: "center" }); } } } }
+    function clearRestaurantMarkers() { restaurantMarkers.forEach((marker) => marker.setMap(null)); restaurantMarkers = []; }
+
+    // --- Page-Specific Rendering & Logic ---
+    const loggedOutPlaceholder = (message) => `<p class="placeholder-text">請先<a href="#" onclick="window.showPage('login-page')">登入</a>${message}</p>`;
+
+    function renderProfilePage() { 
+        const activeTabBtn = document.querySelector('#profile-page .tab-btn.active'); 
+        if(activeTabBtn) { 
+            window.showProfileTab(activeTabBtn.getAttribute('onclick').match(/'([^']+)'/)[1], activeTabBtn); 
+        } else { 
+            window.showProfileTab('accounting', document.querySelector('#profile-page .tab-btn')); 
+        } 
+    }
+    
+    window.showProfileTab = function(tabId, tabElement) { 
+        document.querySelectorAll('#profile-page .tab-btn').forEach(btn => { btn.classList.remove('active'); }); 
+        tabElement.classList.add('active'); 
+        document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); 
+        document.getElementById(`${tabId}-content`).classList.add('active'); 
+        if (tabId === 'accounting') renderAccountingRecords(); 
+        if (tabId === 'posts') renderMyPosts(); 
+        if (tabId === 'favorites') renderFavoriteRestaurants(); 
+        if (tabId === 'friends') renderFriendsList(); 
+    }
+
+    async function renderAccountingRecords() {
+        const container = document.getElementById('accounting-content');
+        if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的消費紀錄。'); return; }
+        
+        try {
+            const posts = (await getPosts()).filter(p => p.cost > 0);
+            if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">尚無消費紀錄。</p>`; return; }
+            
+            const mealTypeNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', other: '其他' };
+            const mealTypeOrder = ['breakfast', 'lunch', 'dinner', 'other'];
+
+            const groupedByDate = posts.reduce((acc, post) => {
+                const date = post.timestamp ? new Date(post.timestamp.toDate()).toLocaleDateString() : '日期不明';
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(post);
+                return acc;
+            }, {});
+
+            const sortedDates = Object.keys(groupedByDate).sort((a, b) => new Date(b) - new Date(a));
+            
+            let html = '';
+            sortedDates.forEach(date => {
+                html += `<div class="accounting-date-group"><div class="accounting-date-header">${date}</div>`;
+                const dayPosts = groupedByDate[date];
+                
+                mealTypeOrder.forEach(mealType => {
+                    const mealPosts = dayPosts.filter(p => (p.mealType || 'other') === mealType);
+                    if (mealPosts.length > 0) {
+                        html += `<h4 class="accounting-meal-header">${mealTypeNames[mealType]}</h4>`;
+                        html += mealPosts.map(p => `
+                            <div class="record-card">
+                                <span class="cost">$${p.cost}</span>
+                                <div class="title">${p.name}</div>
+                                <div class="details">${p.items || '無品項紀錄'}</div>
+                            </div>`).join('');
+                    }
+                });
+                html += `</div>`;
+            });
+            container.innerHTML = html || `<p class="placeholder-text">尚無消費紀錄。</p>`;
+        } catch (error) {
+            console.error("Error rendering accounting records:", error);
+            container.innerHTML = `<p class="placeholder-text">讀取紀錄失敗。</p>`;
+        }
+    }
+    
+    async function renderMyPosts() {
+        const postsContent = document.getElementById('posts-content');
+        if (!currentUser) { postsContent.innerHTML = loggedOutPlaceholder('以查看您的貼文。'); return; }
+        
+        const listContainer = document.getElementById('posts-list-container');
+        listContainer.innerHTML = `<p class="list-status-text">正在載入貼文...</p>`;
+        
+        try {
+            let posts = await getPosts();
+            if (posts.length === 0) {
+                listContainer.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`;
+                return;
+            }
+            
+            const sortOrder = document.getElementById('post-sort-order').value;
+            posts.sort((a, b) => {
+                const timeA = a.timestamp ? a.timestamp.toMillis() : 0;
+                const timeB = b.timestamp ? b.timestamp.toMillis() : 0;
+                return sortOrder === 'newest' ? timeB - timeA : timeA - timeB;
+            });
+
+            listContainer.innerHTML = posts.map(p => {
+                const ratingHtml = Array(parseInt(p.rating)).fill('<i class="fa-solid fa-heart"></i>').join('');
+                const photosHtml = (p.photos && p.photos.length > 0) 
+                    ? `<div class="post-photos">${p.photos.map(src => `<img src="${src}" alt="Post photo">`).join('')}</div>`
+                    : '';
+                const postDate = p.timestamp ? new Date(p.timestamp.toDate()).toLocaleString() : '日期不明';
+
+                return `
+                    <div class="post-card">
+                        <div class="card-actions">
+                            <button class="action-btn btn-edit" onclick="handleEditPost('${p.id}')">編輯</button>
+                            <button class="action-btn btn-delete" onclick="handleDeletePost('${p.id}')">刪除</button>
+                        </div>
+                        <div class="title">${p.name}</div>
+                        <div class="details">${postDate}</div>
+                        <p class="content" style="white-space: pre-wrap;">${p.content || '（無詳細評論）'}</p>
+                        <div class="post-rating">${ratingHtml}</div>
+                        ${photosHtml}
+                    </div>`;
+            }).join('');
+        } catch (error) {
+            console.error("Error rendering posts:", error);
+            listContainer.innerHTML = `<p class="placeholder-text">讀取貼文失敗。</p>`;
+        }
+    }
+
+    async function renderFavoriteRestaurants() {
+        const container = document.getElementById('favorites-content');
+        if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的最愛餐廳。'); return; }
+        
+        try {
+            const favorites = await getFavorites();
+            if (favorites.length === 0) { 
+                container.innerHTML = `<p class="placeholder-text">您還沒有加入任何最愛餐廳。<br>可以從地圖上點擊餐廳的<i class="fa-regular fa-heart" style="color:#ddd"></i>來加入喔！</p>`; 
+                return; 
+            }
+            
+            container.innerHTML = '<h3>我的最愛餐廳</h3>' + favorites.map(f => `
+                <div class="record-card">
+                    <div class="card-actions">
+                        <button class="action-btn btn-delete" onclick="handleToggleFavorite({place_id: '${f.id}', name: '${f.name}'}, null)">移除</button>
+                    </div>
+                    <div class="title"><i class="fa-solid fa-utensils" style="margin-right:8px; color: var(--primary-color)"></i>${f.name}</div>
+                </div>`).join('');
+        } catch (error) {
+            console.error("Error rendering favorites:", error);
+            container.innerHTML = `<p class="placeholder-text">讀取最愛餐廳失敗。</p>`;
+        }
+    }
+
+    async function renderFriendsList() {
+        const friendsContent = document.getElementById('friends-content');
+        if (!currentUser) { friendsContent.innerHTML = loggedOutPlaceholder('以查看好友名單。'); return; }
+        
+        const listContainer = document.getElementById('friends-list-container');
+        listContainer.innerHTML = `<p class="list-status-text">正在載入好友列表...</p>`;
+
+        try {
+            const friends = await getFriends();
+            if (friends.length === 0) {
+                listContainer.innerHTML = `<p class="placeholder-text">您還沒有加入任何好友。</p>`;
+            } else {
+                listContainer.innerHTML = friends.map(f => `
+                    <div class="record-card">
+                        <div class="card-actions">
+                            <button class="action-btn btn-delete" onclick="handleDeleteFriend('${f.id}')">刪除</button>
+                        </div>
+                        <div class="title"><i class="fa-solid fa-user-group" style="margin-right:8px;color:var(--text-light)"></i>${f.displayName}</div>
+                        <div class="details">Email: ${f.email}</div>
+                    </div>
+                `).join('');
+            }
+        } catch (err) {
+            console.error(err);
+            listContainer.innerHTML = `<p class="placeholder-text">載入好友時發生錯誤</p>`;
+        }
+    }
+    
+    async function updateRandomPageStatus() {
+        const statusText = document.getElementById('random-status-text');
+        const pickerResult = document.getElementById('picker-result');
+        
+        statusText.style.visibility = 'visible';
+        statusText.classList.add('placeholder-text');
+        
+        if (!currentUser) {
+            statusText.textContent = '登入後，系統會從您的「最愛餐廳」中隨機抽選！';
+            drawPickerWheel([]);
+            if(pickerResult) pickerResult.textContent = "?";
+            return;
+        }
+        
+        try {
+            const favorites = await getFavorites();
+            pickerResult.textContent = "?";
+            pickerResult.style.color = 'var(--primary-color)';
+            
+            drawPickerWheel(favorites);
+            
+            if (favorites.length === 0) {
+                statusText.innerHTML = "您還沒有加入任何最愛餐廳！<br>請到地圖上點擊♡來加入吧！";
+            } else if (favorites.length < 2) {
+                statusText.textContent = `目前有 ${favorites.length} 家餐廳。至少需要2家才能開始抽籤喔！`;
+            } else {
+                statusText.textContent = `目前有 ${favorites.length} 家餐廳在您的最愛清單中。`;
+            }
+        } catch (error) {
+            statusText.textContent = "讀取最愛清單失敗。";
+        }
+    }
+
+    function drawPickerWheel(restaurants) {
+        const wheel = document.getElementById('picker-wheel');
+        wheel.innerHTML = '<div id="picker-result">?</div>'; 
+        
+        const numOptions = restaurants.length;
+        if (numOptions < 1) {
+            wheel.style.background = '#f0f0f0';
+            return;
+        }
+
+        const sliceAngle = 360 / numOptions;
+        const colors = ['#667eea', '#f6d365', '#fda085', '#764ba2', '#84fab0', '#8fd3f4', '#fccb90', '#d4c4fb'];
+        
+        let gradientString = 'conic-gradient(';
+        let currentAngle = 0;
+
+        restaurants.forEach((restaurant, i) => {
+            const color = colors[i % colors.length];
+            gradientString += `${color} ${currentAngle}deg ${currentAngle + sliceAngle}deg`;
+            if (i < numOptions - 1) {
+                gradientString += ', ';
+            }
+            
+            const textEl = document.createElement('div');
+            textEl.className = 'slice-text';
+            textEl.textContent = restaurant.name;
+
+            const textAngle = currentAngle + (sliceAngle / 2);
+            textEl.style.transform = `rotate(${textAngle}deg) translateY(-80px) rotate(-${textAngle}deg)`;
+            
+            wheel.appendChild(textEl);
+            currentAngle += sliceAngle;
+        });
+        gradientString += ')';
+        wheel.style.background = gradientString;
+    }
+    
+    // --- Event Handlers ---
+    async function handleSaveReview() {
+        if (!currentUser) { alert('請先登入！'); window.showPage('login-page'); return; }
+        const name = document.getElementById('review-restaurant-name').value.trim();
+        const rating = document.getElementById('review-rating').dataset.rating;
+        if (!name || rating === "0") { alert("請務必填寫「餐廳名称」和「喜愛程度」！"); return; }
+        
+        const photoPreviews = document.querySelectorAll('#photo-preview-container .photo-preview-item img');
+        const photos = Array.from(photoPreviews).map(img => img.src);
+        
+        const postData = {
+            name, 
+            items: document.getElementById('review-meal-items').value.trim(), 
+            cost: Number(document.getElementById('review-cost').value) || 0,
+            mealType: document.getElementById('review-meal-type').value,
+            rating, 
+            content: document.getElementById('review-content').value.trim(),
+            photos
+        };
+
+        try {
+            await savePost(postData);
+            alert(editingPostId ? "評論已成功更新！" : "評論已成功儲存！");
+            editingPostId = null; 
+            resetReviewForm();
+            window.showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]'));
+        } catch (error) {
+            console.error("Error saving review:", error);
+            alert("儲存失敗，請稍後再試。");
+        }
+    }
+    
+    async function handleEditPost(postId) {
+        const posts = await getPosts();
+        const postToEdit = posts.find(p => p.id === postId);
+        if (!postToEdit) return;
+        editingPostId = postId;
+        document.getElementById('review-restaurant-name').value = postToEdit.name;
+        document.getElementById('review-meal-items').value = postToEdit.items || '';
+        document.getElementById('review-cost').value = postToEdit.cost || '';
+        document.getElementById('review-meal-type').value = postToEdit.mealType || 'other';
+        document.getElementById('review-content').value = postToEdit.content || '';
+        document.getElementById('review-rating').dataset.rating = postToEdit.rating;
+        updateHeartDisplay(postToEdit.rating);
+        const previewContainer = document.getElementById('photo-preview-container');
+        previewContainer.innerHTML = '';
+        if (postToEdit.photos && postToEdit.photos.length > 0) {
+            displayPhotoPreviews(postToEdit.photos);
+        }
+        document.getElementById('add-review-header').innerHTML = `<i class="fa-solid fa-pen-to-square"></i>編輯美食評論`;
+        document.getElementById('save-review-btn').textContent = "更新評論";
+        window.showPage('add-review-page');
+    }
+
+    async function handleDeletePost(postId) {
+        if (confirm('確定要刪除這筆紀錄嗎？')) {
+            try {
+                await deletePostFromDB(postId);
+                renderMyPosts(); 
+                renderAccountingRecords();
+            } catch (error) {
+                alert("刪除失敗，請稍後再試。");
+            }
+        }
+    }
+    
+    async function handleToggleFavorite(place, element) {
+        if (!currentUser) { alert('請先登入才能使用此功能！'); return; }
+        
+        const isCurrentlyFavorite = isFavorite(place.place_id);
+        
+        if (element) {
+            element.classList.toggle('is-favorite', !isCurrentlyFavorite);
+            element.querySelector('i').className = !isCurrentlyFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        }
+        
+        try {
+            await toggleFavoriteInDB(place);
+            if(document.getElementById('favorites-content').classList.contains('active')) {
+                renderFavoriteRestaurants();
+            }
+            updateRandomPageStatus();
+        } catch (error) {
+            console.error("Error toggling favorite:", error);
+            if (element) { // Revert UI on failure
+                element.classList.toggle('is-favorite', isCurrentlyFavorite);
+                element.querySelector('i').className = isCurrentlyFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+            }
+        }
+    }
+
+    async function searchFriend() {
+        const input = document.getElementById('friend-search-input');
+        const email = input.value.trim();
+        if (!email || !currentUser) return;
+
+        try {
+            const snapshot = await db.collection('users').where('email', '==', email).limit(1).get();
+            if (snapshot.empty) {
+                alert('找不到該用戶。');
+            } else {
+                const doc = snapshot.docs[0];
+                const foundUser = { id: doc.id, ...doc.data() };
+                if (foundUser.id === currentUser.uid) {
+                    alert('您無法將自己加為好友。');
+                    return;
+                }
+                
+                const currentFriends = await getFriends();
+                if (currentFriends.some(f => f.id === foundUser.id)) {
+                    alert('你們已經是好友了！');
+                } else if (confirm(`找到用戶「${foundUser.displayName}」，要將他加入好友嗎？`)) {
+                    await saveFriend({id: foundUser.id, displayName: foundUser.displayName, email: foundUser.email});
+                    alert('已加入好友！');
+                    renderFriendsList();
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            alert('搜尋好友時發生錯誤，請稍後再試。');
+        } finally {
+            input.value = '';
+        }
+    }
+
+    async function handleDeleteFriend(friendId) {
+        if (!currentUser || !confirm("確定要刪除這位好友嗎？")) return;
+        try {
+            await removeFriend(friendId);
+            alert("好友已刪除");
+            renderFriendsList();
+        } catch(err) {
+            console.error(err);
+            alert("刪除好友失敗，請稍後再試");
+        }
+    }
+
+    window.toggleOpeningHours = function(evt, btn) {
+        evt.stopPropagation();
+        const detailsDiv = btn.closest('.info-window-content').querySelector('.opening-hours-details');
+        const expanded = detailsDiv.classList.toggle('expanded');
+        btn.textContent = expanded ? '收起' : '查看詳細時間';
+    }
+
+    // --- Misc Helper Functions ---
+    function handleRatingClick(e) { const rating = e.target.dataset.value; document.getElementById('review-rating').dataset.rating = rating; updateHeartDisplay(rating); }
+    function handleRatingHover(e) { updateHeartDisplay(e.target.dataset.value); }
+    function handleRatingMouseout() { updateHeartDisplay(document.getElementById('review-rating').dataset.rating); }
+    function updateHeartDisplay(rating) { document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => { heart.classList.toggle('active', heart.dataset.value <= rating); }); }
+
+    function resetReviewForm() {
+        editingPostId = null;
+        document.getElementById('add-review-header').innerHTML = `<i class="fa-solid fa-pencil"></i>新增美食評論`;
+        document.getElementById('save-review-btn').textContent = "儲存評論與貼文";
+        ['review-restaurant-name', 'review-meal-items', 'review-cost', 'review-content'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('review-meal-type').value = 'other';
+        document.getElementById('review-rating').dataset.rating = 0;
+        updateHeartDisplay(0);
+        document.getElementById('photo-preview-container').innerHTML = '';
+    }
+
+    function displayPhotoPreviews(items) {
+        const previewContainer = document.getElementById('photo-preview-container');
+        previewContainer.innerHTML = ''; // Clear previous previews
+        for (const item of items) {
+            if (item instanceof File) {
+                if (!item.type.startsWith('image/')){ continue; }
+                const reader = new FileReader();
+                reader.onload = function(e) { createPreviewElement(e.target.result); }
+                reader.readAsDataURL(item);
+            } 
+            else if (typeof item === 'string' && item.startsWith('data:image')) {
+                createPreviewElement(item);
+            }
+        }
+        function createPreviewElement(src) {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'photo-preview-item';
+            const img = document.createElement('img');
+            img.src = src;
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-photo-btn';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.onclick = function() { previewItem.remove(); };
+            previewItem.appendChild(img);
+            previewItem.appendChild(deleteBtn);
+            previewContainer.appendChild(previewItem);
+        }
+    }
+    
+    // --- QR Scanner Functions ---
+    window.openQrScanner = function() { qrModal.style.display = 'flex'; qrStatusText.textContent = '請將發票左方(總金額)或右方(明細) QR Code 對準掃描框'; scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(s) { stream = s; video.srcObject = stream; video.setAttribute("playsinline", true); video.play(); requestAnimationFrame(tick); }).catch(function(err) { qrStatusText.textContent = '無法啟動相機。請確認已授權。'; console.error("相機錯誤:", err); }); }
+    window.closeQrScanner = function() { qrModal.style.display = 'none'; if (stream) { stream.getTracks().forEach(track => track.stop()); } if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; } }
+
+    function tick() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvasElement.height = video.videoHeight;
+            canvasElement.width = video.videoWidth;
+            canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+            var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+
+            if (code) {
+                handleQrCodeResult(code.data);
+                return;
+            }
+        }
+        animationFrameId = requestAnimationFrame(tick);
+    }
+    
+    function handleQrCodeResult(qrData) {
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+        
+        const leftQRResult = parseLeftQRCode(qrData);
+        const rightQRResult = parseRightQRCode(qrData);
+
+        if (!leftQRResult && !rightQRResult) {
+            qrStatusText.textContent = '無法辨識的發票 QR Code 格式。';
+            scanBox.style.borderColor = 'var(--danger-color)';
+            setTimeout(() => {
+                scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+                if (qrModal.style.display === 'flex') requestAnimationFrame(tick);
+            }, 2500);
+            return;
+        }
+
+        scanBox.style.borderColor = 'var(--success-color)';
+        let feedback = [];
+
+        if (leftQRResult) {
+            document.getElementById('review-cost').value = leftQRResult.totalAmount;
+            feedback.push(`總金額 $${leftQRResult.totalAmount} 已填入！`);
+        }
+
+        if (rightQRResult) {
+            const currentItems = document.getElementById('review-meal-items').value;
+            const newItems = rightQRResult.items.join('\n');
+            document.getElementById('review-meal-items').value = currentItems ? `${currentItems}\n${newItems}` : newItems;
+            feedback.push(`${rightQRResult.items.length}筆商品明細已加入！`);
+        }
+
+        const feedbackMessage = feedback.join('\n');
+        qrStatusText.textContent = feedbackMessage;
+        
+        setTimeout(() => {
+            if (confirm(feedbackMessage + '\n\n是否要繼續掃描下一個 QR Code？')) {
+                qrStatusText.textContent = '請對準下一個 QR Code...';
+                scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+                requestAnimationFrame(tick);
+            } else {
+                closeQrScanner();
+            }
+        }, 500);
+    }
+
+    function parseLeftQRCode(data) {
+        if (typeof data !== 'string' || data.length < 77) return null;
+        try {
+            const totalAmountHex = data.substring(29, 37);
+            const totalAmount = parseInt(totalAmountHex, 16);
+            if (isNaN(totalAmount)) return null;
+            return { totalAmount };
+        } catch (e) { return null; }
+    }
+
+    function parseRightQRCode(data) {
+        if (typeof data !== 'string' || !data.startsWith('**') && data.indexOf('*:') === -1) return null;
+        
+        let detailsData = data.startsWith('**') ? data.substring(2) : data;
+
+        try {
+            const parts = detailsData.split(':');
+            if (parts.length < 2) return null;
+            const itemCount = parseInt(parts[1]);
+            if (isNaN(itemCount) || itemCount <= 0) return null;
+
+            let parsedItems = [];
+            let currentIndex = 3; 
+            for (let i = 0; i < itemCount; i++) {
+                if (currentIndex + 2 >= parts.length) break; 
+                
+                const itemName = parts[currentIndex];
+                const itemQuantity = parts[currentIndex + 1];
+                
+                if (itemName && itemQuantity) {
+                    parsedItems.push(`${itemName} x ${itemQuantity}`);
+                }
+                currentIndex += 3;
+            }
+            return parsedItems.length > 0 ? { items: parsedItems } : null;
+        } catch (e) { return null; }
+    }
+  </script>
+
 </body>
 </html>
