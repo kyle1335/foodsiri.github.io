@@ -36,7 +36,7 @@
         align-items: center;
         overflow: hidden;
     }
-    /* --- MODIFIED: Removed border and adjusted shadow/radius for a modern card look --- */
+    /* --- MODIFIED: Implemented borderless design --- */
     .app-container { 
       width: 390px;
       height: 844px;
@@ -44,12 +44,9 @@
       display: flex;
       flex-direction: column;
       background-color: var(--background-color);
-      /* Use a softer, more modern shadow */
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-      /* Slightly adjusted radius for a better borderless look */
-      border-radius: 30px;
-      /* Removed the border */
-      border: none;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); 
+      border-radius: 30px; 
+      border: none; /* Removed coarse border */
       position: relative;
       overflow: hidden;
       box-sizing: border-box;
@@ -188,10 +185,11 @@
     .btn { display: block; width: 100%; padding: 15px; background-color: var(--success-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; }
     #random-picker-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; box-sizing: border-box; }
     
+    /* --- MODIFIED: Removed border from picker wheel --- */
     #picker-wheel { 
       width: 280px; 
       height: 280px; 
-      border: 10px solid #ddd; 
+      border: none; /* Removed coarse border */
       border-radius: 50%; 
       position: relative; 
       margin-bottom: 30px; 
@@ -333,9 +331,8 @@
         max-width: 1280px;
         height: 90vh;
         max-height: 800px;
-        /* Adjusted radius and removed border for desktop view */
         border-radius: 16px;
-        border: none;
+        border: none; /* Also removed border for desktop view */
       }
       #map-page {
         flex-direction: row;
@@ -1128,12 +1125,10 @@
 
     function processAndDisplayResults(places, center) { const listContainer = document.getElementById("list-content-area"); const placesWithDistance = places.map((place) => ({ ...place, distance: google.maps.geometry.spherical.computeDistanceBetween(center, place.geometry.location) })); placesWithDistance.sort((a, b) => a.distance - b.distance); listContainer.innerHTML = ""; placesWithDistance.forEach((place) => { addRestaurantMarker(place); addRestaurantToList(place); }); }
     
-    // --- START: 修正 addRestaurantMarker 邏輯 ---
     function addRestaurantMarker(place) {
-        // 依賴 activeFilter 來決定顏色，這是最穩定的方式
         const markerColor = (activeFilter.type === 'keyword' && categoryKeywords[activeFilter.value]) 
                             ? categoryKeywords[activeFilter.value].color 
-                            : getCategoryColor(place); // 當是 "距離" 模式時，嘗試猜測顏色
+                            : getCategoryColor(place);
 
         const marker = new google.maps.Marker({
             position: place.geometry.location,
@@ -1158,7 +1153,6 @@
         marker.place_id = place.place_id;
         restaurantMarkers.push(marker);
     }
-    // --- END: 修正 addRestaurantMarker ---
 
     function addRestaurantToList(place, routeInfo = null, details = null) { 
         const listContainer = document.getElementById("list-content-area"); 
@@ -1215,7 +1209,6 @@
             directionsRenderer.setDirections({ routes: [] });
         }
         
-        // 結合 place 和 placeDetails 的資訊來獲得最準確的顏色
         const finalPlaceDataForColor = { ...place, types: (placeDetails && placeDetails.types) || place.types || [] };
         const markerColor = color || getCategoryColor(finalPlaceDataForColor);
 
