@@ -12,6 +12,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
   <style>
+    /* [CSS 樣式內容不變，此處省略] */
     :root { 
       --primary-color: #667eea; 
       --secondary-color: #764ba2; 
@@ -89,8 +90,6 @@
     }
     #map { width: 100%; height: 100%; }
     .search-area { padding: 15px; border-bottom: 1px solid #eee; background: white; flex-shrink: 0; position: relative; }
-    
-    /* 新 Autocomplete 元件的樣式 */
     gmp-place-autocomplete {
         width: 100%;
         box-sizing: border-box;
@@ -103,7 +102,6 @@
         width: 100%;
         box-sizing: border-box;
     }
-    
     .filter-tags-container {
       display: flex;
       justify-content: flex-start;
@@ -132,7 +130,6 @@
       white-space: nowrap; 
       transition: all 0.2s ease-in-out;
     }
-    
     .filter-tag[data-filter-value="distance"]:hover {
       background-color: #e8eaf6;
     }
@@ -141,30 +138,25 @@
         color: white;
         border-color: var(--primary-color);
     }
-
     .filter-tag:not([data-filter-value="distance"]):hover {
         filter: brightness(0.95);
     }
-
     .filter-tag.active {
       transform: scale(1.05);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    
     .filter-tag[data-filter-value="日式料理"] { background-color: #ffebee; border-color: #ffcdd2; color: #c62828; }
     .filter-tag[data-filter-value="火鍋"]     { background-color: #fff3e0; border-color: #ffe0b2; color: #ef6c00; }
     .filter-tag[data-filter-value="咖啡廳"]   { background-color: #efebe9; border-color: #d7ccc8; color: #5d4037; }
     .filter-tag[data-filter-value="義大利麵"] { background-color: #e8f5e9; border-color: #c8e6c9; color: #2e7d32; }
     .filter-tag[data-filter-value="早午餐"]   { background-color: #fffde7; border-color: #fff9c4; color: #f57f17; }
     .filter-tag[data-filter-value="小吃"]     { background-color: #eceff1; border-color: #cfd8dc; color: #37474f; }
-
     .filter-tag[data-filter-value="日式料理"].active { background-color: #e57373; border-color: #e57373; color: white; }
     .filter-tag[data-filter-value="火鍋"].active     { background-color: #ff9800; border-color: #fb8c00; color: white; }
     .filter-tag[data-filter-value="咖啡廳"].active   { background-color: #795548; border-color: #6d4c41; color: white; }
     .filter-tag[data-filter-value="義大利麵"].active { background-color: #66bb6a; border-color: #66bb6a; color: white; }
     .filter-tag[data-filter-value="早午餐"].active   { background-color: #ffee58; border-color: #fdd835; color: #333; }
     .filter-tag[data-filter-value="小吃"].active     { background-color: #78909c; border-color: #78909c; color: white; }
-
     .list-content { overflow-y: auto; flex-grow: 1; }
     .list-item { display: flex; align-items: flex-start; gap: 15px; padding: 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background-color 0.2s; }
     .list-item.is-selected { background-color: #e8eaf6; border-left: 4px solid var(--primary-color); padding-left: 11px; }
@@ -483,7 +475,7 @@
     ];
     let qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
     const firebaseConfig = {
-        apiKey: "AIzaSyBQNGqpCU04OhQ-Py3iKvWcSxGuDgwIFsQ",
+        apiKey: "YOUR_API_KEY",
         authDomain: "foodiedata-b4982.firebaseapp.com",
         projectId: "foodiedata-b4982",
         storageBucket: "foodiedata-b4982.firebasestorage.app",
