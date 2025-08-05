@@ -746,13 +746,13 @@
     async function initiateRouteAndDetailsFetch(place, color) {
         if (!userGpsPosition || !place.geometry || !place.geometry.location) { showPlaceDetailsInWindow(place, null, {}); return; }
         clearRestaurantMarkers(); const { Place } = await google.maps.importLibrary("places"); const placeObject = new Place({ id: place.place_id });
-        const [drivingResult, walkingResult, placeDetailsResponse] = await Promise.all([ getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.DRIVING), getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.WALKING), placeObject.fetchFields({ fields: ['displayName', 'rating', 'formattedPhoneNumber', 'openingHours', 'businessStatus', 'formattedAddress', 'id', 'types'] }) ]);
+        const [drivingResult, walkingResult, placeDetailsResponse] = await Promise.all([ getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.DRIVING), getRoutePromise(userGpsPosition, place.geometry.location, google.maps.TravelMode.WALKING), placeObject.fetchFields({ fields: ['displayName', 'rating', 'formattedPhoneNumber', 'regularOpeningHours', 'businessStatus', 'formattedAddress', 'id', 'types'] }) ]);
         const routeInfo = { driving: drivingResult, walking: walkingResult }; const detailedPlace = placeDetailsResponse ? placeDetailsResponse.place : null;
         if (drivingResult) { directionsRenderer.setDirections(drivingResult.response); map.fitBounds(drivingResult.response.routes[0].bounds); } else { directionsRenderer.setDirections({ routes: [] }); }
         const finalPlaceDataForColor = { ...place, types: (detailedPlace && detailedPlace.types) || place.types || [] }; const markerColor = color || getCategoryColor(finalPlaceDataForColor);
         const { AdvancedMarkerElement } = await google.maps.importLibrary("marker"); const destinationMarker = new AdvancedMarkerElement({ position: place.geometry.location, map: map, title: place.name, content: createRestaurantPin(markerColor) });
         destinationMarker.addListener('click', () => { handlePlaceSelection(place); }); restaurantMarkers.push(destinationMarker);
-        const finalPlaceData = { ...place, name: detailedPlace?.displayName || place.name, formatted_address: detailedPlace?.formattedAddress || place.formatted_address, openingHours: detailedPlace?.openingHours, formatted_phone_number: detailedPlace?.formattedPhoneNumber, business_status: detailedPlace?.businessStatus || place.business_status };
+        const finalPlaceData = { ...place, name: detailedPlace?.displayName || place.name, formatted_address: detailedPlace?.formattedAddress || place.formatted_address, openingHours: detailedPlace?.regularOpeningHours, formatted_phone_number: detailedPlace?.formattedPhoneNumber, business_status: detailedPlace?.businessStatus || place.business_status };
         showPlaceDetailsInWindow(finalPlaceData, destinationMarker, routeInfo); showSinglePlaceResult(finalPlaceData, routeInfo, finalPlaceData);
     }
     function getRoutePromise(origin, destination, travelMode) { return new Promise(resolve => { const request = { origin, destination, travelMode }; directionsService.route(request, (res, stat) => { if (stat === 'OK') { const leg = res.routes[0].legs[0]; resolve({ distance: leg.distance.text, duration: leg.duration.text, response: res }); } else { resolve(null); } }); }); }
@@ -839,3 +839,4 @@
   ></script>
 </body>
 </html>
+
