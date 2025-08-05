@@ -36,6 +36,7 @@
         align-items: center;
         overflow: hidden;
     }
+    /* --- MODIFIED: Removed border and adjusted shadow/radius for a modern card look --- */
     .app-container { 
       width: 390px;
       height: 844px;
@@ -43,9 +44,12 @@
       display: flex;
       flex-direction: column;
       background-color: var(--background-color);
-      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.25);
-      border-radius: 40px;
-      border: 10px solid #111;
+      /* Use a softer, more modern shadow */
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+      /* Slightly adjusted radius for a better borderless look */
+      border-radius: 30px;
+      /* Removed the border */
+      border: none;
       position: relative;
       overflow: hidden;
       box-sizing: border-box;
@@ -329,8 +333,9 @@
         max-width: 1280px;
         height: 90vh;
         max-height: 800px;
-        border-radius: 12px;
-        border: 1px solid #ccc;
+        /* Adjusted radius and removed border for desktop view */
+        border-radius: 16px;
+        border: none;
       }
       #map-page {
         flex-direction: row;
@@ -1084,7 +1089,7 @@
     function getFriends() { if (!currentUser) return []; const key = `${FRIENDS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
     function saveFriends(friends) { if (!currentUser) return; const key = `${FRIENDS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(friends)); }
 
-    function createUserMarker(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
+    function createUserMarker(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
     function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener("click", (e) => { if (e.placeId) { e.stop(); } window.clearSearch(); }); }
     function setupAutocomplete() { 
         const input = document.getElementById('search-input'); 
