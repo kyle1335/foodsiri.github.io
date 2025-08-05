@@ -483,7 +483,7 @@
     ];
     let qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
     const firebaseConfig = {
-        apiKey: "AIzaSyBQNGqpCU04OhQ-Py3iKvWcSxGuDgwIFsQ",
+        apiKey: "YOUR_API_KEY",
         authDomain: "foodiedata-b4982.firebaseapp.com",
         projectId: "foodiedata-b4982",
         storageBucket: "foodiedata-b4982.firebasestorage.app",
@@ -677,7 +677,6 @@
         listContainer.innerHTML = `<p class="list-status-text">正在搜尋附近餐廳...</p>`;
         clearRestaurantMarkers();
         
-        // --- 最終修正點 ---
         const fields = ['id', 'displayName', 'location', 'businessStatus', 'rating', 'userRatingCount', 'types', 'primaryType', 'formattedAddress'];
 
         const request = {
@@ -817,7 +816,7 @@
         setTimeout(() => { if (confirm(feedbackMessage + '\n\n是否要繼續掃描下一個 QR Code？')) { qrStatusText.textContent = '請對準下一個 QR Code...'; scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; requestAnimationFrame(tick); } else { closeQrScanner(); } }, 500);
     }
     function displayPhotoPreviews(items) {
-        const previewContainer = document.getElementById('photo-preview-container'); if (!items) return; for (const item of items) { if (item instanceof File) { if (!item.type.startsWith('image/')){ continue; } const reader = new FileReader(); reader.onload = function(e) { createPreviewElement(e.target.result); } reader.readAsDataURL(item); } else if (typeof item === 'string' && item.startsWith('data:image')) { createPreviewElement(item); } }
+        const previewContainer = document.getElementById('photo-preview-container'); if (!items) return; for (const item of items) { if (item instanceof File) { if (!item.type.startsWith('image/')){ continue; } const reader = new FileReader(); reader.onload = function(e) { createPreviewElement(e.target.result); }; reader.readAsDataURL(item); } else if (typeof item === 'string' && item.startsWith('data:image')) { createPreviewElement(item); } }
         function createPreviewElement(src) { const previewItem = document.createElement('div'); previewItem.className = 'photo-preview-item'; const img = document.createElement('img'); img.src = src; const deleteBtn = document.createElement('button'); deleteBtn.className = 'delete-photo-btn'; deleteBtn.innerHTML = '×'; deleteBtn.onclick = function() { previewItem.remove(); }; previewItem.appendChild(img); previewItem.appendChild(deleteBtn); previewContainer.appendChild(previewItem); }
     }
     document.addEventListener('DOMContentLoaded', () => {
@@ -839,4 +838,3 @@
   ></script>
 </body>
 </html>
-
