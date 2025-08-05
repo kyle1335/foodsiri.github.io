@@ -677,7 +677,6 @@
         }
     };
     
-    // --- MODIFIED: `handleRegister` now creates a document in Firestore 'users' collection ---
     window.handleRegister = function() {
         const name = document.getElementById('register-name-input').value.trim();
         const email = document.getElementById('register-email-input').value;
@@ -886,7 +885,6 @@
     window.inviteFriendToChallenge = async function(boardId) { const friendName = prompt('請輸入要邀請的好友名稱：'); if (friendName && friendName.trim() !== '') { try { const boardRef = db.collection('challenges').doc(boardId); const boardDoc = await boardRef.get(); if (!boardDoc.exists) return; const boardData = boardDoc.data(); const friendId = `friend_${Date.now()}`; const newParticipantData = { name: friendName.trim(), score: 0 }; const updatePayload = { [`participants.${friendId}`]: newParticipantData, participantIds: firebase.firestore.FieldValue.arrayUnion(`ext_${friendId}`) }; await boardRef.update(updatePayload); await renderChallengeBoardDetail(boardId); } catch(error) { console.error("Error inviting friend: ", error); alert("邀請失敗！"); } } }
     window.deleteChallengeBoard = async function(boardId) { if (confirm('確定要刪除整個挑戰榜嗎？此動作無法復原。')) { try { await db.collection('challenges').doc(boardId).delete(); await window.goBackToBoardList(); } catch(error) { console.error("Error deleting challenge: ", error); alert("刪除失敗！"); } } }
 
-    // --- MODIFIED: `searchFriend` now queries Firestore 'users' collection ---
     window.searchFriend = async function() {
         if (!currentUser) return;
         const input = document.getElementById('friend-search-input');
@@ -1708,14 +1706,35 @@
         };
         setVh();
         window.addEventListener('resize', setVh);
+
+        // --- MODIFIED: `onAuthStateChanged` now checks and creates user doc in Firestore ---
         auth.onAuthStateChanged(async (user) => { 
             currentUser = user;
             if (user) { 
+                // Check if user document exists in Firestore
+                const userDocRef = db.collection('users').doc(user.uid);
+                const userDoc = await userDocRef.get();
+
+                // If the user document does not exist, create it
+                if (!userDoc.exists) {
+                    console.log("Firestore user document not found, creating one for user:", user.uid);
+                    try {
+                        await userDocRef.set({
+                            uid: user.uid,
+                            displayName: user.displayName || user.email.split('@')[0],
+                            email: user.email
+                        });
+                    } catch (error) {
+                        console.error("Error creating user document on login: ", error);
+                    }
+                }
+                
                 await setupLoggedInUI(user); 
             } else { 
                 await setupLoggedOutUI(); 
             } 
         });
+
         document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => {
             heart.addEventListener('click', handleRatingClick);
             heart.addEventListener('mouseover', handleRatingHover);
