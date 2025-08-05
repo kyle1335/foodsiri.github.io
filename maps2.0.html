@@ -483,7 +483,7 @@
     ];
     let qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
     const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
+        apiKey: "AIzaSyBQNGqpCU04OhQ-Py3iKvWcSxGuDgwIFsQ",
         authDomain: "foodiedata-b4982.firebaseapp.com",
         projectId: "foodiedata-b4982",
         storageBucket: "foodiedata-b4982.firebasestorage.app",
@@ -751,7 +751,7 @@
         const finalPlaceDataForColor = { ...place, types: (detailedPlace && detailedPlace.types) || place.types || [] }; const markerColor = color || getCategoryColor(finalPlaceDataForColor);
         const { AdvancedMarkerElement } = await google.maps.importLibrary("marker"); const destinationMarker = new AdvancedMarkerElement({ position: place.geometry.location, map: map, title: place.name, content: createRestaurantPin(markerColor) });
         destinationMarker.addListener('click', () => { handlePlaceSelection(place); }); restaurantMarkers.push(destinationMarker);
-        const finalPlaceData = { ...place, name: detailedPlace?.displayName || place.name, formatted_address: detailedPlace?.formattedAddress || place.formatted_address, openingHours: detailedPlace?.regularOpeningHours, formatted_phone_number: detailedPlace?.formattedPhoneNumber, business_status: detailedPlace?.businessStatus || place.business_status };
+        const finalPlaceData = { ...place, name: detailedPlace?.displayName || place.name, formatted_address: detailedPlace?.formattedAddress || place.formatted_address, openingHours: detailedPlace?.regularOpeningHours, formattedPhoneNumber: detailedPlace?.formattedPhoneNumber, business_status: detailedPlace?.businessStatus || place.business_status };
         showPlaceDetailsInWindow(finalPlaceData, destinationMarker, routeInfo); showSinglePlaceResult(finalPlaceData, routeInfo, finalPlaceData);
     }
     function getRoutePromise(origin, destination, travelMode) { return new Promise(resolve => { const request = { origin, destination, travelMode }; directionsService.route(request, (res, stat) => { if (stat === 'OK') { const leg = res.routes[0].legs[0]; resolve({ distance: leg.distance.text, duration: leg.duration.text, response: res }); } else { resolve(null); } }); }); }
@@ -759,7 +759,8 @@
     function showPlaceDetailsInWindow(place, marker, routeInfo = {}) {
         const isFav = isFavorite(place.place_id); const favIconClass = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'; const favBtnClass = isFav ? 'is-favorite' : ''; const placeDataStr = JSON.stringify({ name: place.name, place_id: place.place_id }).replace(/"/g, "'"); let content = `<div class="info-window-content"><h4><span>${place.name}</span><button class="favorite-btn ${favBtnClass}" onclick="toggleFavorite(${placeDataStr}, this)"><i class="${favIconClass}"></i></button></h4>`;
         const address = place.formatted_address || place.vicinity;
-        if (address) content += `<p><i class="fas fa-map-marker-alt"></i><span>${address}</span></p>`; if (routeInfo.driving) content += `<p><i class="fas fa-car"></i><span>${routeInfo.driving.distance} (${routeInfo.driving.duration})</span></p>`; if (routeInfo.walking) content += `<p><i class="fas fa-walking"></i><span>${routeInfo.walking.distance} (${routeInfo.walking.duration})</span></p>`; if (place.formatted_phone_number) content += `<p><i class="fas fa-phone"></i><span>${place.formatted_phone_number}</span></p>`;
+        const phoneNumber = place.formattedPhoneNumber || place.formatted_phone_number;
+        if (address) content += `<p><i class="fas fa-map-marker-alt"></i><span>${address}</span></p>`; if (routeInfo.driving) content += `<p><i class="fas fa-car"></i><span>${routeInfo.driving.distance} (${routeInfo.driving.duration})</span></p>`; if (routeInfo.walking) content += `<p><i class="fas fa-walking"></i><span>${routeInfo.walking.distance} (${routeInfo.walking.duration})</span></p>`; if (phoneNumber) content += `<p><i class="fas fa-phone"></i><span>${phoneNumber}</span></p>`;
         if (place.business_status === "CLOSED_PERMANENTLY") { content += `<p><i class="fas fa-store-slash"></i><span style="color: var(--danger-color); font-weight: bold;">永久停業</span></p>`; }
         else if (place.openingHours) { const isOpen = place.openingHours.isOpen(); const statusText = isOpen ? "營業中" : "休息中"; const color = isOpen ? "var(--success-color)" : "var(--danger-color)"; content += `<p><i class="fas fa-clock"></i><span style="color: ${color}; font-weight: bold;">${statusText}</span></p>`; }
         else { content += `<p><i class="fas fa-clock"></i><span>營業時間資訊不明</span></p>`; }
