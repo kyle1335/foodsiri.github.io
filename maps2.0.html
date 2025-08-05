@@ -1041,7 +1041,7 @@
         listContainer.innerHTML = `<p class="list-status-text">正在搜尋附近餐廳...</p>`;
         clearRestaurantMarkers();
 
-        const fields = ['id', 'displayName', 'location', 'businessStatus', 'rating', 'userRatingCount', 'types', 'primaryType', 'shortFormattedAddress'];
+        const fields = ['id', 'displayName', 'location', 'businessStatus', 'rating', 'userRatingCount', 'types', 'primaryType', 'addressComponents'];
         const request = {
             locationRestriction: { center: location, radius: 1500 },
             includedTypes: ['restaurant'],
@@ -1504,3 +1504,4 @@
 
 </body>
 </html>
+
