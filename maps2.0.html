@@ -475,7 +475,7 @@
     ];
     let qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
     const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
+        apiKey: "AIzaSyBQNGqpCU04OhQ-Py3iKvWcSxGuDgwIFsQ",
         authDomain: "foodiedata-b4982.firebaseapp.com",
         projectId: "foodiedata-b4982",
         storageBucket: "foodiedata-b4982.firebasestorage.app",
@@ -678,7 +678,8 @@
             fields: fields,
         };
         if (activeFilter.type === 'keyword' && activeFilter.value) {
-            request.textQuery = activeFilter.value;
+            // Correct way to handle keyword search with searchNearby
+            request.includedTypes.push(activeFilter.value); 
             listContainer.innerHTML = `<p class="list-status-text">正在搜尋「${activeFilter.value}」...</p>`;
         }
         try {
