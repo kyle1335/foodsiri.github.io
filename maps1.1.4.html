@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>FoodieApp</title>
+  <title>FoodieApp - Firestore Edition</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
 
   <!-- External libraries are loaded first in the head -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
   <style>
@@ -36,7 +37,6 @@
         align-items: center;
         overflow: hidden;
     }
-    /* --- MODIFIED: Implemented borderless design --- */
     .app-container { 
       width: 390px;
       height: 844px;
@@ -46,7 +46,7 @@
       background-color: var(--background-color);
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); 
       border-radius: 30px; 
-      border: none; /* Removed coarse border */
+      border: none;
       position: relative;
       overflow: hidden;
       box-sizing: border-box;
@@ -185,11 +185,10 @@
     .btn { display: block; width: 100%; padding: 15px; background-color: var(--success-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; }
     #random-picker-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; box-sizing: border-box; }
     
-    /* --- MODIFIED: Removed border from picker wheel --- */
     #picker-wheel { 
       width: 280px; 
       height: 280px; 
-      border: none; /* Removed coarse border */
+      border: none;
       border-radius: 50%; 
       position: relative; 
       margin-bottom: 30px; 
@@ -332,7 +331,7 @@
         height: 90vh;
         max-height: 800px;
         border-radius: 16px;
-        border: none; /* Also removed border for desktop view */
+        border: none;
       }
       #map-page {
         flex-direction: row;
@@ -477,9 +476,9 @@
             <div id="favorites-content" class="tab-content"></div>
             <div id="friends-content" class="tab-content">
                 <div class="search-area" style="padding: 0 0 20px 0; border-bottom: none; background: transparent;">
-                    <p style="font-size: 14px; color: var(--text-light); margin-bottom: 10px;">透過 ID 或 Email 搜尋好友：</p>
+                    <p style="font-size: 14px; color: var(--text-light); margin-bottom: 10px;">透過 Email 搜尋好友：</p>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="text" id="friend-search-input" class="search-input" placeholder="輸入好友ID或Email..." style="border-radius: 8px; padding: 12px 15px; width: auto; flex-grow: 1;">
+                        <input type="text" id="friend-search-input" class="search-input" placeholder="輸入好友的 Email..." style="border-radius: 8px; padding: 12px 15px; width: auto; flex-grow: 1;">
                         <button class="btn" style="padding: 0; width: 80px; height: 44px; flex-shrink: 0;" onclick="searchFriend()">搜尋</button>
                     </div>
                 </div>
@@ -553,12 +552,8 @@
     var currentUser = null; 
     var map, userGpsPosition, userMarker, restaurantMarkers, debounceTimer, placesService, autocomplete, infoWindow, directionsService, directionsRenderer;
     var isMapReady = false; 
-    const POSTS_DB_KEY = 'foodieAppPosts'; 
-    const CHALLENGE_BOARDS_DB_KEY = 'foodieAppChallengeBoards';
-    const FAVORITES_DB_KEY = 'foodieAppFavorites';
-    const FRIENDS_DB_KEY = 'foodieAppFriends';
     var pageHistory = [];
-    var auth; 
+    var auth, db; 
     var selectedPlaceForReview = null; 
     var editingPostId = null; 
     var viewingChallengeId = null;
@@ -573,15 +568,6 @@
         '小吃':     { color: '#78909c', keywords: ['snack', '小吃', '快餐', '麵線', '水餃'] }
     };
     const defaultMarkerColor = '#EA4335';
-
-    // --- Mock User Database for Friend Search ---
-    const mockUserDB = [
-        { id: 'friend01', name: '美食探險家', email: 'explorer@food.com' },
-        { id: 'friend02', name: '吃貨小夥伴', email: 'partner@food.com' },
-        { id: 'friend03', name: '深夜食堂常客', email: 'nightowl@food.com' },
-        { id: 'friend04', name: '甜點魔人', email: 'dessert@food.com' },
-        { id: 'admin01', name: 'Admin User', email: 'admin@mail.com' }
-    ];
 
     // --- QR Code 掃描器相關變數 ---
     var qrModal, video, canvasElement, canvas, qrStatusText, scanBox, stream, animationFrameId;
@@ -598,6 +584,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth(); 
+    db = firebase.firestore();
 
     function getCategoryColor(place) {
         if (!place) return defaultMarkerColor;
@@ -657,7 +644,7 @@
     }
 
     // --- 全域可呼叫函式 (掛載到 window) ---
-    window.showPage = function(pageId, navElement = null) {
+    window.showPage = async function(pageId, navElement = null) {
         if (pageId === 'add-review-page' && !editingPostId) {
             resetReviewForm(); 
         }
@@ -674,9 +661,9 @@
             navElement.classList.add('active');
             pageHistory = [];
         }
-        if (pageId === 'random-page') updateRandomPageStatus();
-        if (pageId === 'challenge-page') { viewingChallengeId = null; renderChallengePage(); }
-        if (pageId === 'profile-page') renderProfilePage();
+        if (pageId === 'random-page') await updateRandomPageStatus();
+        if (pageId === 'challenge-page') { viewingChallengeId = null; await renderChallengePage(); }
+        if (pageId === 'profile-page') await renderProfilePage();
     };
     window.goBack = function() {
         editingPostId = null; 
@@ -689,7 +676,44 @@
             window.showPage('map-page', document.querySelector('.nav-item[onclick*="map-page"]'));
         }
     };
-    window.handleRegister = function() { const name = document.getElementById('register-name-input').value.trim(); const email = document.getElementById('register-email-input').value; const password = document.getElementById('register-password-input').value; const errorDiv = document.getElementById('register-error'); errorDiv.textContent = ''; if (!name || !email || !password) { errorDiv.textContent = '所有欄位都必須填寫！'; return; } auth.createUserWithEmailAndPassword(email, password).then(userCredential => userCredential.user.updateProfile({ displayName: name })).then(() => { window.goBack(); }).catch(error => { switch(error.code) { case 'auth/email-already-in-use': errorDiv.textContent = '此電子郵件已被註冊。'; break; case 'auth/invalid-email': errorDiv.textContent = '電子郵件格式不正確。'; break; case 'auth/weak-password': errorDiv.textContent = '密碼強度不足 (至少6位數)。'; break; default: errorDiv.textContent = '註冊失敗，請稍後再試。'; } }); }
+    
+    // --- MODIFIED: `handleRegister` now creates a document in Firestore 'users' collection ---
+    window.handleRegister = function() {
+        const name = document.getElementById('register-name-input').value.trim();
+        const email = document.getElementById('register-email-input').value;
+        const password = document.getElementById('register-password-input').value;
+        const errorDiv = document.getElementById('register-error');
+        errorDiv.textContent = '';
+        if (!name || !email || !password) {
+            errorDiv.textContent = '所有欄位都必須填寫！';
+            return;
+        }
+
+        auth.createUserWithEmailAndPassword(email, password)
+            .then(userCredential => {
+                const user = userCredential.user;
+                return user.updateProfile({
+                    displayName: name
+                }).then(() => {
+                    return db.collection('users').doc(user.uid).set({
+                        uid: user.uid,
+                        displayName: name,
+                        email: user.email
+                    });
+                });
+            })
+            .then(() => {
+                window.goBack();
+            })
+            .catch(error => {
+                switch (error.code) {
+                    case 'auth/email-already-in-use': errorDiv.textContent = '此電子郵件已被註冊。'; break;
+                    case 'auth/invalid-email': errorDiv.textContent = '電子郵件格式不正確。'; break;
+                    case 'auth/weak-password': errorDiv.textContent = '密碼強度不足 (至少6位數)。'; break;
+                    default: errorDiv.textContent = '註冊失敗，請稍後再試。';
+                }
+            });
+    }
     
     window.handleSignIn = function() {
         const email = document.getElementById('login-email-input').value;
@@ -714,13 +738,13 @@
     window.centerOnUserGPS = function() { if (map && userGpsPosition) { map.panTo(userGpsPosition); } }
     window.clearSearch = function(suppressSearch = false) { directionsRenderer.setDirections({ routes: [] }); infoWindow.close(); const input = document.getElementById('search-input'); input.value = ''; document.getElementById('clear-search').style.display = 'none'; highlightListItem(null); if (!suppressSearch) { searchNearbyRestaurants(map.getCenter()); } }
     
-    window.startRandomPick = function() {
+    window.startRandomPick = async function() {
         if (!currentUser) {
             alert('請先登入才能使用您的最愛清單進行抽籤！');
             window.showPage('login-page');
             return;
         }
-        const favorites = getFavorites();
+        const favorites = await getFavorites();
         if (favorites.length < 2) {
             alert("您的最愛餐廳少於2家，無法啟動輪盤！\n請到地圖上將更多餐廳加入最愛。");
             return;
@@ -775,12 +799,7 @@
         if (!name || rating === "0") { alert("請務必填寫「餐廳名称」和「喜愛程度」！"); return; }
         
         const photoPreviews = document.querySelectorAll('#photo-preview-container .photo-preview-item img');
-        const photos = [];
-        for (const img of photoPreviews) {
-            photos.push(img.src);
-        }
-        
-        const posts = getPosts();
+        const photos = Array.from(photoPreviews).map(img => img.src);
         
         const postData = {
             name, 
@@ -789,38 +808,37 @@
             mealType: document.getElementById('review-meal-type').value,
             rating, 
             content: document.getElementById('review-content').value.trim(),
-            photos
+            photos,
+            timestamp: new Date().toISOString(), 
         };
 
-        if (editingPostId) { 
-            const postIndex = posts.findIndex(p => p.id === editingPostId);
-            if (postIndex > -1) {
-                posts[postIndex] = { ...posts[postIndex], ...postData };
+        try {
+            const postsCollection = db.collection('users').doc(currentUser.uid).collection('posts');
+            if (editingPostId) { 
+                await postsCollection.doc(editingPostId).update(postData);
                 alert("評論已成功更新！");
+            } else { 
+                await postsCollection.add(postData);
+                alert("評論已成功儲存！");
             }
-        } else { 
-            const newPost = { 
-                id: Date.now(), 
-                timestamp: new Date().toISOString(),
-                ...postData
-            };
-            posts.unshift(newPost);
-            alert("評論已成功儲存！");
+        } catch (error) {
+            console.error("Error saving review: ", error);
+            alert("儲存失敗，請稍後再試。");
+            return;
         }
         
-        savePosts(posts);
         editingPostId = null; 
         resetReviewForm();
         window.showPage('profile-page', document.querySelector('.nav-item[onclick*="profile-page"]'));
     }
     
-    window.showProfileTab = function(tabId, tabElement) { document.querySelectorAll('#profile-page .tab-btn').forEach(btn => { btn.classList.remove('active'); }); tabElement.classList.add('active'); document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active'); if (tabId === 'accounting') renderAccountingRecords(); if (tabId === 'posts') renderMyPosts(); if (tabId === 'favorites') renderFavoriteRestaurants(); if (tabId === 'friends') renderFriendsList(); }
+    window.showProfileTab = async function(tabId, tabElement) { document.querySelectorAll('#profile-page .tab-btn').forEach(btn => { btn.classList.remove('active'); }); tabElement.classList.add('active'); document.querySelectorAll('#profile-page .tab-content').forEach(content => content.classList.remove('active')); document.getElementById(`${tabId}-content`).classList.add('active'); if (tabId === 'accounting') await renderAccountingRecords(); if (tabId === 'posts') await renderMyPosts(); if (tabId === 'favorites') await renderFavoriteRestaurants(); if (tabId === 'friends') await renderFriendsList(); }
     window.goToReviewPageFromMap = function() { if (infoWindow) { infoWindow.close(); } if (!currentUser) { alert('請先登入才能新增評論！'); window.showPage('login-page'); return; } if (!selectedPlaceForReview) return; const addReviewNavButton = document.querySelector('.nav-item[onclick*="add-review-page"]'); window.showPage('add-review-page', addReviewNavButton); document.getElementById('review-restaurant-name').value = selectedPlaceForReview.name; };
     window.openQrScanner = function() { qrModal.style.display = 'flex'; qrStatusText.textContent = '請將發票左方(總金額)或右方(明細) QR Code 對準掃描框'; scanBox.style.borderColor = 'rgba(255, 255, 255, 0.7)'; navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(s) { stream = s; video.srcObject = stream; video.setAttribute("playsinline", true); video.play(); requestAnimationFrame(tick); }).catch(function(err) { qrStatusText.textContent = '無法啟動相機。請確認已授權。'; console.error("相機錯誤:", err); }); }
     window.closeQrScanner = function() { qrModal.style.display = 'none'; if (stream) { stream.getTracks().forEach(track => track.stop()); } if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; } }
 
-    window.editPost = function(postId) {
-        const posts = getPosts();
+    window.editPost = async function(postId) {
+        const posts = await getPosts();
         const postToEdit = posts.find(p => p.id === postId);
         if (!postToEdit) return;
 
@@ -846,97 +864,148 @@
         window.showPage('add-review-page');
     }
 
-    window.deletePost = function(postId) {
+    window.deletePost = async function(postId) {
         if (confirm('確定要刪除這筆紀錄嗎？\n(這將會同時刪除記帳和貼文內容)')) {
-            let posts = getPosts();
-            posts = posts.filter(p => p.id !== postId);
-            savePosts(posts);
-            renderProfilePage(); 
+            if (!currentUser) return;
+            try {
+                await db.collection('users').doc(currentUser.uid).collection('posts').doc(postId).delete();
+                await renderProfilePage();
+            } catch(error) {
+                console.error("Error deleting post: ", error);
+                alert("刪除失敗，請稍後再試。");
+            }
         }
     }
     
     // --- Challenge Board Functions ---
-    window.createChallengeBoard = function() { const titleInput = document.getElementById('new-challenge-title'); const subtitleInput = document.getElementById('new-challenge-subtitle'); const title = titleInput.value.trim(); const subtitle = subtitleInput.value.trim(); if (!title) { alert('請務必輸入挑戰主標題！'); return; } const boards = getChallengeBoards(); const newBoard = { id: Date.now(), creatorId: currentUser.uid, title: title, subtitle: subtitle, participants: [{ userId: currentUser.uid, name: currentUser.displayName || '我', score: 0 }] }; boards.unshift(newBoard); saveChallengeBoards(boards); titleInput.value = ''; subtitleInput.value = ''; renderChallengeBoardList(); }
+    window.createChallengeBoard = async function() { const titleInput = document.getElementById('new-challenge-title'); const subtitleInput = document.getElementById('new-challenge-subtitle'); const title = titleInput.value.trim(); const subtitle = subtitleInput.value.trim(); if (!title) { alert('請務必輸入挑戰主標題！'); return; } if (!currentUser) { alert('請先登入！'); return; } try { const newBoard = { creatorId: currentUser.uid, title: title, subtitle: subtitle, participantIds: [currentUser.uid], participants: { [currentUser.uid]: { name: currentUser.displayName || '我', score: 0 } } }; await db.collection('challenges').add(newBoard); titleInput.value = ''; subtitleInput.value = ''; await renderChallengeBoardList(); } catch(error) { console.error("Error creating challenge: ", error); alert("建立失敗！"); } }
     window.viewChallengeBoard = function(boardId) { viewingChallengeId = boardId; renderChallengePage(); }
     window.goBackToBoardList = function() { viewingChallengeId = null; renderChallengePage(); }
-    window.addScore = function(boardId, userId) { const boards = getChallengeBoards(); const board = boards.find(b => b.id === boardId); if (board) { const participant = board.participants.find(p => p.userId === userId); if (participant) { participant.score += 1; saveChallengeBoards(boards); renderChallengeBoardDetail(boardId); } } }
-    window.removeScore = function(boardId, userId) { const boards = getChallengeBoards(); const board = boards.find(b => b.id === boardId); if (board) { const participant = board.participants.find(p => p.userId === userId); if (participant && participant.score > 0) { participant.score -= 1; saveChallengeBoards(boards); renderChallengeBoardDetail(boardId); } } }
-    window.inviteFriendToChallenge = function(boardId) { const friendName = prompt('請輸入要邀請的好友名稱：'); if (friendName && friendName.trim() !== '') { const boards = getChallengeBoards(); const board = boards.find(b => b.id === boardId); if (board) { if (board.participants.some(p => p.name === friendName.trim())) { alert('這位好友已經在挑戰中了！'); return; } const newParticipant = { userId: `friend_${Date.now()}`, name: friendName.trim(), score: 0 }; board.participants.push(newParticipant); saveChallengeBoards(boards); renderChallengeBoardDetail(boardId); } } }
-    window.deleteChallengeBoard = function(boardId) { if (confirm('確定要刪除整個挑戰榜嗎？此動作無法復原。')) { let boards = getChallengeBoards(); boards = boards.filter(b => b.id !== boardId); saveChallengeBoards(boards); window.goBackToBoardList(); } }
+    window.addScore = async function(boardId, userId) { try { const participantField = `participants.${userId}.score`; await db.collection('challenges').doc(boardId).update({ [participantField]: firebase.firestore.FieldValue.increment(1) }); await renderChallengeBoardDetail(boardId); } catch(error) { console.error("Error adding score: ", error); } }
+    window.removeScore = async function(boardId, userId) { try { const participantField = `participants.${userId}.score`; await db.collection('challenges').doc(boardId).update({ [participantField]: firebase.firestore.FieldValue.increment(-1) }); await renderChallengeBoardDetail(boardId); } catch(error) { console.error("Error removing score: ", error); } }
+    window.inviteFriendToChallenge = async function(boardId) { const friendName = prompt('請輸入要邀請的好友名稱：'); if (friendName && friendName.trim() !== '') { try { const boardRef = db.collection('challenges').doc(boardId); const boardDoc = await boardRef.get(); if (!boardDoc.exists) return; const boardData = boardDoc.data(); const friendId = `friend_${Date.now()}`; const newParticipantData = { name: friendName.trim(), score: 0 }; const updatePayload = { [`participants.${friendId}`]: newParticipantData, participantIds: firebase.firestore.FieldValue.arrayUnion(`ext_${friendId}`) }; await boardRef.update(updatePayload); await renderChallengeBoardDetail(boardId); } catch(error) { console.error("Error inviting friend: ", error); alert("邀請失敗！"); } } }
+    window.deleteChallengeBoard = async function(boardId) { if (confirm('確定要刪除整個挑戰榜嗎？此動作無法復原。')) { try { await db.collection('challenges').doc(boardId).delete(); await window.goBackToBoardList(); } catch(error) { console.error("Error deleting challenge: ", error); alert("刪除失敗！"); } } }
 
-    // --- Friend List Functions ---
-    window.searchFriend = function() {
+    // --- MODIFIED: `searchFriend` now queries Firestore 'users' collection ---
+    window.searchFriend = async function() {
         if (!currentUser) return;
         const input = document.getElementById('friend-search-input');
-        const searchTerm = input.value.trim().toLowerCase();
+        const searchTerm = input.value.trim();
         if (!searchTerm) return;
 
-        const foundUser = mockUserDB.find(user => user.id.toLowerCase() === searchTerm || user.email.toLowerCase() === searchTerm);
-        
-        if (foundUser) {
-            if (foundUser.email === currentUser.email) {
-                alert('您無法將自己加為好友。');
+        try {
+            const usersRef = db.collection('users');
+            const query = usersRef.where('email', '==', searchTerm);
+            const querySnapshot = await query.get();
+
+            if (querySnapshot.empty) {
+                alert('找不到該用戶。\n請確認 Email 完全正確，或提醒您的朋友註冊帳號。');
+                input.value = '';
                 return;
             }
-            
-            const friends = getFriends();
-            if (friends.some(f => f.id === foundUser.id)) {
-                alert('你們已經是好友了！');
-            } else {
-                if (confirm(`找到用戶「${foundUser.name}」，要將他加入好友嗎？`)) {
-                    friends.push(foundUser);
-                    saveFriends(friends);
-                    renderFriendsList();
+
+            let foundUser = null;
+            querySnapshot.forEach(doc => {
+                if (!foundUser) {
+                    foundUser = doc.data();
+                }
+            });
+
+            if (foundUser) {
+                if (foundUser.uid === currentUser.uid) {
+                    alert('您無法將自己加為好友。');
+                    return;
+                }
+
+                const friends = await getFriends();
+                if (friends.some(f => f.id === foundUser.uid)) {
+                    alert('你們已經是好友了！');
+                } else {
+                    if (confirm(`找到用戶「${foundUser.displayName}」，要將他加入好友嗎？`)) {
+                        const batch = db.batch();
+                        const currentUserFriendRef = db.collection('users').doc(currentUser.uid).collection('friends').doc(foundUser.uid);
+                        batch.set(currentUserFriendRef, { name: foundUser.displayName, id: foundUser.uid, email: foundUser.email });
+
+                        const otherUserFriendRef = db.collection('users').doc(foundUser.uid).collection('friends').doc(currentUser.uid);
+                        batch.set(otherUserFriendRef, { name: currentUser.displayName, id: currentUser.uid, email: currentUser.email });
+
+                        await batch.commit();
+                        await renderFriendsList();
+                    }
                 }
             }
-        } else {
-            alert('找不到該用戶。');
+            input.value = '';
+
+        } catch (error) {
+            console.error("Error searching friend: ", error);
+            if (error.code === 'failed-precondition') {
+                alert("搜尋功能需要建立資料庫索引，請查看瀏覽器開發者工具的 Console，點擊其中的連結來建立索引，稍待幾分鐘後再試一次。");
+            } else {
+                alert("搜尋時發生錯誤，請稍後再試。");
+            }
         }
-        input.value = '';
     };
-    window.deleteFriend = (id) => {
+
+    window.deleteFriend = async (id) => {
         if (confirm("確定要刪除這位好友嗎？")) {
-            let friends = getFriends();
-            friends = friends.filter(f => f.id !== id);
-            saveFriends(friends);
-            renderFriendsList();
+            if (!currentUser) return;
+            try {
+                const batch = db.batch();
+                const currentUserFriendRef = db.collection('users').doc(currentUser.uid).collection('friends').doc(id);
+                batch.delete(currentUserFriendRef);
+                const otherUserFriendRef = db.collection('users').doc(id).collection('friends').doc(currentUser.uid);
+                batch.delete(otherUserFriendRef);
+                await batch.commit();
+                await renderFriendsList();
+            } catch(error) {
+                console.error("Error deleting friend: ", error);
+                alert("刪除好友失敗。");
+            }
         }
     };
 
     // --- Favorite Functions ---
-    window.toggleFavorite = function(place, element) {
+    window.toggleFavorite = async function(place, element) {
         if (!currentUser) { alert('請先登入才能使用此功能！'); return; }
-        let favorites = getFavorites();
-        const isFav = isFavorite(place.place_id);
         
-        if (isFav) {
-            favorites = favorites.filter(fav => fav.place_id !== place.place_id);
-        } else {
-            favorites.push({ place_id: place.place_id, name: place.name });
-        }
-        
-        saveFavorites(favorites);
-        
-        if (element) {
-            element.classList.toggle('is-favorite', !isFav);
-            element.querySelector('i').className = !isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-        }
-        
-        if(document.getElementById('favorites-content').classList.contains('active')) {
-            renderFavoriteRestaurants();
+        const favRef = db.collection('users').doc(currentUser.uid).collection('favorites').doc(place.place_id);
+        const isCurrentlyFav = await isFavorite(place.place_id);
+
+        try {
+            if (isCurrentlyFav) {
+                await favRef.delete();
+            } else {
+                await favRef.set({ name: place.name, place_id: place.place_id });
+            }
+
+            if (element) {
+                element.classList.toggle('is-favorite', !isCurrentlyFav);
+                element.querySelector('i').className = !isCurrentlyFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+            }
+            
+            if(document.getElementById('favorites-content').classList.contains('active')) {
+                await renderFavoriteRestaurants();
+            }
+            if(document.getElementById('random-page').classList.contains('active')) {
+                await updateRandomPageStatus();
+            }
+
+        } catch (error) {
+            console.error("Error toggling favorite:", error);
+            alert("操作失敗，請稍後再試。");
         }
     }
 
     // --- 內部專用函式 ---
-    function setupLoggedInUI(user) { document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block'; const userName = user.displayName || user.email.split('@')[0]; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`; renderProfilePage(); }
-    function setupLoggedOutUI() { document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; renderProfilePage(); renderChallengePage(); updateRandomPageStatus(); }
-    function renderProfilePage() { const activeTabBtn = document.querySelector('#profile-page .tab-btn.active'); if(activeTabBtn) { window.showProfileTab(activeTabBtn.getAttribute('onclick').match(/'([^']+)'/)[1], activeTabBtn); } else { window.showProfileTab('accounting', document.querySelector('#profile-page .tab-btn')); } }
+    async function setupLoggedInUI(user) { document.getElementById('profile-login-btn').style.display = 'none'; document.getElementById('profile-logout-btn').style.display = 'block'; const userName = user.displayName || user.email.split('@')[0]; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> ${userName}`; await renderProfilePage(); }
+    async function setupLoggedOutUI() { document.getElementById('profile-login-btn').style.display = 'block'; document.getElementById('profile-logout-btn').style.display = 'none'; document.getElementById('profile-header').innerHTML = `<i class="fa-solid fa-user"></i> 個人檔案`; await renderProfilePage(); await renderChallengePage(); await updateRandomPageStatus(); }
+    async function renderProfilePage() { const activeTabBtn = document.querySelector('#profile-page .tab-btn.active'); if(activeTabBtn) { await window.showProfileTab(activeTabBtn.getAttribute('onclick').match(/'([^']+)'/)[1], activeTabBtn); } else { await window.showProfileTab('accounting', document.querySelector('#profile-page .tab-btn')); } }
     const loggedOutPlaceholder = (message) => `<p class="placeholder-text">請先<a href="#" onclick="window.showPage('login-page')">登入</a>${message}</p>`;
     
-    function renderAccountingRecords() {
+    async function renderAccountingRecords() {
         const container = document.getElementById('accounting-content');
         if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的消費紀錄。'); return; }
-        const posts = getPosts().filter(p => p.cost > 0);
+        const posts = (await getPosts()).filter(p => p.cost > 0);
         if (posts.length === 0) { container.innerHTML = `<p class="placeholder-text">尚無消費紀錄。</p>`; return; }
         
         const mealTypeNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', other: '其他' };
@@ -977,7 +1046,7 @@
         container.innerHTML = html || `<p class="placeholder-text">尚無消費紀錄。</p>`;
     }
     
-    function renderMyPosts() {
+    async function renderMyPosts() {
         const postsContent = document.getElementById('posts-content');
         if (!currentUser) {
             postsContent.innerHTML = loggedOutPlaceholder('以查看您的貼文。');
@@ -996,7 +1065,7 @@
         }
         
         const listContainer = document.getElementById('posts-list-container');
-        let posts = getPosts();
+        let posts = await getPosts();
         if (posts.length === 0) {
             listContainer.innerHTML = `<p class="placeholder-text">您還沒有發表過貼文。</p>`;
             return;
@@ -1014,8 +1083,8 @@
             return `
                 <div class="post-card">
                     <div class="card-actions">
-                        <button class="action-btn btn-edit" onclick="editPost(${p.id})">編輯</button>
-                        <button class="action-btn btn-delete" onclick="deletePost(${p.id})">刪除</button>
+                        <button class="action-btn btn-edit" onclick="editPost('${p.id}')">編輯</button>
+                        <button class="action-btn btn-delete" onclick="deletePost('${p.id}')">刪除</button>
                     </div>
                     <div class="title">${p.name}</div>
                     <div class="details">${new Date(p.timestamp).toLocaleString()}</div>
@@ -1026,10 +1095,10 @@
         }).join('');
     }
 
-    function renderFavoriteRestaurants() {
+    async function renderFavoriteRestaurants() {
         const container = document.getElementById('favorites-content');
         if (!currentUser) { container.innerHTML = loggedOutPlaceholder('以查看您的最愛餐廳。'); return; }
-        const favorites = getFavorites();
+        const favorites = await getFavorites();
         if (favorites.length === 0) { container.innerHTML = `<p class="placeholder-text">您還沒有加入任何最愛餐廳。<br>可以從地圖上點擊餐廳的<i class="fa-regular fa-heart" style="color:#ddd"></i>來加入喔！</p>`; return; }
         
         container.innerHTML = '<h3>我的最愛餐廳</h3>' + favorites.map(f => `
@@ -1041,7 +1110,7 @@
             </div>`).join('');
     }
 
-    function renderFriendsList() {
+    async function renderFriendsList() {
         const friendsContent = document.getElementById('friends-content');
         if (!currentUser) { 
             friendsContent.innerHTML = loggedOutPlaceholder('以查看好友名單。'); 
@@ -1050,9 +1119,9 @@
         if (!friendsContent.querySelector('.search-area')) {
             friendsContent.innerHTML = `
                 <div class="search-area" style="padding: 0 0 20px 0; border-bottom: none; background: transparent;">
-                    <p style="font-size: 14px; color: var(--text-light); margin-bottom: 10px;">透過 ID 或 Email 搜尋好友：</p>
+                    <p style="font-size: 14px; color: var(--text-light); margin-bottom: 10px;">透過 Email 搜尋好友：</p>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="text" id="friend-search-input" class="search-input" placeholder="輸入好友ID或Email..." style="border-radius: 8px; padding: 12px 15px; width: auto; flex-grow: 1;">
+                        <input type="text" id="friend-search-input" class="search-input" placeholder="輸入好友的 Email..." style="border-radius: 8px; padding: 12px 15px; width: auto; flex-grow: 1;">
                         <button class="btn" style="padding: 0; width: 80px; height: 44px; flex-shrink: 0;" onclick="searchFriend()">搜尋</button>
                     </div>
                 </div>
@@ -1060,7 +1129,7 @@
         }
         
         const listContainer = document.getElementById('friends-list-container');
-        const friends = getFriends();
+        const friends = await getFriends();
 
         if (friends.length === 0) {
             listContainer.innerHTML = `<p class="placeholder-text">您還沒有加入任何好友。</p>`;
@@ -1071,23 +1140,20 @@
                         <button class="action-btn btn-delete" onclick="deleteFriend('${f.id}')">刪除</button>
                     </div>
                     <div class="title"><i class="fa-solid fa-user-group" style="margin-right:8px; color: var(--text-light)"></i>${f.name}</div>
-                    <div class="details">ID: ${f.id}</div>
+                    <div class="details">Email: ${f.email}</div>
                 </div>`).join('');
         }
     }
     
-    function getPosts() { if (!currentUser) return []; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
-    function savePosts(posts) { if (!currentUser) return; const key = `${POSTS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(posts)); }
-    function getChallengeBoards() { if (!currentUser) return []; const key = `${CHALLENGE_BOARDS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
-    function saveChallengeBoards(boards) { if (!currentUser) return; const key = `${CHALLENGE_BOARDS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(boards)); }
-    function getFavorites() { if (!currentUser) return []; const key = `${FAVORITES_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
-    function saveFavorites(favorites) { if (!currentUser) return; const key = `${FAVORITES_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(favorites)); updateRandomPageStatus(); }
-    function isFavorite(place_id) { if (!currentUser) return false; return getFavorites().some(f => f.place_id === place_id); }
-    function getFriends() { if (!currentUser) return []; const key = `${FRIENDS_DB_KEY}_${currentUser.uid}`; return JSON.parse(localStorage.getItem(key)) || []; }
-    function saveFriends(friends) { if (!currentUser) return; const key = `${FRIENDS_DB_KEY}_${currentUser.uid}`; localStorage.setItem(key, JSON.stringify(friends)); }
+    // --- Firestore Data Access Functions ---
+    async function getPosts() { if (!currentUser) return []; try { const snapshot = await db.collection('users').doc(currentUser.uid).collection('posts').get(); return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); } catch (error) { console.error("Error getting posts: ", error); return []; } }
+    async function getChallengeBoards() { if (!currentUser) return []; try { const snapshot = await db.collection('challenges').where('participantIds', 'array-contains', currentUser.uid).get(); return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); } catch (error) { console.error("Error getting challenge boards: ", error); return []; } }
+    async function getFavorites() { if (!currentUser) return []; try { const snapshot = await db.collection('users').doc(currentUser.uid).collection('favorites').get(); return snapshot.docs.map(doc => doc.data()); } catch (error) { console.error("Error getting favorites: ", error); return []; } }
+    async function isFavorite(place_id) { if (!currentUser) return false; try { const doc = await db.collection('users').doc(currentUser.uid).collection('favorites').doc(place_id).get(); return doc.exists; } catch (error) { console.error("Error checking favorite status: ", error); return false; } }
+    async function getFriends() { if (!currentUser) return []; try { const snapshot = await db.collection('users').doc(currentUser.uid).collection('friends').get(); return snapshot.docs.map(doc => doc.data()); } catch (error) { console.error("Error getting friends: ", error); return []; } }
 
     function createUserMarker(position) { const userIcon = { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", fillColor: '#4285F4', fillOpacity: 1, strokeWeight: 0, scale: 1.5, anchor: new google.maps.Point(12, 24) }; if (userMarker) { userMarker.setPosition(position); } else { userMarker = new google.maps.Marker({ position, map, title: "您的位置", icon: userIcon, zIndex: 1000 }); } }
-    function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections()) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener("click", (e) => { if (e.placeId) { e.stop(); } window.clearSearch(); }); }
+    function setupMapListeners() { map.addListener("idle", () => { if (!directionsRenderer.getDirections() || directionsRenderer.getDirections().routes.length === 0) { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => searchNearbyRestaurants(map.getCenter()), 500); } }); map.addListener("click", (e) => { if (e.placeId) { e.stop(); } window.clearSearch(); }); }
     function setupAutocomplete() { 
         const input = document.getElementById('search-input'); 
         const clearBtn = document.getElementById('clear-search');
@@ -1191,7 +1257,7 @@
 
     async function initiateRouteAndDetailsFetch(place, color) {
         if (!userGpsPosition || !place.geometry || !place.geometry.location) {
-            showPlaceDetailsInWindow(place, null, {});
+            await showPlaceDetailsInWindow(place, null, {});
             return;
         }
         document.getElementById('clear-search').style.display = 'flex';
@@ -1231,7 +1297,7 @@
             handlePlaceSelection(place);
         });
         restaurantMarkers.push(destinationMarker);
-        showPlaceDetailsInWindow(place, destinationMarker, routeInfo, placeDetails);
+        await showPlaceDetailsInWindow(place, destinationMarker, routeInfo, placeDetails);
         showSinglePlaceResult(place, routeInfo, placeDetails);
     }
     
@@ -1245,8 +1311,8 @@
     }
 
     function showSinglePlaceResult(place, routeInfo, placeDetails) { const listContainer = document.getElementById("list-content-area"); listContainer.innerHTML = ""; addRestaurantToList(place, routeInfo, placeDetails); highlightListItem(place.place_id); }
-    function showPlaceDetailsInWindow(place, marker, routeInfo = {}, details = null) {
-        const isFav = isFavorite(place.place_id);
+    async function showPlaceDetailsInWindow(place, marker, routeInfo = {}, details = null) {
+        const isFav = await isFavorite(place.place_id);
         const favIconClass = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
         const favBtnClass = isFav ? 'is-favorite' : '';
         const placeDataStr = JSON.stringify({ name: place.name, place_id: place.place_id }).replace(/"/g, "'");
@@ -1324,7 +1390,7 @@
         wheel.style.background = gradientString;
     }
 
-    function updateRandomPageStatus() {
+    async function updateRandomPageStatus() {
         const statusText = document.getElementById('random-status-text');
         const pickerResult = document.getElementById('picker-result');
         
@@ -1338,7 +1404,7 @@
             return;
         }
         
-        const favorites = getFavorites();
+        const favorites = await getFavorites();
         pickerResult.textContent = "?";
         pickerResult.style.color = 'var(--primary-color)';
         
@@ -1359,7 +1425,7 @@
     function handleRatingMouseout() { updateHeartDisplay(document.getElementById('review-rating').dataset.rating); }
     function updateHeartDisplay(rating) { document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => { heart.classList.toggle('active', heart.dataset.value <= rating); }); }
     
-    function renderChallengePage() {
+    async function renderChallengePage() {
         if (!currentUser) {
             const content = document.getElementById('challenge-page-content');
             if (content) content.innerHTML = '<p class="placeholder-text">登入後即可與好友建立美食挑戰榜！</p>';
@@ -1383,13 +1449,13 @@
         }
 
         if (viewingChallengeId === null) {
-            renderChallengeBoardList();
+            await renderChallengeBoardList();
         } else {
-            renderChallengeBoardDetail(viewingChallengeId);
+            await renderChallengeBoardDetail(viewingChallengeId);
         }
     }
 
-    function renderChallengeBoardList() {
+    async function renderChallengeBoardList() {
         const listView = document.getElementById('challenge-list-view');
         const detailView = document.getElementById('challenge-detail-view');
         if (!listView || !detailView) return;
@@ -1398,7 +1464,7 @@
         detailView.style.display = 'none';
 
         const container = document.getElementById('challenge-boards-container');
-        const boards = getChallengeBoards();
+        const boards = await getChallengeBoards();
 
         if (boards.length === 0) {
             container.innerHTML = '<p class="placeholder-text">您還沒有建立任何挑戰榜，快來建立第一個吧！</p>';
@@ -1406,15 +1472,15 @@
         }
 
         container.innerHTML = boards.map(board => `
-            <div class="record-card" style="cursor: pointer;" onclick="viewChallengeBoard(${board.id})">
+            <div class="record-card" style="cursor: pointer;" onclick="viewChallengeBoard('${board.id}')">
                 <div class="title">${board.title}</div>
                 <div class="details">${board.subtitle || '點此查看詳情'}</div>
-                <div class="details" style="margin-top: 8px; color: var(--primary-color);"><i class="fa-solid fa-users"></i> ${board.participants.length} 位參賽者</div>
+                <div class="details" style="margin-top: 8px; color: var(--primary-color);"><i class="fa-solid fa-users"></i> ${Object.keys(board.participants).length} 位參賽者</div>
             </div>
         `).join('');
     }
 
-    function renderChallengeBoardDetail(boardId) {
+    async function renderChallengeBoardDetail(boardId) {
         const listView = document.getElementById('challenge-list-view');
         const detailView = document.getElementById('challenge-detail-view');
         if (!listView || !detailView) return;
@@ -1422,17 +1488,17 @@
         listView.style.display = 'none';
         detailView.style.display = 'block';
 
-        const boards = getChallengeBoards();
-        const board = boards.find(b => b.id === boardId);
-
-        if (!board) {
+        const boardDoc = await db.collection('challenges').doc(boardId).get();
+        if (!boardDoc.exists) {
             detailView.innerHTML = '<p class="placeholder-text">找不到此挑戰榜。</p><button class="btn" onclick="goBackToBoardList()">返回列表</button>';
             return;
         }
-
+        const board = { id: boardDoc.id, ...boardDoc.data() };
+        
         const isCreator = board.creatorId === currentUser.uid;
 
-        const participantsHtml = board.participants
+        const participantsHtml = Object.entries(board.participants)
+            .map(([userId, userData]) => ({ userId, ...userData }))
             .sort((a, b) => b.score - a.score)
             .map((p, index) => {
                 const isSelf = p.userId === currentUser.uid;
@@ -1446,17 +1512,17 @@
                         <span style="font-weight: ${isSelf ? 'bold' : 'normal'};">${p.name}</span>
                     </div>
                     <div class="challenge-actions">
-                        <button class="action-btn" onclick="removeScore(${board.id}, '${p.userId}')" ${!isCreator ? 'disabled' : ''}>-</button>
+                        <button class="action-btn" onclick="removeScore('${board.id}', '${p.userId}')" ${!isCreator ? 'disabled' : ''}>-</button>
                         <span style="font-size: 18px; font-weight: bold; width: 30px; text-align: center;">${p.score}</span>
-                        <button class="action-btn" onclick="addScore(${board.id}, '${p.userId}')" ${!isCreator ? 'disabled' : ''}>+</button>
+                        <button class="action-btn" onclick="addScore('${board.id}', '${p.userId}')" ${!isCreator ? 'disabled' : ''}>+</button>
                     </div>
                 </div>
                 `;
             }).join('');
         
         const adminActionsHtml = isCreator ? `
-            <button class="btn" style="background-color: var(--primary-color); margin-bottom: 10px;" onclick="inviteFriendToChallenge(${board.id})"><i class="fa-solid fa-user-plus"></i> 邀請好友</button>
-            <button class="btn" style="background-color: var(--danger-color);" onclick="deleteChallengeBoard(${board.id})"><i class="fa-solid fa-trash"></i> 刪除挑戰榜</button>
+            <button class="btn" style="background-color: var(--primary-color); margin-bottom: 10px;" onclick="inviteFriendToChallenge('${board.id}')"><i class="fa-solid fa-user-plus"></i> 邀請好友</button>
+            <button class="btn" style="background-color: var(--danger-color);" onclick="deleteChallengeBoard('${board.id}')"><i class="fa-solid fa-trash"></i> 刪除挑戰榜</button>
         ` : '';
         
         detailView.innerHTML = `
@@ -1642,9 +1708,13 @@
         };
         setVh();
         window.addEventListener('resize', setVh);
-        auth.onAuthStateChanged(user => { 
+        auth.onAuthStateChanged(async (user) => { 
             currentUser = user;
-            if (user) { setupLoggedInUI(user); } else { setupLoggedOutUI(); } 
+            if (user) { 
+                await setupLoggedInUI(user); 
+            } else { 
+                await setupLoggedOutUI(); 
+            } 
         });
         document.querySelectorAll('.rating-hearts .fa-heart').forEach(heart => {
             heart.addEventListener('click', handleRatingClick);
