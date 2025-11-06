@@ -1,0 +1,245 @@
+/**
+ * Google Maps integration styles for Food Paradise Website
+ * 美食天地 - Google Maps 樣式
+ */
+
+/* 地圖容器樣式 */
+#map-container {
+    height: 400px;
+    width: 100%;
+    margin: 20px 0;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 搜尋結果容器 */
+#search-results {
+    margin-top: 20px;
+}
+
+/* 結果計數 */
+.result-count {
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: #555;
+}
+
+/* 結果列表 */
+.result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+/* 結果項目 */
+.result-item {
+    display: flex;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.result-item:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.result-item.active {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-left: 4px solid #64ffda;
+}
+
+/* 結果照片 */
+.result-photo {
+    width: 70px;
+    height: 70px;
+    overflow: hidden;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+.result-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 結果信息 */
+.result-info {
+    flex: 1;
+}
+
+.result-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #fff;
+}
+
+.result-address {
+    font-size: 0.85em;
+    color: #ccc;
+}
+
+/* 價格級別 */
+.price-level {
+    color: #64ffda;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+/* 星級評分 */
+.stars {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.stars i {
+    color: #FFD700;
+    margin-right: 2px;
+}
+
+.rating-value {
+    margin-left: 5px;
+    font-weight: bold;
+}
+
+.review-count {
+    font-size: 0.85em;
+    color: #ccc;
+    margin-left: 5px;
+}
+
+/* 信息窗口樣式 */
+.info-window {
+    max-width: 300px;
+    font-family: Arial, sans-serif;
+}
+
+.info-window h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.place-photo {
+    margin-bottom: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.place-photo img {
+    width: 100%;
+    display: block;
+}
+
+.rating-container {
+    margin-bottom: 10px;
+}
+
+.hours {
+    margin: 10px 0;
+    font-size: 0.9em;
+}
+
+.weekday-hours {
+    font-size: 0.85em;
+    margin-top: 5px;
+}
+
+.open-now {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.closed-now {
+    color: #F44336;
+    font-weight: bold;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.action-button {
+    padding: 5px 10px;
+    background-color: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85em;
+    transition: background-color 0.3s;
+}
+
+.action-button i {
+    margin-right: 5px;
+}
+
+.action-button.favorite {
+    background-color: #F44336;
+}
+
+.action-button.favorite:hover {
+    background-color: #D32F2F;
+}
+
+.action-button.share {
+    background-color: #2196F3;
+}
+
+.action-button.share:hover {
+    background-color: #1976D2;
+}
+
+/* 加載中指示器 */
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #ccc;
+    position: relative;
+}
+
+.loading:after {
+    content: "...";
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { content: "."; }
+    33% { content: ".."; }
+    66% { content: "..."; }
+}
+
+/* 響應式調整 */
+@media screen and (max-width: 736px) {
+    #map-container {
+        height: 300px;
+    }
+    
+    .result-list {
+        max-height: 350px;
+    }
+    
+    .result-item {
+        flex-direction: column;
+    }
+    
+    .result-photo {
+        width: 100%;
+        height: 120px;
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+}
